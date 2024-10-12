@@ -1,21 +1,31 @@
-import mysql from "mysql2/promise";
-import { ethers } from "ethers";
+import mysql from "serverless-mysql";
+import { isAddress } from "viem";
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl: {
-    rejectUnauthorized: true,
+// Create a database connection pool
+const db = mysql({
+  config: {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: {
+      rejectUnauthorized: true,
+    },
   },
 });
 
+// Execute SQL queries
 export async function query(sql: string, params: any[]) {
-  const [results] = await pool.execute(sql, params);
-  return results;
+  try {
+    const results = await db.query(sql, params);
+    await db.end();
+    return results;
+  } catch (error) {
+    return { error };
+  }
 }
 
+// Authenticate user based on Ethereum address
 export async function authenticateUser(req: Request): Promise<string | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -25,7 +35,7 @@ export async function authenticateUser(req: Request): Promise<string | null> {
   const token = authHeader.split(" ")[1];
   // TODO: Implement proper token verification
   // For now, we'll just check if it's a valid Ethereum address
-  if (ethers.utils.isAddress(token)) {
+  if (isAddress(token)) {
     return token;
   }
 
