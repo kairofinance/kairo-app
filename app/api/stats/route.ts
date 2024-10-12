@@ -1,60 +1,40 @@
 import { NextResponse } from "next/server";
-import { query, authenticateUser } from "@/app/lib/db";
+import { db } from "@/app/lib/db";
 
-interface StatsQueryResult {
-  revenue: number;
-  overdue_invoices: number;
-  outstanding_invoices: number;
-  expenses: number;
-}
-
-export async function GET(request: Request) {
-  const user = await authenticateUser(request);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET() {
   try {
-    const stats = (await query(
-      `SELECT 
-        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as revenue,
-        SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END) as overdue_invoices,
-        SUM(CASE WHEN status = 'outstanding' THEN amount ELSE 0 END) as outstanding_invoices,
-        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
-      FROM transactions
-      WHERE user_address = ?`,
-      [user]
-    )) as StatsQueryResult[];
-
-    const formattedStats = [
+    // TODO: Implement actual statistics calculation
+    // For now, we'll return mock data
+    const stats = [
       {
-        name: "Revenue",
-        value: `$${stats[0].revenue.toFixed(2)}`,
-        change: "+5%",
+        name: "Total Revenue",
+        value: "$75,000",
+        change: "+3.4%",
         changeType: "positive",
       },
       {
-        name: "Overdue invoices",
-        value: `$${stats[0].overdue_invoices.toFixed(2)}`,
-        change: "-54.02%",
+        name: "New Clients",
+        value: "23",
+        change: "+2.6%",
         changeType: "positive",
       },
       {
-        name: "Outstanding invoices",
-        value: `$${stats[0].outstanding_invoices.toFixed(2)}`,
-        change: "+112%",
-        changeType: "positive",
-      },
-      {
-        name: "Expenses",
-        value: `$${stats[0].expenses.toFixed(2)}`,
+        name: "Active Projects",
+        value: "12",
+        change: "0%",
         changeType: "neutral",
+      },
+      {
+        name: "Profit Margin",
+        value: "25%",
+        change: "+1.2%",
+        changeType: "positive",
       },
     ];
 
-    return NextResponse.json(formattedStats);
+    return NextResponse.json(stats);
   } catch (error) {
-    console.error("Database query error:", error);
+    console.error("Error fetching stats:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

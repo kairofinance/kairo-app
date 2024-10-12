@@ -1,54 +1,85 @@
 import { NextResponse } from "next/server";
-import { query, authenticateUser } from "@/app/lib/db";
+import { db } from "@/app/lib/db";
 
-interface ClientQueryResult {
-  id: number;
+interface Client {
+  id: string;
   name: string;
-  image_url: string;
-  last_invoice_date: string | null;
-  last_invoice_amount: number | null;
-  last_invoice_status: string | null;
+  imageUrl: string;
+  invoices: Array<{
+    date: Date;
+    amount: number;
+    status: string;
+  }>;
 }
 
+const placeholderClients = [
+  {
+    id: 1,
+    name: "Acme Inc.",
+    imageUrl: "https://tailwindui.com/img/logos/48x48/tuple.svg",
+    lastInvoice: {
+      date: "December 13, 2023",
+      dateTime: "2023-12-13",
+      amount: "$2,000.00",
+      status: "Paid",
+    },
+  },
+  {
+    id: 2,
+    name: "Globex Corporation",
+    imageUrl: "https://tailwindui.com/img/logos/48x48/savvycal.svg",
+    lastInvoice: {
+      date: "January 22, 2024",
+      dateTime: "2024-01-22",
+      amount: "$1,500.00",
+      status: "Overdue",
+    },
+  },
+  {
+    id: 3,
+    name: "Soylent Corp",
+    imageUrl: "https://tailwindui.com/img/logos/48x48/reform.svg",
+    lastInvoice: {
+      date: "February 15, 2024",
+      dateTime: "2024-02-15",
+      amount: "$3,200.00",
+      status: "Paid",
+    },
+  },
+];
+
 export async function GET(request: Request) {
-  const user = await authenticateUser(request);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (process.env.USE_PLACEHOLDER_DATA === "true") {
+    return NextResponse.json(placeholderClients);
   }
 
   try {
-    const clients = (await query(
-      `SELECT 
-        c.id, c.name, c.image_url,
-        t.amount as last_invoice_amount, t.status as last_invoice_status, t.transaction_date as last_invoice_date
-      FROM clients c
-      LEFT JOIN (
-        SELECT client_id, amount, status, transaction_date,
-          ROW_NUMBER() OVER (PARTITION BY client_id ORDER BY transaction_date DESC) as rn
-        FROM transactions
-        WHERE user_address = ? AND type = 'invoice'
-      ) t ON c.id = t.client_id AND t.rn = 1
-      WHERE c.user_address = ?
-      ORDER BY t.transaction_date DESC
-      LIMIT 10`,
-      [user, user]
-    )) as ClientQueryResult[];
+    console.log("Fetching clients from database");
+    const clients = await db.client.findMany({
+      include: {
+        invoices: {
+          orderBy: { date: "desc" },
+          take: 1,
+        },
+      },
+    });
 
-    const formattedClients = clients.map((client) => ({
+    console.log("Fetched clients:", clients);
+
+    const formattedClients = clients.map((client: Client) => ({
       id: client.id,
       name: client.name,
-      imageUrl: client.image_url,
-      lastInvoice: client.last_invoice_date
+      imageUrl: client.imageUrl,
+      lastInvoice: client.invoices[0]
         ? {
-            date: new Date(client.last_invoice_date).toLocaleDateString(
-              "en-US",
-              { year: "numeric", month: "long", day: "numeric" }
-            ),
-            dateTime: new Date(client.last_invoice_date)
-              .toISOString()
-              .split("T")[0],
-            amount: `$${client.last_invoice_amount?.toFixed(2)}`,
-            status: client.last_invoice_status,
+            date: client.invoices[0].date.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            dateTime: client.invoices[0].date.toISOString().split("T")[0],
+            amount: `$${client.invoices[0].amount.toFixed(2)}`,
+            status: client.invoices[0].status,
           }
         : null,
     }));
@@ -57,8 +88,13 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Database query error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", details: getErrorMessage(error) },
       { status: 500 }
     );
   }
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
 }

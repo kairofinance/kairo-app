@@ -1,6 +1,5 @@
 "use client";
-
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Disclosure,
   DisclosureButton,
@@ -15,6 +14,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PlusSmallIcon } from "@heroicons/react/24/solid";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount, useConnect } from "wagmi";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -49,8 +50,30 @@ function ProfilePicture() {
   );
 }
 
-function Navbar() {
+const Navbar = React.memo(() => {
   const pathname = usePathname();
+  const appKit = useAppKit();
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleConnect = useCallback(async () => {
+    if (!isConnected) {
+      setIsLoading(true);
+      try {
+        await appKit.open(); // Use open() instead of connect()
+      } catch (error) {
+        console.error("Connection error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [appKit, isConnected]);
 
   const navigationWithCurrent = navigation.map((item) => ({
     ...item,
@@ -116,13 +139,33 @@ function Navbar() {
                 ))}
               </MenuItems>
             </Menu>
-            <a
-              href="#"
-              className="ml-auto flex items-center gap-x-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-            >
-              <PlusSmallIcon aria-hidden="true" className="-ml-1.5 h-5 w-5" />
-              New invoice
-            </a>
+            <div key="wallet">
+              {isClient &&
+                (isConnected ? (
+                  <span className="ml-auto flex items-center gap-x-1 rounded-md bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">
+                    {address
+                      ? `${address.slice(0, 6)}...${address.slice(-4)}`
+                      : "Connected"}
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleConnect}
+                    disabled={isLoading}
+                    className="ml-auto flex items-center gap-x-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                  >
+                    {isLoading ? "Connecting..." : "Connect Wallet"}
+                  </button>
+                ))}
+            </div>
+            {isClient && isConnected && (
+              <a
+                href="#"
+                className="ml-auto flex items-center gap-x-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
+                <PlusSmallIcon aria-hidden="true" className="-ml-1.5 h-5 w-5" />
+                New invoice
+              </a>
+            )}
           </div>
           <div className="-mr-2 flex items-center sm:hidden">
             {/* Mobile menu button */}
@@ -196,6 +239,8 @@ function Navbar() {
       </DisclosurePanel>
     </Disclosure>
   );
-}
+});
+
+Navbar.displayName = "Navbar";
 
 export default Navbar;
