@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prisma:generate": "yarn prisma generate",
-    "build": "yarn run prisma:generate && next build",
+    "build": "yarn prisma generate && next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -23,6 +22,7 @@
     "next": "14.2.5",
     "pg": "^8.7.1",
     "pino-pretty": "^11.2.2",
+    "prisma": "^5.20.0",
     "react": "^18",
     "react-dom": "^18",
     "serverless-mysql": "^1.5.5",
