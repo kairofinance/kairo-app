@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { query, authenticateUser } from "@/app/lib/db";
 
+interface StatsQueryResult {
+  revenue: number;
+  overdue_invoices: number;
+  outstanding_invoices: number;
+  expenses: number;
+}
+
 export async function GET(request: Request) {
   const user = await authenticateUser(request);
   if (!user) {
@@ -8,7 +15,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const stats = await query(
+    const stats = (await query(
       `SELECT 
         SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as revenue,
         SUM(CASE WHEN status = 'overdue' THEN amount ELSE 0 END) as overdue_invoices,
@@ -17,7 +24,7 @@ export async function GET(request: Request) {
       FROM transactions
       WHERE user_address = ?`,
       [user]
-    );
+    )) as StatsQueryResult[];
 
     const formattedStats = [
       {
