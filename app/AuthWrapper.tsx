@@ -19,7 +19,7 @@ const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
     } else if (pathname !== "/") {
       router.push("/");
     }
-  }, [address, router]);
+  }, [address, isConnected, pathname, router]);
 
   useEffect(() => {
     checkAuthentication();
