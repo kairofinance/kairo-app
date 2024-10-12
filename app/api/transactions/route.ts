@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 
 interface Transaction {
-  id: number;
+  id: string;
   invoiceNumber: string;
   amount: number;
   status: string;
@@ -11,13 +11,16 @@ interface Transaction {
   client: {
     name: string;
   };
+  createdAt: Date;
+  updatedAt: Date;
+  clientId: string;
 }
 
 interface GroupedTransaction {
   date: string;
   dateTime: string;
   transactions: Array<{
-    id: number;
+    id: string;
     invoiceNumber: string;
     href: string;
     amount: string;
