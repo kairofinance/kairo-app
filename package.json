@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prisma:generate": "prisma generate",
-    "build": "npm run prisma:generate && next build",
+    "prisma:generate": "yarn prisma generate",
+    "build": "yarn run prisma:generate && next build",
     "start": "next start",
     "lint": "next lint"
   },
