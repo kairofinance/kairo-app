@@ -1,84 +1,62 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyMessage } from "viem";
-import { db } from "@/app/lib/db";
+import { recoverMessageAddress } from "viem";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set in environment variables");
+}
 
 export async function GET(request: NextRequest) {
   const address = request.nextUrl.searchParams.get("address");
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.split(" ")[1];
 
-  console.log("Received GET request for address:", address);
-
-  if (!address) {
-    console.log("No address provided");
+  if (!token) {
     return NextResponse.json(
-      { isAuthenticated: false, error: "No address provided" },
-      { status: 400 }
+      { isAuthenticated: false, error: "No token provided" },
+      { status: 401 }
     );
   }
 
   try {
-    console.log("Querying database for address:", address);
-    const user = await db.user.findUnique({
-      where: { address: address.toLowerCase() },
-    });
-
-    console.log("Database query result:", user);
-
-    return NextResponse.json({ isAuthenticated: !!user });
+    const decoded = jwt.verify(token, JWT_SECRET as jwt.Secret);
+    const isAuthenticated = (decoded as jwt.JwtPayload).address === address;
+    return NextResponse.json({ isAuthenticated });
   } catch (error) {
-    console.error("Error checking authentication:", error);
-    console.error("Full error object:", JSON.stringify(error, null, 2));
     return NextResponse.json(
-      { error: "Internal server error", details: getErrorMessage(error) },
-      { status: 500 }
+      { isAuthenticated: false, error: "Invalid token" },
+      { status: 401 }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
+  const { address, signature, message } = await request.json();
+
   try {
-    const { address, signature, message } = await request.json();
-    console.log("Received POST request with:", { address, signature, message });
-
-    if (!address || !signature || !message) {
-      console.log("Missing required fields");
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    console.log("Verifying message...");
-    const isValid = await verifyMessage({
+    const recoveredAddress = await recoverMessageAddress({
       message,
       signature,
-      address,
     });
-    console.log("Message verification result:", isValid);
 
-    if (!isValid) {
-      console.log("Invalid signature");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    if (recoveredAddress.toLowerCase() === address.toLowerCase()) {
+      const token = jwt.sign({ address }, JWT_SECRET as jwt.Secret, {
+        expiresIn: "1d",
+      });
+      return NextResponse.json({ success: true, token });
+    } else {
+      return NextResponse.json(
+        { success: false, error: "Invalid signature" },
+        { status: 401 }
+      );
     }
-
-    console.log("Upserting user in database...");
-    const user = await db.user.upsert({
-      where: { address: address.toLowerCase() },
-      update: { lastSignIn: new Date() },
-      create: { address: address.toLowerCase(), lastSignIn: new Date() },
-    });
-    console.log("User upserted:", user);
-
-    return NextResponse.json({ success: true, user });
   } catch (error) {
-    console.error("Error during authentication:", error);
+    console.error("Verification error:", error);
     return NextResponse.json(
-      { error: "Authentication failed", details: getErrorMessage(error) },
+      { success: false, error: "Verification failed" },
       { status: 500 }
     );
   }
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
 }
