@@ -1,136 +1,149 @@
-import { NextResponse } from "next/server";
-import { db } from "@/app/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { rateLimit } from "../middleware/rateLimit";
 
-interface Transaction {
-  id: string;
-  invoiceNumber: string;
-  amount: number;
-  status: string;
-  description: string;
-  date: Date;
-  client: {
-    name: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-  clientId: string;
-}
+const prisma = new PrismaClient();
 
-interface GroupedTransaction {
-  date: string;
-  dateTime: string;
-  transactions: Array<{
-    id: string;
-    invoiceNumber: string;
-    href: string;
-    amount: string;
-    status: string;
-    client: string;
-    description: string;
-    icon: string;
-  }>;
-}
+// This is a mock function. Use only when USE_PLACEHOLDER_DATA is true.
+const getMockTransactions = (period: string) => {
+  return [
+    {
+      date: "Today",
+      dateTime: "2023-03-22",
+      transactions: [
+        {
+          id: 1,
+          invoiceNumber: "INV-001",
+          href: "#",
+          amount: "$10,000",
+          status: "Paid",
+          client: "Tuple Technologies",
+          description: "Invoice payment",
+          icon: "ArrowUpCircleIcon",
+        },
+        {
+          id: 2,
+          invoiceNumber: "INV-002",
+          href: "#",
+          amount: "$5,000",
+          status: "Withdraw",
+          client: "SavvyCal",
+          description: "Withdrawal to bank account",
+          icon: "ArrowDownCircleIcon",
+        },
+      ],
+    },
+    {
+      date: "Yesterday",
+      dateTime: "2023-03-21",
+      transactions: [
+        {
+          id: 3,
+          invoiceNumber: "INV-003",
+          href: "#",
+          amount: "$7,500",
+          status: "Paid",
+          client: "Reform",
+          description: "Invoice payment",
+          icon: "ArrowUpCircleIcon",
+        },
+      ],
+    },
+  ];
+};
 
-interface GroupedTransactions {
-  [date: string]: GroupedTransaction;
-}
-
-/**
- * Handles GET requests for transactions.
- * Groups transactions by date and returns them in a structured format.
- *
- * @param {Request} request - The incoming request object
- * @returns {Promise<NextResponse>} JSON response with grouped transactions or error
- */
-export async function GET(request: Request): Promise<NextResponse> {
-  const { searchParams } = new URL(request.url);
-  const period = searchParams.get("period") || "last7days";
-
-  // Determine the date filter based on the requested period
-  const dateFilter = getDateFilter(period);
-
+// Function to get actual transactions from the database
+const getActualTransactions = async (period: string) => {
   try {
-    // Fetch transactions from the database
-    const transactions: Transaction[] = await db.transaction.findMany({
+    const transactions = await prisma.transaction.findMany({
       where: {
-        date: dateFilter,
+        // Add conditions based on the period
+        // This is a placeholder and should be adjusted based on your actual data model
+        date: {
+          gte: new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+        },
       },
       orderBy: {
         date: "desc",
       },
       include: {
-        client: {
-          select: {
-            name: true,
-          },
-        },
+        client: true,
       },
     });
 
     // Group transactions by date
-    const groupedTransactions = groupTransactionsByDate(transactions);
+    const groupedTransactions = transactions.reduce((acc, transaction) => {
+      const date = transaction.date.toISOString().split("T")[0];
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(transaction);
+      return acc;
+    }, {} as Record<string, any[]>);
 
-    return NextResponse.json(Object.values(groupedTransactions));
+    // Format the data to match the expected structure
+    return Object.entries(groupedTransactions).map(([date, transactions]) => ({
+      date: new Date(date).toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      }),
+      dateTime: date,
+      transactions: transactions.map((t) => ({
+        id: t.id,
+        invoiceNumber: t.invoiceNumber,
+        href: `#`,
+        amount: `$${t.amount.toFixed(2)}`,
+        status: t.status,
+        client: t.client.name,
+        description: t.description,
+        icon: t.amount > 0 ? "ArrowUpCircleIcon" : "ArrowDownCircleIcon",
+      })),
+    }));
   } catch (error) {
-    console.error("Database query error:", error);
+    console.error("Error fetching transactions from database:", error);
+    throw error;
+  }
+};
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  try {
+    const rateLimitResult = await rateLimit(request);
+    if (rateLimitResult) return rateLimitResult;
+
+    let url;
+    try {
+      url = new URL(request.url);
+    } catch (error) {
+      console.error("Failed to parse URL:", request.url, error);
+      return NextResponse.json(
+        { error: "Invalid URL", details: "Failed to parse request URL" },
+        { status: 400 }
+      );
+    }
+
+    const period = url.searchParams.get("period") || "last7days";
+
+    const usePlaceholderData = process.env.USE_PLACEHOLDER_DATA === "true";
+
+    let transactions;
+    if (usePlaceholderData) {
+      transactions = getMockTransactions(period);
+    } else {
+      transactions = await getActualTransactions(period);
+    }
+
+    return NextResponse.json(transactions);
+  } catch (error) {
+    console.error("Error in GET /api/transactions:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      {
+        error: "Internal Server Error",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }
-}
-
-/**
- * Determines the date filter based on the requested period.
- *
- * @param {string} period - The requested period (e.g., "last7days", "last30days", "alltime")
- * @returns {object} The date filter object for the database query
- */
-function getDateFilter(period: string): object {
-  switch (period) {
-    case "last30days":
-      return { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
-    case "alltime":
-      return {}; // No date filter
-    default: // last7days
-      return { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
-  }
-}
-
-/**
- * Groups transactions by date.
- *
- * @param {Transaction[]} transactions - The array of transactions to group
- * @returns {GroupedTransactions} The transactions grouped by date
- */
-function groupTransactionsByDate(
-  transactions: Transaction[]
-): GroupedTransactions {
-  return transactions.reduce<GroupedTransactions>((acc, transaction) => {
-    const date = transaction.date.toISOString().split("T")[0];
-    if (!acc[date]) {
-      acc[date] = {
-        date: transaction.date.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        dateTime: date,
-        transactions: [],
-      };
-    }
-    acc[date].transactions.push({
-      id: transaction.id,
-      invoiceNumber: transaction.invoiceNumber,
-      href: `#`,
-      amount: `${transaction.amount.toFixed(2)} USDC`,
-      status: transaction.status,
-      client: transaction.client.name,
-      description: transaction.description,
-      icon:
-        transaction.amount > 0 ? "ArrowUpCircleIcon" : "ArrowDownCircleIcon",
-    });
-    return acc;
-  }, {});
 }

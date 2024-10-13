@@ -2,27 +2,34 @@
 
 import React, { useEffect, useState, useCallback, ReactNode } from "react";
 import { useAccount, useSignMessage, useConnect } from "wagmi";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { z } from "zod";
+import Cookies from "js-cookie";
 
 const Spinner = () => (
   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
 );
 
-const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
+const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
   const { signMessageAsync } = useSignMessage();
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
   const checkAuthentication = useCallback(async () => {
-    if (pathname === "/" || !isConnected || !address) return;
+    if (pathname === "/" || !isConnected || !address) {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -32,11 +39,14 @@ const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const response = await fetch(`/api/auth?address=${address}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `/api/auth?address=${encodeURIComponent(address)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         throw new Error("Authentication check failed");
       }
@@ -66,12 +76,20 @@ const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
         const message = `Sign this message to authenticate: ${Date.now()}`;
         const signature = await signMessageAsync({ message });
 
+        const authSchema = z.object({
+          address: z.string(),
+          signature: z.string(),
+          message: z.string(),
+        });
+
+        const validatedData = authSchema.parse({ address, signature, message });
+
         const response = await fetch("/api/auth", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ address, signature, message }),
+          body: JSON.stringify(validatedData),
         });
 
         if (response.ok) {
@@ -91,8 +109,13 @@ const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
     }
   };
 
+  const handleLanguageChange = (newLang: string) => {
+    Cookies.set("NEXT_LOCALE", newLang, { expires: 365 });
+    router.refresh(); // This will trigger a re-render of the page with the new language
+  };
+
   if (!isMounted) {
-    return null; // or a loading spinner
+    return <div> </div>;
   }
 
   if (pathname === "/" || isAuthenticated) {
@@ -111,7 +134,9 @@ const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
     <div className="flex flex-col justify-center items-center h-screen">
       <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
       <p className="mb-4">
-        Please connect your wallet and sign the message to access this page.
+        {isConnected
+          ? "Please sign the message to access this page."
+          : "Please connect your wallet to access this page."}
       </p>
       <button
         onClick={handleAuthentication}
@@ -121,7 +146,7 @@ const AuthWrapper = React.memo(({ children }: { children: ReactNode }) => {
       </button>
     </div>
   );
-});
+};
 
 AuthWrapper.displayName = "AuthWrapper";
 

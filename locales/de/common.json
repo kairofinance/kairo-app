@@ -1,0 +1,51 @@
+{
+  "changeLanguage": "Sprache ändern",
+  "english": "Englisch",
+  "french": "Französisch",
+  "spanish": "Spanisch",
+  "portuguese": "Portugiesisch",
+  "japanese": "Japanisch",
+  "chinese": "Chinesisch",
+  "german": "Deutsch",
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Übersicht",
+    "stats": {
+      "totalRevenue": "Gesamtumsatz",
+      "newClients": "Neue Kunden",
+      "activeProjects": "Aktive Projekte",
+      "profitMargin": "Gewinnspanne"
+    },
+    "periods": {
+      "last7days": "Letzte 7 Tage",
+      "last30days": "Letzte 30 Tage",
+      "allTime": "Gesamtzeitraum"
+    },
+    "streams": {
+      "title": "Streams",
+      "description": "Eine Liste aller Ihrer aktiven Streams mit Details und Status."
+    },
+    "recentActivity": {
+      "title": "Letzte Aktivitäten",
+      "description": "Sehen Sie Ihre letzten Aktivitäten, einschließlich Transaktionen, Updates und mehr."
+    }
+  },
+  "navbar": {
+    "home": "Startseite",
+    "dashboard": "Dashboard",
+    "stream": "Stream",
+    "projects": "Projekte",
+    "newInvoice": "Neue Rechnung",
+    "settings": "Einstellungen",
+    "help": "Hilfe",
+    "logout": "Abmelden"
+  },
+  "connectWallet": "Wallet verbinden",
+  "loading": "Laden...",
+  "error": "Fehler",
+  "notFound": {
+    "title": "Seite Nicht Gefunden",
+    "description": "Die von Ihnen gesuchte Seite existiert nicht.",
+    "goHome": "Zurück zur Startseite"
+  }
+}

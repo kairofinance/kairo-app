@@ -4,70 +4,78 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/20/solid";
 
-const features = [
-  {
-    name: "Boost yield anywhere",
-    description:
-      "Use Grove tokens across lending protocols, liquidity pools, and staking platforms to maximize your yield. With Grove, you can easily take advantage of the best opportunities in the DeFi ecosystem, boosting your overall returns and optimizing your investment strategy.",
-    href: "#",
-    icon: CloudArrowUpIcon,
-  },
-  {
-    name: "Safer exposure",
-    description:
-      "Grove tokens offer diversified exposure to multiple high-quality assets, reducing the risk of individual asset volatility. This approach ensures robust yields and a more stable, secure investment in the DeFi landscape.",
-    href: "#",
-    icon: LockClosedIcon,
-  },
-  {
-    name: "Simple queues",
-    description:
-      "Pellentesque sit elit congue ante nec amet. Dolor aenean curabitur viverra suspendisse iaculis eget. Nec mollis placerat ultricies euismod ut condimentum.",
-    href: "#",
-    icon: ArrowPathIcon,
-  },
-];
+interface Feature1Props {
+  dictionary: any;
+}
 
-export default function Feature1() {
+export default function Feature1({ dictionary }: Feature1Props) {
+  const t = dictionary.feature1 || {};
+
+  const features = [
+    {
+      name: t.boostYield || "Boost yield anywhere",
+      description:
+        t.boostYieldDescription ||
+        "Use Grove tokens across lending protocols, liquidity pools, and staking platforms to maximize your yield. With Grove, you can easily take advantage of the best opportunities in the DeFi ecosystem, boosting your overall returns and optimizing your investment strategy.",
+      href: "#",
+      icon: CloudArrowUpIcon,
+    },
+    {
+      name: t.saferExposure || "Safer exposure",
+      description:
+        t.saferExposureDescription ||
+        "Grove tokens offer diversified exposure to multiple high-quality assets, reducing the risk of individual asset volatility. This approach ensures robust yields and a more stable, secure investment in the DeFi landscape.",
+      href: "#",
+      icon: LockClosedIcon,
+    },
+    {
+      name: t.simpleQueues || "Simple queues",
+      description:
+        t.simpleQueuesDescription ||
+        "Pellentesque sit elit congue ante nec amet. Dolor aenean curabitur viverra suspendisse iaculis eget. Nec mollis placerat ultricies euismod ut condimentum.",
+      href: "#",
+      icon: ArrowPathIcon,
+    },
+  ];
+
   return (
     <div className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base font-semibold leading-7 text-red-600">
-            For the smart investor
+          <h2 className="text-base font-semibold leading-7 text-red-600 dark:text-red-400">
+            {t.forSmartInvestor || "For the smart investor"}
           </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Simplify Your DeFi Journey
+          <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+            {t.simplifyJourney || "Simplify Your DeFi Journey"}
           </p>
-          <p className="mt-6 text-lg leading-8 text-gray-600">
-            Grove tokens are designed to give you access to diversified,
-            yield-bearing assets with minimal effort. By holding our tokens, you
-            gain exposure to a wide range of DeFi opportunities, including
-            lending, staking, and liquidity provision.
+          <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-200">
+            {t.description ||
+              "Grove tokens are designed to give you access to diversified, yield-bearing assets with minimal effort. By holding our tokens, you gain exposure to a wide range of DeFi opportunities, including lending, staking, and liquidity provision."}
           </p>
         </div>
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
           <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
             {features.map((feature) => (
               <div key={feature.name} className="flex flex-col">
-                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-zinc-900 dark:text-white">
                   <feature.icon
                     aria-hidden="true"
-                    className="h-5 w-5 flex-none text-red-500"
+                    className="h-5 w-5 flex-none text-red-500 dark:text-red-400"
                   />
                   {feature.name}
                 </dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
+                <div className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600 dark:text-zinc-300">
                   <p className="flex-auto">{feature.description}</p>
                   <p className="mt-6">
                     <a
                       href={feature.href}
-                      className="text-sm font-semibold leading-6 text-red-700"
+                      className="text-sm font-semibold leading-6 text-red-700 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
                     >
-                      Learn more <span aria-hidden="true">→</span>
+                      {t.learnMore || "Learn more"}{" "}
+                      <span aria-hidden="true">→</span>
                     </a>
                   </p>
-                </dd>
+                </div>
               </div>
             ))}
           </dl>

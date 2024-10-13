@@ -1,0 +1,53 @@
+{
+  "changeLanguage": "Change Language",
+  "english": "English",
+  "french": "French",
+  "spanish": "Spanish",
+  "portuguese": "Portuguese",
+  "japanese": "Japanese",
+  "chinese": "Chinese",
+  "german": "German",
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "stats": {
+      "totalrevenue": "Total Revenue",
+      "newclients": "New Clients",
+      "activeprojects": "Active Projects",
+      "profitmargin": "Profit Margin"
+    },
+    "periods": {
+      "last7days": "Last 7 days",
+      "last30days": "Last 30 days",
+      "alltime": "All-time"
+    },
+    "streams": {
+      "title": "Streams",
+      "description": "A list of all your active streams including their details and status."
+    },
+    "recentActivity": {
+      "title": "Recent activity",
+      "description": "View your recent activity, including transactions, updates, and more."
+    }
+  },
+  "navbar": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "stream": "Stream",
+    "projects": "Projects",
+    "newInvoice": "New Invoice",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout",
+    "yourProfile": "Your Profile",
+    "signOut": "Sign out"
+  },
+  "connectWallet": "Connect Wallet",
+  "loading": " ",
+  "error": "Error",
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you are looking for does not exist.",
+    "goHome": "Go Back Home"
+  }
+}

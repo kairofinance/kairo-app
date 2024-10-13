@@ -1,0 +1,51 @@
+{
+  "changeLanguage": "Changer de langue",
+  "english": "Anglais",
+  "french": "Français",
+  "spanish": "Espagnol",
+  "portuguese": "Portugais",
+  "japanese": "Japonais",
+  "chinese": "Chinois",
+  "german": "Allemand",
+  "dashboard": {
+    "title": "Tableau de bord",
+    "overview": "Aperçu",
+    "stats": {
+      "totalrevenue": "Revenu total",
+      "newclients": "Nouveaux clients",
+      "activeprojects": "Projets actifs",
+      "profitmargin": "Marge bénéficiaire"
+    },
+    "periods": {
+      "last7days": "7 derniers jours",
+      "last30days": "30 derniers jours",
+      "alltime": "Tout le temps"
+    },
+    "streams": {
+      "title": "Flux",
+      "description": "Une liste de tous vos flux actifs, y compris leurs détails et leur statut."
+    },
+    "recentActivity": {
+      "title": "Activité récente",
+      "description": "Consultez votre activité récente, y compris les transactions, les mises à jour et plus encore."
+    }
+  },
+  "navbar": {
+    "home": "Accueil",
+    "dashboard": "Tableau de bord",
+    "stream": "Flux",
+    "projects": "Projets",
+    "newInvoice": "Nouvelle facture",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "logout": "Déconnexion"
+  },
+  "connectWallet": "Connecter le portefeuille",
+  "loading": " ",
+  "error": "Erreur",
+  "notFound": {
+    "title": "Page non trouvée",
+    "description": "La page que vous recherchez n'existe pas.",
+    "goHome": "Retour à l'accueil"
+  }
+}
