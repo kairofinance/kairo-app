@@ -9,10 +9,6 @@ import { createConfig, Config, WagmiProvider } from "wagmi";
 import { getDefaultConfig } from "connectkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-interface ProvidersProps {
-  children: React.ReactNode;
-}
-
 const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
 
 if (!projectId) {

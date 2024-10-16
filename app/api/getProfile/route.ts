@@ -1,59 +1,106 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User, Profile } from "@prisma/client";
+import { createPublicClient, http, Address } from "viem";
+import { mainnet } from "viem/chains";
 
 const prisma = new PrismaClient();
+const DEFAULT_PROFILE_PICTURE = "/default-profile.png";
+
+// Initialize viem public client
+const publicClient = createPublicClient({
+  chain: mainnet,
+  transport: http(process.env.ETHEREUM_RPC_URL),
+});
+
+type UserWithProfile = User & { profile: Profile | null };
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const address = searchParams.get("address");
+  const addressOrEns = searchParams.get("addressOrEns");
 
-  if (!address) {
-    return NextResponse.json({ error: "Address is required" }, { status: 400 });
+  console.log("Received request for addressOrEns:", addressOrEns);
+
+  if (!addressOrEns) {
+    return NextResponse.json(
+      { error: "Address or ENS name is required" },
+      { status: 400 }
+    );
   }
 
   try {
-    console.log("Searching for user with address:", address);
-    let user = await prisma.user.findUnique({
-      where: { address },
+    let address: Address;
+    let ensName: string | null = null;
+
+    // Check if the input is an ENS name or an address
+    if (addressOrEns.endsWith(".eth") || !addressOrEns.startsWith("0x")) {
+      // It's an ENS name, resolve it to an address
+      const resolvedAddress = await publicClient.getEnsAddress({
+        name: addressOrEns,
+      });
+      if (!resolvedAddress) {
+        return NextResponse.json(
+          { error: "Invalid ENS name" },
+          { status: 400 }
+        );
+      }
+      address = resolvedAddress;
+      ensName = addressOrEns;
+    } else {
+      // It's an address, check if it has an associated ENS name
+      address = addressOrEns as Address;
+      ensName = await publicClient.getEnsName({ address });
+    }
+
+    console.log("Resolved address:", address);
+    console.log("ENS name:", ensName);
+
+    let user: UserWithProfile | null = await prisma.user.findUnique({
+      where: { address: address.toLowerCase() },
       include: { profile: true },
     });
 
     if (!user) {
-      console.log("User not found, creating new user");
+      console.log("User not found, creating new user with profile");
       user = await prisma.user.create({
         data: {
-          address,
+          address: address.toLowerCase(),
+          ensName: ensName,
           lastSignIn: new Date(),
           profile: {
-            create: {}, // Create an empty profile
+            create: {
+              nickname: ensName || address,
+              username: address,
+              profilePicture: DEFAULT_PROFILE_PICTURE,
+            },
           },
         },
         include: { profile: true },
       });
-      console.log("New user created:", user);
-    } else {
-      console.log("Existing user found:", user);
     }
 
-    // Ensure the profile picture URL is absolute
+    // Ensure the profile picture URL is correct
     if (user.profile && user.profile.profilePicture) {
-      user.profile.profilePicture = new URL(
-        user.profile.profilePicture,
-        process.env.NEXT_PUBLIC_BASE_URL
-      ).toString();
+      user.profile.profilePicture = user.profile.profilePicture.startsWith("/")
+        ? user.profile.profilePicture
+        : `/${user.profile.profilePicture}`;
     }
 
-    return NextResponse.json({ user });
+    console.log("Returning user data:", user);
+
+    // If the user accessed with an address but has an ENS, suggest a redirect
+    const suggestedRoute = ensName && addressOrEns !== ensName ? ensName : null;
+
+    return NextResponse.json({ user, suggestedRoute });
   } catch (error: any) {
     console.error("Detailed error:", error);
     return NextResponse.json(
       {
         error: "Failed to fetch or create profile",
         details: error.message,
-        stack: error.stack,
-        name: error.name,
       },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

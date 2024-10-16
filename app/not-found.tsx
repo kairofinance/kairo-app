@@ -14,12 +14,8 @@ export default async function NotFound() {
 
   const dictionary = await getDictionary(currentLang as Locale);
 
-  // Log the dictionary to check if it's loaded correctly
-  console.log("Loaded dictionary:", dictionary);
-
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-900">
-      <Navbar currentLang={currentLang} />
       <main className="flex-grow flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-800">
         <div className="text-center">
           <h1 className="text-6xl font-bold text-zinc-800 dark:text-zinc-100 mb-4">

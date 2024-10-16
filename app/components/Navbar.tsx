@@ -119,7 +119,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
   const userNavigation = [
     {
       name: dictionary.navbar.yourProfile,
-      href: address ? `/u/${address}` : "#",
+      href: address ? `/${address}` : "#",
       onClick: address ? undefined : handleConnect,
     },
     { name: dictionary.navbar.settings, href: "#" },
@@ -128,13 +128,13 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
 
   const navigation = [
     { name: dictionary.navbar.dashboard, href: "/dashboard" },
-    { name: dictionary.navbar.stream, href: "#" },
+    { name: dictionary.navbar.streams, href: "/streams" },
     { name: dictionary.navbar.projects, href: "#" },
   ];
 
   const navigationWithCurrent = navigation.map((item) => ({
     ...item,
-    current: pathname === `/{item.href}`,
+    current: pathname === `${item.href}`,
     href: `${item.href}`,
   }));
 
@@ -170,7 +170,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                 {getLogoText(currentLang)}
               </div>
             </Link>
-            <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden md:-my-px md:ml-6 md:flex md:space-x-8">
               {navigationWithCurrent.map((item) => (
                 <Link
                   key={item.name}
@@ -188,7 +188,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
               ))}
             </div>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center gap-4">
+          <div className="hidden md:ml-6 md:flex md:items-center gap-4">
             {/* Language switcher */}
             <Menu as="div" className="relative ml-3">
               <div>
@@ -281,9 +281,9 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
             </div>
             {isClient && isConnected && <AnimatedButton />}
           </div>
-          <div className="-mr-2 flex items-center sm:hidden">
+          <div className="-mr-2 flex items-center md:hidden">
             {/* Mobile menu button */}
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md bg-white p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md bg-white dark:bg-zinc-900 p-2 text-zinc-400 dark:text-zinc-100 hover:bg-zinc-100 hover:text-zinc-500 focus:outline-none focus:ring-2 ring-red-500 focus:ring-offset-2">
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
               <Bars3Icon
@@ -299,7 +299,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
         </div>
       </div>
 
-      <DisclosurePanel className="sm:hidden">
+      <DisclosurePanel className="md:hidden">
         <div className="space-y-1 pb-3 pt-2">
           {navigationWithCurrent.map((item) => (
             <DisclosureButton
@@ -308,8 +308,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
               href={item.href}
               className={classNames(
                 item.current
-                  ? "border-red-500 bg-red-50 text-red-700"
-                  : "border-transparent text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-800",
+                  ? "border-red-500 bg-red-50 text-red-700 dark:text-red-300 dark:bg-zinc-800"
+                  : "border-transparent text-zinc-600 dark:text-zinc-100 hover:border-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-800",
                 "block border-l-4 py-2 pl-3 pr-4 text-base font-medium"
               )}
               aria-current={item.current ? "page" : undefined}
@@ -318,14 +318,14 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
             </DisclosureButton>
           ))}
         </div>
-        <div className="border-t border-zinc-200 pb-3 pt-4">
+        <div className="border-t border-zinc-200 dark:border-zinc-700 pb-3 pt-4">
           <div className="flex items-center px-4">
             <div className="flex-shrink-0">
               <div className="h-10 w-10 rounded-full bg-red-200" />
             </div>
             <div className="ml-3">
-              <div className="text-base font-medium text-zinc-800">
-                {"0x2f...5e3"}
+              <div className="text-base font-medium text-zinc-800 dark:text-zinc-100">
+                {sanitizedDisplayAddress}
               </div>
             </div>
             <button
@@ -343,7 +343,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                 key={item.name}
                 as="a"
                 href={item.href}
-                className="block px-4 py-2 text-base font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                className="block px-4 py-2 text-base font-medium dark:text-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               >
                 {item.name}
               </DisclosureButton>

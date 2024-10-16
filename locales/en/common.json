@@ -33,7 +33,7 @@
   "navbar": {
     "home": "Home",
     "dashboard": "Dashboard",
-    "stream": "Stream",
+    "streams": "Streams",
     "projects": "Projects",
     "newInvoice": "New Invoice",
     "settings": "Settings",

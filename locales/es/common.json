@@ -33,7 +33,7 @@
   "navbar": {
     "home": "Inicio",
     "dashboard": "Panel de control",
-    "stream": "Flujo",
+    "streams": "Flujos",
     "projects": "Proyectos",
     "newInvoice": "Nueva factura",
     "settings": "Configuración",

@@ -78,7 +78,7 @@ const RecentActivity: React.FC<{
                 <th
                   scope="colgroup"
                   colSpan={3}
-                  className="relative isolate py-2 font-semibold"
+                  className="relative isolate pt-8 pb-4 font-semibold"
                 >
                   <time dateTime={DOMPurify.sanitize(day.dateTime)}>
                     {DOMPurify.sanitize(day.date)}

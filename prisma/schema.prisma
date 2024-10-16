@@ -19,11 +19,13 @@ model User {
   clients   Client[]
   streams   Stream[]
   profile   Profile?
+  ensName   String?
 }
 
 model Profile {
   id        String   @id @default(cuid())
-  nickname  String?
+  nickname  String
+  username  String
   bio       String?
   website   String?
   email     String?

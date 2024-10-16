@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { i18n, Locale } from "@/utils/i18n-config";
 import { cookies } from "next/headers";
+import AlertMessage from "@/components/AlertMessage";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,10 @@ export default function RootLayout({
         <Providers>
           <div className="min-h-screen flex flex-col">
             <Navbar currentLang={lang} />
+            <div
+              id="alert-container"
+              className="fixed top-16 left-0 right-0 z-50"
+            ></div>
             <main className="flex-grow">{children}</main>
             <Footer />
           </div>

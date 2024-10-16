@@ -33,7 +33,7 @@
   "navbar": {
     "home": "首页",
     "dashboard": "仪表板",
-    "stream": "流",
+    "streams": "流",
     "projects": "项目",
     "newInvoice": "新发票",
     "settings": "设置",

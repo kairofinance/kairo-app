@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Stats from "./components/Stats";
 import RecentActivity from "./components/RecentActivity";
-import Streams from "./components/Streams";
 import { debounce } from "lodash";
 import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
@@ -214,23 +213,6 @@ export default function DashboardClient({
         <Stats stats={stats} isLoading={isLoading} />
 
         <div className="space-y-16 py-16 xl:space-y-20">
-          {/* Streams section */}
-          <div>
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <h2 className="mx-auto max-w-2xl text-base font-semibold leading-6 text-zinc-900 dark:text-white lg:mx-0 lg:max-w-none">
-                {dictionary.dashboard.streams.title}
-              </h2>
-              <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-                {dictionary.dashboard.streams.description}
-              </p>
-            </div>
-            <div className="overflow-hidden">
-              <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                {address && <Streams userId={address} isLoading={isLoading} />}
-              </div>
-            </div>
-          </div>
-
           {/* Recent Activity section */}
           <div>
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

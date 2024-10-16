@@ -1,0 +1,12 @@
+import "hashes/sha256/512bitPacked" as sha256packed;
+from "zokrates_stdlib/stdlib.zok" import u32_to_bits;
+
+def main(private field invoiceHash, private field amount, private field token) -> field[2] {
+    // Ensure amount is greater than zero
+    assert(amount > 0);
+
+    field[4] preimage = [invoiceHash, amount, token, 0];
+    field[2] hash = sha256packed(preimage);
+    
+    return [hash[0], token];
+}

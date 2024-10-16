@@ -33,7 +33,7 @@
   "navbar": {
     "home": "Accueil",
     "dashboard": "Tableau de bord",
-    "stream": "Flux",
+    "streams": "Flux",
     "projects": "Projets",
     "newInvoice": "Nouvelle facture",
     "settings": "Paramètres",

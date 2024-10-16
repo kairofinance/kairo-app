@@ -2,8 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ["public.blob.vercel-storage.com"],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/**",
+      },
+      // Add your production domain pattern here as well
+    ],
   },
+  transpilePackages: ["viem"],
 };
 
 module.exports = nextConfig;

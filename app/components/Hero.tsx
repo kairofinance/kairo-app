@@ -51,14 +51,15 @@ export default function Hero({ lang, dictionary }: HeroProps) {
               {t.title || "Web3 billing, simplified."}
             </h1>
             <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-100">
-              {t.description || "Default description text"}
+              {t.description ||
+                "Effortlessly manage your freelance and DAO billing processes, decentralized and secure."}
             </p>
             <div className="mt-10 flex items-center gap-x-6">
               <a
-                href="#"
+                href="/dashboard"
                 className="outline-1 outline outline-black dark:outline-white hover:bg-black dark:hover:bg-white hover:text-white dark:hover:text-black duration-300 px-3.5 py-2.5 text-sm font-semibold text-black dark:text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                {t.createInvoice || "Create An Invoice"}
+                {t.createInvoice || "Go to Dashboard"}
               </a>
               <a
                 href="#"

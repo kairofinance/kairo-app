@@ -1,71 +1,69 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { verifyMessage } from "viem";
 import { PrismaClient } from "@prisma/client";
-import { verifyMessage } from "ethers";
-import { put } from "@vercel/blob";
 
 const prisma = new PrismaClient();
 
-async function uploadToVercelBlob(file: File): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+export async function POST(request: Request) {
+  const { address, signature, message, ...profileData } = await request.json();
 
-  const { url } = await put(file.name, buffer, {
-    access: "public",
-  });
-
-  return url;
-}
-
-export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const address = formData.get("address") as string;
-  const profileData = JSON.parse(formData.get("profileData") as string);
-  const signature = formData.get("signature") as string;
-  const message = formData.get("message") as string;
-  const profilePicture = formData.get("profilePicture") as File | null;
-
-  // Verify the signature
-  const recoveredAddress = verifyMessage(message, signature);
-  if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-  }
+  console.log("Received update request for address:", address);
+  console.log("Profile data to update:", profileData);
 
   try {
-    let profilePictureUrl = profileData.profilePicture;
-    if (profilePicture) {
-      // Upload the file to Vercel Blob and get its URL
-      profilePictureUrl = await uploadToVercelBlob(profilePicture);
+    // Verify the signature
+    const isValid = await verifyMessage({
+      address: address as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    });
+
+    if (!isValid) {
+      console.error("Invalid signature for address:", address);
+      return NextResponse.json(
+        { message: "Invalid signature" },
+        { status: 401 }
+      );
     }
 
-    // Find the user first
-    const user = await prisma.user.findUnique({
-      where: { address },
+    // Check if the user exists, if not create the user
+    let user = await prisma.user.findUnique({
+      where: { address: address.toLowerCase() },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      user = await prisma.user.create({
+        data: {
+          address: address.toLowerCase(),
+          lastSignIn: new Date(),
+        },
+      });
     }
 
-    // Update or create the profile
-    await prisma.profile.upsert({
+    // Update the profile in the database
+    const updatedProfile = await prisma.profile.upsert({
       where: { userId: user.id },
-      update: {
-        ...profileData,
-        profilePicture: profilePictureUrl,
-      },
-      create: {
-        userId: user.id,
-        ...profileData,
-        profilePicture: profilePictureUrl,
-      },
+      update: profileData,
+      create: { ...profileData, userId: user.id },
     });
 
-    return NextResponse.json({ success: true, profilePictureUrl });
-  } catch (error) {
-    console.error("Error updating profile:", error);
+    console.log("Profile updated successfully:", updatedProfile);
+
     return NextResponse.json(
-      { error: "Failed to update profile" },
+      { message: "Profile updated successfully", profile: updatedProfile },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Detailed error updating profile:", error);
+    return NextResponse.json(
+      {
+        message: `Internal server error: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

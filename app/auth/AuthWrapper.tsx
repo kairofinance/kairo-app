@@ -132,8 +132,10 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">
-      <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-      <p className="mb-4">
+      <h1 className="text-2xl font-bold dark:text-white mb-4">
+        Authentication Required
+      </h1>
+      <p className="mb-4 dark:text-zinc-300">
         {isConnected
           ? "Please sign the message to access this page."
           : "Please connect your wallet to access this page."}

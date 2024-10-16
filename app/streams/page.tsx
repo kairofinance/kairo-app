@@ -1,27 +1,30 @@
 import { Suspense } from "react";
-import Hero from "@/components/Hero";
-import Feature1 from "@/components/Feature1";
-import Stats from "@/components/Stats";
+import AuthWrapper from "@/auth/AuthWrapper";
 import { getDictionary } from "@/utils/get-dictionary";
 import { cookies } from "next/headers";
 import { i18n, Locale } from "@/utils/i18n-config";
 import Spinner from "@/components/Spinner";
-import Bento from "./components/Bento";
+import StreamsClient from "./StreamsClient";
 
-export default async function Home() {
+async function getDashboardData() {
   const cookieStore = cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");
   const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
   const dictionary = await getDictionary(lang);
 
+  return { dictionary, lang };
+}
+
+export default async function StreamsPage() {
+  const { dictionary, lang } = await getDashboardData();
+
   return (
-    <Suspense fallback={<Spinner />}>
-      <Hero lang={lang} dictionary={dictionary} />
-      <Bento />
-      <Feature1 dictionary={dictionary} />
-      <Stats dictionary={dictionary} />
-    </Suspense>
+    <AuthWrapper>
+      <Suspense fallback={<Spinner />}>
+        <StreamsClient />
+      </Suspense>
+    </AuthWrapper>
   );
 }
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";

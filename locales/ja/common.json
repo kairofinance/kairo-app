@@ -33,7 +33,7 @@
   "navbar": {
     "home": "ホーム",
     "dashboard": "ダッシュボード",
-    "stream": "ストリーム",
+    "streams": "ストリーム",
     "projects": "プロジェクト",
     "newInvoice": "新しい請求書",
     "settings": "設定",

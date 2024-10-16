@@ -8,17 +8,7 @@ module.exports = {
   ],
   darkMode: "class", // This enables the class-based dark mode
   theme: {
-    extend: {
-      animation: {
-        "change-text": "changeText 6s infinite",
-      },
-      keyframes: {
-        changeText: {
-          "0%, 45%": { content: '"Stream"' },
-          "50%, 95%": { content: '"Invoice"' },
-        },
-      },
-    },
+    extend: {},
   },
   plugins: [
     // Add any plugins you're using here

@@ -1,7 +1,10 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/20/solid";
 import DOMPurify from "dompurify";
+import { useAccount } from "wagmi";
+import Spinner from "@/components/Spinner"; // Make sure this import is correct
+import { useRouter } from "next/navigation"; // Change this import
 
 interface Stream {
   id: string;
@@ -13,11 +16,6 @@ interface Stream {
   period: "month" | "week" | "day" | "year";
   totalStreamed: number;
   isWithdrawable: boolean;
-}
-
-interface StreamsProps {
-  userId: string;
-  isLoading: boolean;
 }
 
 const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({
@@ -78,34 +76,53 @@ const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({
   );
 };
 
-const Streams: React.FC<StreamsProps> = ({
-  userId,
-  isLoading: parentIsLoading,
-}) => {
+const StreamsClient: React.FC = () => {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { address, isConnecting, isDisconnected } = useAccount();
+  const router = useRouter();
+
   useEffect(() => {
     const fetchStreams = async () => {
-      if (!userId) return;
+      if (!address || isConnecting || isDisconnected) return;
 
       setIsLoading(true);
       setError(null);
       try {
         const response = await fetch(
-          `/api/streams?userId=${encodeURIComponent(
-            DOMPurify.sanitize(userId)
+          `/api/getProfile?addressOrEns=${encodeURIComponent(
+            DOMPurify.sanitize(address)
           )}`
         );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setStreams(data);
+
+        console.log("Fetching streams for address:", address);
+        const streamsResponse = await fetch(
+          `/api/streams?userId=${encodeURIComponent(
+            DOMPurify.sanitize(address)
+          )}`
+        );
+        if (!streamsResponse.ok) {
+          const errorData = await streamsResponse.json();
+          console.error("API error:", streamsResponse.status, errorData);
+          throw new Error(
+            errorData.error || `HTTP error! status: ${streamsResponse.status}`
+          );
+        }
+        const streamsData = await streamsResponse.json();
+        console.log("Streams data received:", streamsData);
+        setStreams(streamsData);
       } catch (error) {
         console.error("Error fetching streams:", error);
-        setError("Failed to fetch streams. Please try again later.");
+        setError(
+          `Failed to fetch streams. ${
+            error instanceof Error ? error.message : "Please try again later."
+          }`
+        );
         setStreams([]);
       } finally {
         setIsLoading(false);
@@ -113,7 +130,7 @@ const Streams: React.FC<StreamsProps> = ({
     };
 
     fetchStreams();
-  }, [userId]);
+  }, [address, isConnecting, isDisconnected, router]);
 
   const formatAmount = (amount: number, token: string) => {
     const formatter = new Intl.NumberFormat("en-US", {
@@ -123,13 +140,20 @@ const Streams: React.FC<StreamsProps> = ({
     return `${formatter.format(amount)} ${DOMPurify.sanitize(token)}`;
   };
 
-  const hasStreams = streams.length > 0;
-
-  if (parentIsLoading || isLoading) {
+  if (isConnecting || isDisconnected) {
     return (
-      <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
-        Loading streams...
-      </p>
+      <div className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+        Please connect your wallet to view streams.
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <Spinner />
+      </div>
     );
   }
 
@@ -141,7 +165,7 @@ const Streams: React.FC<StreamsProps> = ({
     );
   }
 
-  if (!hasStreams) {
+  if (streams.length === 0) {
     return (
       <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
         No streams available
@@ -150,7 +174,15 @@ const Streams: React.FC<StreamsProps> = ({
   }
 
   return (
-    <div className="">
+    <div className="overflow-hidden mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12">
+      <div className="">
+        <h2 className="mx-auto max-w-2xl text-base font-semibold leading-6 text-zinc-900 dark:text-white lg:mx-0 lg:max-w-none">
+          Streams
+        </h2>
+        <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+          Manage your incoming and outgoing streams
+        </p>
+      </div>
       <div className="mt-8 flow-root">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -265,4 +297,4 @@ const Streams: React.FC<StreamsProps> = ({
   );
 };
 
-export default Streams;
+export default StreamsClient;
