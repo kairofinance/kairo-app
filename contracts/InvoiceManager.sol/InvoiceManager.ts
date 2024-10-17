@@ -1,0 +1,332 @@
+export const InvoiceManagerABI = [
+  {
+    type: "function",
+    name: "MINIMUM_DUE_DATE_PERIOD",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "addWhitelistedToken",
+    inputs: [{ name: "_token", type: "address", internalType: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "cancelOwnershipHandover",
+    inputs: [],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "completeOwnershipHandover",
+    inputs: [
+      { name: "pendingOwner", type: "address", internalType: "address" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "createInvoice",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        internalType: "struct IInvoiceManager.CreateInvoiceParams",
+        components: [
+          {
+            name: "zkProof",
+            type: "tuple",
+            internalType: "struct IInvoiceManager.ZKProof",
+            components: [
+              { name: "a", type: "uint256[2]", internalType: "uint256[2]" },
+              {
+                name: "b",
+                type: "uint256[2][2]",
+                internalType: "uint256[2][2]",
+              },
+              { name: "c", type: "uint256[2]", internalType: "uint256[2]" },
+              { name: "input", type: "uint256[2]", internalType: "uint256[2]" },
+            ],
+          },
+          { name: "token", type: "address", internalType: "address" },
+          { name: "dataIdentifier", type: "string", internalType: "string" },
+        ],
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "initialize",
+    inputs: [
+      { name: "_initialTokens", type: "address[]", internalType: "address[]" },
+      {
+        name: "_minimumDueDatePeriod",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      { name: "_verifier", type: "address", internalType: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "invoiceHashes",
+    inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "nextInvoiceId",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ name: "result", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "ownershipHandoverExpiresAt",
+    inputs: [
+      { name: "pendingOwner", type: "address", internalType: "address" },
+    ],
+    outputs: [{ name: "result", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "payInvoice",
+    inputs: [
+      {
+        name: "params",
+        type: "tuple",
+        internalType: "struct IInvoiceManager.PayInvoiceParams",
+        components: [
+          { name: "invoiceId", type: "uint256", internalType: "uint256" },
+          {
+            name: "zkProof",
+            type: "tuple",
+            internalType: "struct IInvoiceManager.ZKProof",
+            components: [
+              { name: "a", type: "uint256[2]", internalType: "uint256[2]" },
+              {
+                name: "b",
+                type: "uint256[2][2]",
+                internalType: "uint256[2][2]",
+              },
+              { name: "c", type: "uint256[2]", internalType: "uint256[2]" },
+              { name: "input", type: "uint256[2]", internalType: "uint256[2]" },
+            ],
+          },
+          { name: "token", type: "address", internalType: "address" },
+        ],
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "removeWhitelistedToken",
+    inputs: [{ name: "_token", type: "address", internalType: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "renounceOwnership",
+    inputs: [],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "requestOwnershipHandover",
+    inputs: [],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "transferOwnership",
+    inputs: [{ name: "newOwner", type: "address", internalType: "address" }],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "verifier",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "contract Verifier" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "whitelistedTokens",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "bool", internalType: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "event",
+    name: "Initialized",
+    inputs: [
+      {
+        name: "version",
+        type: "uint64",
+        indexed: false,
+        internalType: "uint64",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "InvoiceCreated",
+    inputs: [
+      {
+        name: "invoiceId",
+        type: "uint256",
+        indexed: true,
+        internalType: "uint256",
+      },
+      {
+        name: "invoiceHash",
+        type: "bytes32",
+        indexed: false,
+        internalType: "bytes32",
+      },
+      {
+        name: "token",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "InvoicePaid",
+    inputs: [
+      {
+        name: "invoiceId",
+        type: "uint256",
+        indexed: true,
+        internalType: "uint256",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "token",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "OwnershipHandoverCanceled",
+    inputs: [
+      {
+        name: "pendingOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "OwnershipHandoverRequested",
+    inputs: [
+      {
+        name: "pendingOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "OwnershipTransferred",
+    inputs: [
+      {
+        name: "oldOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "newOwner",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "TokenRemovedFromWhitelist",
+    inputs: [
+      {
+        name: "token",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "TokenWhitelisted",
+    inputs: [
+      {
+        name: "token",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  { type: "error", name: "AlreadyInitialized", inputs: [] },
+  { type: "error", name: "InvalidInitialization", inputs: [] },
+  { type: "error", name: "InvalidZKProof", inputs: [] },
+  { type: "error", name: "InvoiceDoesNotExist", inputs: [] },
+  { type: "error", name: "InvoiceHashMismatch", inputs: [] },
+  { type: "error", name: "NewOwnerIsZeroAddress", inputs: [] },
+  { type: "error", name: "NoHandoverRequest", inputs: [] },
+  { type: "error", name: "NotInitializing", inputs: [] },
+  {
+    type: "error",
+    name: "TokenNotWhitelisted",
+    inputs: [{ name: "token", type: "address", internalType: "address" }],
+  },
+  { type: "error", name: "Unauthorized", inputs: [] },
+  { type: "error", name: "ZeroAddress", inputs: [] },
+];

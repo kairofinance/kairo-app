@@ -31,17 +31,17 @@ const wagmiAdapter = new WagmiAdapter({
 });
 
 // Create the AppKit instance
-const appKit = createAppKit({
+createAppKit({
   adapters: [wagmiAdapter],
   projectId,
   networks: [mainnet, sepolia],
-  defaultNetwork: mainnet,
+  defaultNetwork: sepolia,
   metadata: {
     name: "Kairo",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions.",
-    url: "https://kairo.com", // Replace with your actual domain
-    icons: ["https://kairo.com/icon.png"], // Replace with your actual icon URL
+    url: "https://kairo.finance",
+    icons: ["../favicon.ico"],
   },
 });
 

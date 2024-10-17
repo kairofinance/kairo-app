@@ -3,51 +3,78 @@ import { initialize } from "zokrates-js";
 import fs from "fs";
 import path from "path";
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const { token, issuer, client, amount, dueDate } = await request.json();
+    const { token, issuer, client, amount, dueDate, nextInvoiceId } =
+      await request.json();
 
-    // Validate inputs
-    if (!token || !issuer || !client || !amount || !dueDate) {
+    if (!token || !issuer || !client || !amount || !dueDate || !nextInvoiceId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    console.log("Inputs:", {
+      token,
+      issuer,
+      client,
+      amount,
+      dueDate,
+      nextInvoiceId,
+    });
+
     const zokratesProvider = await initialize();
+    console.log("ZoKrates initialized");
+
     const source = fs.readFileSync(
       path.join(process.cwd(), "circuits", "invoice_creation.zok"),
       "utf-8"
     );
-    const artifacts = zokratesProvider.compile(source);
+    console.log("ZoKrates source loaded");
 
-    // Compute witness
+    const artifacts = zokratesProvider.compile(source);
+    console.log("Compilation successful");
+
     const { witness, output } = zokratesProvider.computeWitness(artifacts, [
       token,
       issuer,
       client,
       amount,
       dueDate,
+      nextInvoiceId,
     ]);
+    console.log("Witness computed, output:", output);
 
-    // Generate proof
-    const keypair = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), "verification.key"), "utf-8")
-    );
+    // Read the proving key as a buffer
+    const provingKey = fs.readFileSync(path.join(process.cwd(), "proving.key"));
+    console.log("Proving key loaded");
+
     const proof = zokratesProvider.generateProof(
       artifacts.program,
       witness,
-      keypair.pk
+      provingKey
     );
+    console.log("Proof generated");
 
-    return NextResponse.json({ proof, output });
+    return NextResponse.json({
+      proof: {
+        // @ts-ignore
+        a: proof.proof.a,
+        // @ts-ignore
+        b: proof.proof.b,
+        // @ts-ignore
+        c: proof.proof.c,
+        input: proof.inputs,
+      },
+      output,
+    });
   } catch (error) {
     console.error("Error generating invoice creation proof:", error);
     return NextResponse.json(
       {
         error: "Failed to generate invoice creation proof",
-        details: String(error),
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );

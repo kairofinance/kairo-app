@@ -31,7 +31,7 @@ export default function Hero({ lang, dictionary }: HeroProps) {
             <div className="flex">
               <div className="relative flex items-center gap-x-4 px-4 py-1 text-sm leading-6 text-zinc-600 dark:text-zinc-200 ring-1 ring-zinc-900/10 dark:ring-zinc-300 hover:ring-zinc-900/20 dark:hover:ring-zinc-200">
                 <span className="font-semibold text-black dark:text-white">
-                  {t.beta || "Beta"}
+                  {t.beta || "Testnet"}
                 </span>
                 <span
                   aria-hidden="true"

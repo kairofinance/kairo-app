@@ -13,7 +13,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Kairo",
-  description: "Decentralized Freelancing Platform",
+  description:
+    "Secure Web3 billing with real-time insights and seamless transactions.",
+  icons: "./favicon.ico",
 };
 
 export default function RootLayout({

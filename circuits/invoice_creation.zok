@@ -1,22 +1,14 @@
 import "hashes/sha256/512bitPacked" as sha256packed;
-from "zokrates_stdlib/stdlib.zok" import u32_to_bits;
 
-def main(private field token, private field issuer, private field client, private field amount, private field dueDate) -> field[3] {
-    // Ensure addresses are not zero
+def main(private field token, private field issuer, private field client, private field amount, private field dueDate, private field nextInvoiceId) -> field[2] {
     assert(issuer != 0);
     assert(client != 0);
-    
-    // Ensure amount is greater than zero
     assert(amount > 0);
-    
-    // Ensure dueDate is in the future (this check will be done on-chain as well)
     assert(dueDate > 0);
+    assert(nextInvoiceId > 0);
 
-    field[4] preimage = [amount, dueDate, 0, 0];
+    field[4] preimage = [amount, dueDate, nextInvoiceId, 0];
     field[2] hash = sha256packed(preimage);
     
-    field[4] issuer_client = [issuer, client, 0, 0];
-    field[2] issuer_client_hash = sha256packed(issuer_client);
-    
-    return [hash[0], issuer_client_hash[0], token];
+    return hash;
 }

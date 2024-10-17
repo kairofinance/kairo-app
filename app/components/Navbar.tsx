@@ -129,7 +129,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
   const navigation = [
     { name: dictionary.navbar.dashboard, href: "/dashboard" },
     { name: dictionary.navbar.streams, href: "/streams" },
-    { name: dictionary.navbar.projects, href: "#" },
+    { name: "Invoices", href: "/invoices" },
   ];
 
   const navigationWithCurrent = navigation.map((item) => ({

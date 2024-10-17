@@ -11,15 +11,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  address   String   @unique
-  lastSignIn DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  clients   Client[]
-  streams   Stream[]
-  profile   Profile?
-  ensName   String?
+  id                String   @id @default(cuid())
+  address           String   @unique
+  lastSignIn        DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  clients           Client[]
+  streams           Stream[]
+  profile           Profile?
+  ensName           String?
+  issuedInvoices    Invoice[] @relation("IssuedInvoices")
+  receivedInvoices  Invoice[] @relation("ReceivedInvoices")
 }
 
 model Profile {
@@ -43,22 +45,24 @@ model Client {
   imageUrl  String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  invoices  Invoice[]
   transactions Transaction[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Invoice {
-  id          String   @id @default(cuid())
-  invoiceNumber String @unique
-  amount      Float
-  status      String
-  date        DateTime
-  client      Client   @relation(fields: [clientId], references: [id])
-  clientId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  invoiceHash   String   @unique
+  issuerAddress String
+  clientAddress String
+  tokenAddress  String
+  amount        String
+  dueDate       DateTime
+  status        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  issuer        User     @relation("IssuedInvoices", fields: [issuerAddress], references: [address])
+  client        User     @relation("ReceivedInvoices", fields: [clientAddress], references: [address])
 }
 
 model Transaction {

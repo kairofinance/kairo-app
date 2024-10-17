@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient, User, Profile } from "@prisma/client";
 import { createPublicClient, http, Address } from "viem";
 import { mainnet } from "viem/chains";
+import { verifyMessage } from "viem";
 
 const prisma = new PrismaClient();
 const DEFAULT_PROFILE_PICTURE = "/default-profile.png";
@@ -97,6 +98,58 @@ export async function GET(req: NextRequest) {
       {
         error: "Failed to fetch or create profile",
         details: error.message,
+      },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { address, signature, message } = await request.json();
+
+    if (!address || !signature || !message) {
+      return NextResponse.json(
+        { error: "Missing required parameters" },
+        { status: 400 }
+      );
+    }
+
+    // Verify the signature
+    const isValid = await verifyMessage({
+      address: address as `0x${string}`,
+      message,
+      signature: signature as `0x${string}`,
+    });
+
+    if (!isValid) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+
+    // Create or update the user
+    const user = await prisma.user.upsert({
+      where: { address: address.toLowerCase() },
+      update: { lastSignIn: new Date() },
+      create: {
+        address: address.toLowerCase(),
+        lastSignIn: new Date(),
+      },
+    });
+
+    // Fetch the user's profile if it exists
+    const profile = await prisma.profile.findUnique({
+      where: { userId: user.id },
+    });
+
+    return NextResponse.json({ user, profile });
+  } catch (error) {
+    console.error("Error in getProfile:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
