@@ -20,10 +20,26 @@ body {
 
 * {
   transition-duration: 0.15s;
+  ::selection {
+    color: white;
+    background: rgb(213, 79, 79);
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Hide the default calendar icon without disabling functionality in WebKit browsers (Chrome, Safari, Edge) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Hide the default calendar icon in Firefox */
+input[type="date"]::-moz-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
 }

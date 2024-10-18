@@ -28,6 +28,7 @@
     "dompurify": "^3.1.7",
     "encoding": "^0.1.13",
     "ethers": "^6.13.4",
+    "isomorphic-dompurify": "^2.16.0",
     "js-cookie": "^3.0.5",
     "js-sha256": "^0.11.0",
     "jsonwebtoken": "^9.0.2",

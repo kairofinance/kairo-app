@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Disclosure,
   DisclosureButton,
@@ -17,7 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { PlusSmallIcon } from "@heroicons/react/24/solid";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useConnect, useEnsName, useDisconnect } from "wagmi";
-import DOMPurify from "dompurify";
+import DOMPurify from "isomorphic-dompurify";
 import Cookies from "js-cookie";
 import { getDictionary } from "@/utils/get-dictionary";
 import { Locale } from "@/utils/i18n-config";
@@ -38,7 +38,11 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
   const router = useRouter();
   const appKit = useAppKit();
   const { address, isConnected } = useAccount();
-  const { data: ensName } = useEnsName({ address });
+  const {
+    data: ensName,
+    isLoading: ensLoading,
+    isError: ensError,
+  } = useEnsName({ address });
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const [isClient, setIsClient] = useState(false);
@@ -65,6 +69,13 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
     }
   }, []);
 
+  useEffect(() => {
+    console.log("Address:", address);
+    console.log("ENS Name:", ensName);
+    console.log("ENS Loading:", ensLoading);
+    console.log("ENS Error:", ensError);
+  }, [address, ensName, ensLoading, ensError]);
+
   const handleConnect = useCallback(async () => {
     if (!isConnected) {
       setIsLoading(true);
@@ -80,7 +91,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await disconnect();
+      disconnect();
       // You might want to reset some app state here
       // For example: resetAppState();
     } catch (error) {
@@ -111,6 +122,24 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
     return lang === "ja" ? "かいろ" : "Kairo";
   }, []);
 
+  const sanitizedDisplayAddress = useMemo(() => {
+    if (ensLoading) return "Loading...";
+    if (ensError) {
+      console.error("Error fetching ENS name:", ensError);
+      return address
+        ? `${address.slice(0, 6)}...${address.slice(-4)}`
+        : "Connected";
+    }
+
+    const displayText =
+      ensName ||
+      (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Connected");
+
+    return typeof window === "undefined"
+      ? displayText
+      : DOMPurify.sanitize(displayText);
+  }, [ensName, address, ensLoading, ensError]);
+
   if (!isMounted || !dictionary) {
     return null; // or a loading placeholder
   }
@@ -138,11 +167,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
     href: `${item.href}`,
   }));
 
-  const sanitizedDisplayAddress = DOMPurify.sanitize(
-    ensName ||
-      (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Connected")
-  );
-
   const languages = [
     { code: "en", name: "English" },
     { code: "fr", name: "Français" },
@@ -154,11 +178,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
   ];
 
   return (
-    <Disclosure
-      as="nav"
-      className="bg-zinc-200 dark:bg-zinc-800 bg-opacity-30 dark:bg-opacity-30 border-b-1 shadow-sm"
-    >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <Disclosure as="nav" className="dark:bg-opacity-30 border-b-1 shadow-sm">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
           <div className="flex">
             <Link
@@ -179,8 +200,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                   className={classNames(
                     item.current
                       ? "border-red-500 dark:text-white text-zinc-900"
-                      : "border-transparent text-zinc-500 dark:text-zinc-200 hover:border-zinc-300 hover:text-zinc-700",
-                    "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium"
+                      : "border-transparent text-zinc-500 dark:text-zinc-300/60 dark:hover:text-zinc-300 hover:text-zinc-700",
+                    "inline-flex items-center border-b-2 px-1 pt-1 text-base font-medium"
                   )}
                 >
                   {item.name}
@@ -190,7 +211,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
           </div>
           <div className="hidden md:ml-6 md:flex md:items-center gap-4">
             {/* Language switcher */}
-            <Menu as="div" className="relative ml-3">
+            {/*<Menu as="div" className="relative ml-3">
               <div>
                 <MenuButton className="rounded-full p-1 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0">
                   <LanguageIcon className="h-6 w-6" aria-hidden="true" />
@@ -217,7 +238,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                   </MenuItem>
                 ))}
               </MenuItems>
-            </Menu>
+            </Menu> */}
 
             {/* Dark mode toggle button */}
             <button
@@ -236,11 +257,18 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                 (isConnected ? (
                   <Menu as="div" className="relative ml-3">
                     <div>
-                      <MenuButton className="relative flex text-sm focus:outline-none shadow-md rounded-md focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ">
+                      <MenuButton className="relative rounded-full dark:hover:bg-zinc-800/80 px-3 py-2 gap-2 bg-zinc-800/50 flex text-sm focus:outline-none shadow-md  focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ">
                         <span className="absolute -inset-1.5" />
-                        <span className="sr-only">Open user menu</span>
+                        <span className="sr-only">Open user menu</span>{" "}
+                        <Image
+                          width="24"
+                          height="24"
+                          className="w-6 h-6 rounded-full bg-white my-auto"
+                          src="/default-profile.png"
+                          alt="profile"
+                        />
                         <span
-                          className="ml-auto flex items-center gap-x-1 rounded-md outline-1 outline-zinc-300 outline px-3 py-2 text-sm font-semibold text-zinc-600 dark:text-zinc-100"
+                          className="ml-auto flex items-center gap-x-1 my-auto text-sm font-semibold text-zinc-600 dark:text-zinc-100"
                           dangerouslySetInnerHTML={{
                             __html: sanitizedDisplayAddress,
                           }}
@@ -249,7 +277,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                     </div>
                     <MenuItems
                       transition
-                      className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-white dark:text-zinc-100 dark:bg-zinc-800/50 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     >
                       {userNavigation.map((item) => (
                         <Menu.Item key={item.name}>
@@ -258,8 +286,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                               href={item.href}
                               onClick={item.onClick}
                               className={classNames(
-                                active ? "bg-zinc-100" : "",
-                                "block px-4 py-2 text-sm text-zinc-700"
+                                active ? "bg-zinc-100 dark:bg-zinc-800" : "",
+                                "block px-4 py-2 text-sm dark:text-zinc-100 text-zinc-700"
                               )}
                             >
                               {item.name}
@@ -273,13 +301,12 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                   <button
                     onClick={handleConnect}
                     disabled={isLoading}
-                    className="ml-auto flex items-center gap-x-1 rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                    className="ml-auto flex items-center gap-x-1 rounded-full text-red-500 bg-red-800 bg-opacity-30 px-3 py-2 text-sm font-semibold shadow-lg hover:bg-red-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                   >
                     {isLoading ? "Connecting..." : "Connect Wallet"}
                   </button>
                 ))}
             </div>
-            {isClient && isConnected && <AnimatedButton />}
           </div>
           <div className="-mr-2 flex items-center md:hidden">
             {/* Mobile menu button */}

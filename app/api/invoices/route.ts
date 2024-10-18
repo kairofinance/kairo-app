@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
       dueDate,
       invoiceHash,
       status,
+      nonce,
+      transactionHash,
     } = await request.json();
 
     console.log("Received data:", {
@@ -111,6 +113,9 @@ export async function POST(request: NextRequest) {
         dueDate: new Date(dueDate),
         status,
         invoiceHash,
+        // @ts-ignore
+        nonce,
+        transactionHash,
       },
     });
 

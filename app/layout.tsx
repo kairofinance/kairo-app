@@ -29,7 +29,9 @@ export default function RootLayout({
 
   return (
     <html lang={lang}>
-      <body className={`${inter.className} dark:bg-zinc-900 bg-gradient-to-t `}>
+      <body
+        className={`${inter.className} dark:bg-[#141416] bg-gradient-to-t `}
+      >
         <Providers>
           <div className="min-h-screen flex flex-col">
             <Navbar currentLang={lang} />
