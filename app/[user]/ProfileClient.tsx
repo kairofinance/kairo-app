@@ -342,14 +342,12 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
             {profileData.bannerPicture &&
               profileData.bannerPicture !== "/default-banner.png" && (
                 <Image
-                  src={profileData.bannerPicture}
+                  src={profileData.bannerPicture.replace(/^\//, "")} // Remove leading slash if present
                   alt="Profile Banner"
                   fill
                   style={{ objectFit: "cover" }}
                   quality={100}
                   priority
-                  sizes="100vw"
-                  className="shadow-md"
                 />
               )}
           </div>
@@ -369,15 +367,15 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
                   </button>
                 )}
               </div>
-              <div className="relative group rounded-full outline-6 outline-[#0e0e0e] ml-3">
+              <div className="relative group rounded-full ml-3">
                 {profileData.profilePicture &&
                   profileData.profilePicture !== "/default-profile.png" && (
                     <Image
-                      src={profileData.profilePicture}
+                      src={profileData.profilePicture.replace(/^\//, "")} // Remove leading slash if present
                       alt="Profile"
                       width={120}
                       height={120}
-                      className=" rounded-full"
+                      className="rounded-full outline-[5px] outline outline-[#0e0e0e]"
                     />
                   )}
                 <h1 className="text-xl font-bold mt-5 text-zinc-900 dark:text-zinc-100">

@@ -81,13 +81,18 @@ export default function Settings({
                       {profileData.profilePicture &&
                         profileData.profilePicture !==
                           "/default-profile.png" && (
-                          <Image
-                            src={profileData.profilePicture}
-                            alt="Profile"
-                            width={100}
-                            height={100}
-                            className="rounded-full"
-                          />
+                          <div className="relative w-24 h-24">
+                            <Image
+                              src={profileData.profilePicture.replace(
+                                /^\//,
+                                ""
+                              )} // Remove leading slash if present
+                              alt="Profile"
+                              fill
+                              style={{ objectFit: "cover" }}
+                              className="rounded-full"
+                            />
+                          </div>
                         )}
                       <div>
                         <button
@@ -113,13 +118,15 @@ export default function Settings({
                     <div className="col-span-full flex items-center gap-x-8">
                       {profileData.bannerPicture &&
                         profileData.bannerPicture !== "/default-banner.png" && (
-                          <Image
-                            src={profileData.bannerPicture}
-                            alt="Banner"
-                            width={200}
-                            height={100}
-                            className="rounded-md"
-                          />
+                          <div className="relative w-48 h-24">
+                            <Image
+                              src={profileData.bannerPicture.replace(/^\//, "")} // Remove leading slash if present
+                              alt="Banner"
+                              fill
+                              style={{ objectFit: "cover" }}
+                              className="rounded-md"
+                            />
+                          </div>
                         )}
                       <div>
                         <button

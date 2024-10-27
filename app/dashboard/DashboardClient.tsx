@@ -270,16 +270,19 @@ export default function DashboardClient({
     }
   }, [statsError]);
 
-  const statNames = [
-    "Total Revenue",
-    "Total Invoices",
-    "Paid Invoices",
-    "Unpaid Invoices",
-    "Clients",
-    "Contractors",
-    "Active Projects",
-    "On-Time Payment Rate",
-  ];
+  const statNames = useMemo(
+    () => [
+      "Total Revenue",
+      "Total Invoices",
+      "Paid Invoices",
+      "Unpaid Invoices",
+      "Clients",
+      "Contractors",
+      "Active Projects",
+      "On-Time Payment Rate",
+    ],
+    []
+  ); // Empty dependency array as these names don't change
 
   const dashboardStats = useMemo(() => {
     if (!statsData) return [];
@@ -324,8 +327,8 @@ export default function DashboardClient({
     ] as Stat[];
   }, [statsData]);
 
-  const firstStatsGroup = useMemo(() => statNames.slice(0, 4), []);
-  const secondStatsGroup = useMemo(() => statNames.slice(4), []);
+  const firstStatsGroup = useMemo(() => statNames.slice(0, 4), [statNames]);
+  const secondStatsGroup = useMemo(() => statNames.slice(4), [statNames]);
 
   useEffect(() => {
     // Log debugging information when groupedInvoices changes

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAccount, useWriteContract } from "wagmi";
 import { formatUnits, parseUnits } from "viem";
 import Image from "next/image";
@@ -58,7 +58,7 @@ const InvoicesClient: React.FC = () => {
   const { writeContractAsync: payInvoice } = useWriteContract();
   const { writeContractAsync: approveToken } = useWriteContract();
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     if (address) {
       try {
         setIsLoading(true);
@@ -75,11 +75,11 @@ const InvoicesClient: React.FC = () => {
         setIsLoading(false);
       }
     }
-  };
+  }, [address]);
 
   useEffect(() => {
     fetchInvoices();
-  }, [address]);
+  }, [fetchInvoices]);
 
   const getTokenInfo = (tokenAddress: string): Token | undefined => {
     return tokens.find(

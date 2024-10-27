@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { verifyMessage } from "viem";
 import { PrismaClient } from "@prisma/client";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import sharp from "sharp";
+import { put } from "@vercel/blob";
 
 const prisma = new PrismaClient();
 
@@ -41,9 +40,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
     if (profilePicture) {
       if (profilePicture.size > MAX_FILE_SIZE) {
         return NextResponse.json(
@@ -62,12 +58,16 @@ export async function POST(request: Request) {
         .png({ quality: 100, compressionLevel: 0 })
         .toBuffer();
 
-      const profilePicturePath = `/uploads/${Date.now()}_profile.png`;
-      await writeFile(
-        path.join(process.cwd(), "public", profilePicturePath),
-        optimizedBuffer
+      const blob = await put(
+        `profile-pictures/${Date.now()}.png`,
+        optimizedBuffer,
+        {
+          access: "public",
+          contentType: "image/png",
+        }
       );
-      profileData.profilePicture = profilePicturePath;
+
+      profileData.profilePicture = blob.url;
     }
 
     if (bannerPicture) {
@@ -88,12 +88,16 @@ export async function POST(request: Request) {
         .png({ quality: 100, compressionLevel: 0 })
         .toBuffer();
 
-      const bannerPicturePath = `/uploads/${Date.now()}_banner.png`;
-      await writeFile(
-        path.join(process.cwd(), "public", bannerPicturePath),
-        optimizedBuffer
+      const blob = await put(
+        `banner-pictures/${Date.now()}.png`,
+        optimizedBuffer,
+        {
+          access: "public",
+          contentType: "image/png",
+        }
       );
-      profileData.bannerPicture = bannerPicturePath;
+
+      profileData.bannerPicture = blob.url;
     }
 
     // Add link validation if needed
