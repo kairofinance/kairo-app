@@ -6,6 +6,7 @@ import { verifyMessage } from "viem";
 
 const prisma = new PrismaClient();
 const DEFAULT_PROFILE_PICTURE = "/default-profile.png";
+const DEFAULT_BANNER_PICTURE = "/default-banner.png";
 
 // Initialize viem public client
 const publicClient = createPublicClient({
@@ -60,6 +61,8 @@ export async function GET(req: NextRequest) {
       include: { profile: true },
     });
 
+    console.log("User found in database:", user);
+
     if (!user) {
       console.log("User not found, creating new user with profile");
       user = await prisma.user.create({
@@ -69,21 +72,42 @@ export async function GET(req: NextRequest) {
           lastSignIn: new Date(),
           profile: {
             create: {
-              nickname: ensName || address,
-              username: address,
+              username: address.toLowerCase(),
               profilePicture: DEFAULT_PROFILE_PICTURE,
+              bannerPicture: DEFAULT_BANNER_PICTURE,
             },
           },
         },
         include: { profile: true },
       });
+      console.log("New user created:", user);
+    } else if (!user.profile) {
+      console.log("User found but profile missing, creating profile");
+      user.profile = await prisma.profile.create({
+        data: {
+          userId: user.id,
+          username: user.address,
+          profilePicture: DEFAULT_PROFILE_PICTURE,
+          bannerPicture: DEFAULT_BANNER_PICTURE,
+        },
+      });
+      console.log("New profile created:", user.profile);
     }
 
-    // Ensure the profile picture URL is correct
-    if (user.profile && user.profile.profilePicture) {
-      user.profile.profilePicture = user.profile.profilePicture.startsWith("/")
-        ? user.profile.profilePicture
-        : `/${user.profile.profilePicture}`;
+    // Ensure the profile picture and banner picture URLs are correct
+    if (user.profile) {
+      if (user.profile.profilePicture) {
+        user.profile.profilePicture = user.profile.profilePicture.startsWith(
+          "/"
+        )
+          ? user.profile.profilePicture
+          : `/${user.profile.profilePicture}`;
+      }
+      if (user.profile.bannerPicture) {
+        user.profile.bannerPicture = user.profile.bannerPicture.startsWith("/")
+          ? user.profile.bannerPicture
+          : `/${user.profile.bannerPicture}`;
+      }
     }
 
     console.log("Returning user data:", user);
@@ -98,6 +122,7 @@ export async function GET(req: NextRequest) {
       {
         error: "Failed to fetch or create profile",
         details: error.message,
+        stack: error.stack,
       },
       { status: 500 }
     );

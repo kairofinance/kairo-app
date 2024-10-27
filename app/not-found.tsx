@@ -15,8 +15,8 @@ export default async function NotFound() {
   const dictionary = await getDictionary(currentLang as Locale);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-900">
-      <main className="flex-grow flex flex-col items-center justify-center bg-zinc-100 dark:bg-zinc-800">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-none">
+      <main className="flex-grow flex flex-col items-center justify-center bg-zinc-100 dark:bg-[#141416] bg-gradient-to-t ">
         <div className="text-center">
           <h1 className="text-6xl font-bold text-zinc-800 dark:text-zinc-100 mb-4">
             404

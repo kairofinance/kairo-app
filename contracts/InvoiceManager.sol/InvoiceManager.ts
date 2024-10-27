@@ -1,8 +1,22 @@
 export const InvoiceManagerABI = [
   {
     type: "function",
+    name: "MAX_FEE_PERCENTAGE",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "MINIMUM_DUE_DATE_PERIOD",
     inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "accumulatedFees",
+    inputs: [{ name: "", type: "address", internalType: "address" }],
     outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
@@ -33,33 +47,49 @@ export const InvoiceManagerABI = [
     type: "function",
     name: "createInvoice",
     inputs: [
-      {
-        name: "params",
-        type: "tuple",
-        internalType: "struct IInvoiceManager.CreateInvoiceParams",
-        components: [
-          {
-            name: "zkProof",
-            type: "tuple",
-            internalType: "struct IInvoiceManager.ZKProof",
-            components: [
-              { name: "a", type: "uint256[2]", internalType: "uint256[2]" },
-              {
-                name: "b",
-                type: "uint256[2][2]",
-                internalType: "uint256[2][2]",
-              },
-              { name: "c", type: "uint256[2]", internalType: "uint256[2]" },
-              { name: "input", type: "uint256[2]", internalType: "uint256[2]" },
-            ],
-          },
-          { name: "token", type: "address", internalType: "address" },
-          { name: "dataIdentifier", type: "string", internalType: "string" },
-        ],
-      },
+      { name: "issuer", type: "address", internalType: "address" },
+      { name: "client", type: "address", internalType: "address" },
+      { name: "amount", type: "uint256", internalType: "uint256" },
+      { name: "dueDate", type: "uint256", internalType: "uint256" },
+      { name: "token", type: "address", internalType: "address" },
     ],
-    outputs: [],
+    outputs: [{ name: "invoiceId", type: "uint256", internalType: "uint256" }],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "feeCollector",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "feePercentage",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getAvailableFees",
+    inputs: [{ name: "token", type: "address", internalType: "address" }],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getFeeCollector",
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getFeePercentage",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+    stateMutability: "view",
   },
   {
     type: "function",
@@ -71,16 +101,28 @@ export const InvoiceManagerABI = [
         type: "uint256",
         internalType: "uint256",
       },
-      { name: "_verifier", type: "address", internalType: "address" },
+      { name: "_feeCollector", type: "address", internalType: "address" },
+      {
+        name: "_initialFeePercentage",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
     outputs: [],
     stateMutability: "nonpayable",
   },
   {
     type: "function",
-    name: "invoiceHashes",
+    name: "invoices",
     inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
-    outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+    outputs: [
+      { name: "issuer", type: "address", internalType: "address" },
+      { name: "client", type: "address", internalType: "address" },
+      { name: "amount", type: "uint256", internalType: "uint256" },
+      { name: "dueDate", type: "uint256", internalType: "uint256" },
+      { name: "token", type: "address", internalType: "address" },
+      { name: "paid", type: "bool", internalType: "bool" },
+    ],
     stateMutability: "view",
   },
   {
@@ -109,32 +151,7 @@ export const InvoiceManagerABI = [
   {
     type: "function",
     name: "payInvoice",
-    inputs: [
-      {
-        name: "params",
-        type: "tuple",
-        internalType: "struct IInvoiceManager.PayInvoiceParams",
-        components: [
-          { name: "invoiceId", type: "uint256", internalType: "uint256" },
-          {
-            name: "zkProof",
-            type: "tuple",
-            internalType: "struct IInvoiceManager.ZKProof",
-            components: [
-              { name: "a", type: "uint256[2]", internalType: "uint256[2]" },
-              {
-                name: "b",
-                type: "uint256[2][2]",
-                internalType: "uint256[2][2]",
-              },
-              { name: "c", type: "uint256[2]", internalType: "uint256[2]" },
-              { name: "input", type: "uint256[2]", internalType: "uint256[2]" },
-            ],
-          },
-          { name: "token", type: "address", internalType: "address" },
-        ],
-      },
-    ],
+    inputs: [{ name: "invoiceId", type: "uint256", internalType: "uint256" }],
     outputs: [],
     stateMutability: "nonpayable",
   },
@@ -161,6 +178,24 @@ export const InvoiceManagerABI = [
   },
   {
     type: "function",
+    name: "setFeeCollector",
+    inputs: [
+      { name: "_feeCollector", type: "address", internalType: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setFeePercentage",
+    inputs: [
+      { name: "_feePercentage", type: "uint256", internalType: "uint256" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "transferOwnership",
     inputs: [{ name: "newOwner", type: "address", internalType: "address" }],
     outputs: [],
@@ -168,17 +203,86 @@ export const InvoiceManagerABI = [
   },
   {
     type: "function",
-    name: "verifier",
-    inputs: [],
-    outputs: [{ name: "", type: "address", internalType: "contract Verifier" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
     name: "whitelistedTokens",
     inputs: [{ name: "", type: "address", internalType: "address" }],
     outputs: [{ name: "", type: "bool", internalType: "bool" }],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "withdrawFees",
+    inputs: [{ name: "token", type: "address", internalType: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "event",
+    name: "FeeCollected",
+    inputs: [
+      {
+        name: "invoiceId",
+        type: "uint256",
+        indexed: true,
+        internalType: "uint256",
+      },
+      {
+        name: "feeAmount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "feeCollector",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FeePercentageChanged",
+    inputs: [
+      {
+        name: "oldFeePercentage",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+      {
+        name: "newFeePercentage",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "FeesWithdrawn",
+    inputs: [
+      {
+        name: "feeCollector",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "token",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
+      },
+    ],
+    anonymous: false,
   },
   {
     type: "event",
@@ -204,10 +308,28 @@ export const InvoiceManagerABI = [
         internalType: "uint256",
       },
       {
-        name: "invoiceHash",
-        type: "bytes32",
+        name: "issuer",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "client",
+        type: "address",
+        indexed: true,
+        internalType: "address",
+      },
+      {
+        name: "amount",
+        type: "uint256",
         indexed: false,
-        internalType: "bytes32",
+        internalType: "uint256",
+      },
+      {
+        name: "dueDate",
+        type: "uint256",
+        indexed: false,
+        internalType: "uint256",
       },
       {
         name: "token",
@@ -237,7 +359,7 @@ export const InvoiceManagerABI = [
       {
         name: "token",
         type: "address",
-        indexed: false,
+        indexed: true,
         internalType: "address",
       },
     ],
@@ -295,7 +417,7 @@ export const InvoiceManagerABI = [
       {
         name: "token",
         type: "address",
-        indexed: false,
+        indexed: true,
         internalType: "address",
       },
     ],
@@ -308,19 +430,23 @@ export const InvoiceManagerABI = [
       {
         name: "token",
         type: "address",
-        indexed: false,
+        indexed: true,
         internalType: "address",
       },
     ],
     anonymous: false,
   },
   { type: "error", name: "AlreadyInitialized", inputs: [] },
+  { type: "error", name: "InvalidAmount", inputs: [] },
+  { type: "error", name: "InvalidDueDate", inputs: [] },
+  { type: "error", name: "InvalidFeePercentage", inputs: [] },
   { type: "error", name: "InvalidInitialization", inputs: [] },
-  { type: "error", name: "InvalidZKProof", inputs: [] },
+  { type: "error", name: "InvoiceAlreadyPaid", inputs: [] },
   { type: "error", name: "InvoiceDoesNotExist", inputs: [] },
-  { type: "error", name: "InvoiceHashMismatch", inputs: [] },
   { type: "error", name: "NewOwnerIsZeroAddress", inputs: [] },
+  { type: "error", name: "NoFeesToWithdraw", inputs: [] },
   { type: "error", name: "NoHandoverRequest", inputs: [] },
+  { type: "error", name: "NotFeeCollector", inputs: [] },
   { type: "error", name: "NotInitializing", inputs: [] },
   {
     type: "error",
@@ -328,5 +454,29 @@ export const InvoiceManagerABI = [
     inputs: [{ name: "token", type: "address", internalType: "address" }],
   },
   { type: "error", name: "Unauthorized", inputs: [] },
+  { type: "error", name: "UnauthorizedPayment", inputs: [] },
   { type: "error", name: "ZeroAddress", inputs: [] },
+  {
+    type: "error",
+    name: "CustomError",
+    inputs: [],
+  },
+  // Add this new custom error
+  {
+    type: "error",
+    name: "InsufficientAllowance",
+    inputs: [],
+  },
+  // Add this new custom error
+  {
+    type: "error",
+    name: "InsufficientBalance",
+    inputs: [],
+  },
+  // Add this new custom error
+  {
+    type: "error",
+    name: "InsufficientTokenBalance",
+    inputs: [],
+  },
 ];

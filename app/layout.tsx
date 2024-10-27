@@ -8,8 +8,15 @@ import Footer from "@/components/Footer";
 import { i18n, Locale } from "@/utils/i18n-config";
 import { cookies } from "next/headers";
 import AlertMessage from "@/components/AlertMessage";
+import dynamic from "next/dynamic";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const inter = Inter({ subsets: ["latin"] });
+
+const CustomErrorBoundary = dynamic(
+  () => import("../components/CustomErrorBoundary"),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: "Kairo",
@@ -30,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang={lang}>
       <body
-        className={`${inter.className} dark:bg-[#141416] bg-gradient-to-t `}
+        className={`${inter.className} dark:bg-[#0e0e0e] bg-gradient-to-t `}
       >
         <Providers>
           <div className="min-h-screen flex flex-col">
@@ -39,7 +46,9 @@ export default function RootLayout({
               id="alert-container"
               className="fixed top-16 left-0 right-0 z-50"
             ></div>
-            <main className="flex-grow">{children}</main>
+            <main className="flex-grow">
+              <CustomErrorBoundary>{children}</CustomErrorBoundary>
+            </main>
             <Footer />
           </div>
         </Providers>

@@ -156,9 +156,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
   ];
 
   const navigation = [
-    { name: dictionary.navbar.dashboard, href: "/dashboard" },
-    { name: dictionary.navbar.streams, href: "/streams" },
     { name: "Invoices", href: "/invoices" },
+    { name: dictionary.navbar.dashboard, href: "/dashboard" },
   ];
 
   const navigationWithCurrent = navigation.map((item) => ({
@@ -277,7 +276,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                     </div>
                     <MenuItems
                       transition
-                      className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-white dark:text-zinc-100 dark:bg-zinc-800/50 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-white dark:text-zinc-100 dark:bg-zinc-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     >
                       {userNavigation.map((item) => (
                         <Menu.Item key={item.name}>

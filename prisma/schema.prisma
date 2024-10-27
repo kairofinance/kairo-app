@@ -11,8 +11,10 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(cuid())
-  address           String   @unique
+  id        String   @id @default(cuid())
+  address   String   @unique
+  username  String?
+  pfp       String?
   lastSignIn        DateTime
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -25,18 +27,19 @@ model User {
 }
 
 model Profile {
-  id        String   @id @default(cuid())
-  nickname  String
-  username  String
-  bio       String?
-  website   String?
-  email     String?
-  profilePicture String?
-  peopleWorkedWith Int @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @unique
+  id              String   @id @default(cuid())
+  username        String   @unique
+  bio             String?
+  website         String?
+  email           String?
+  profilePicture  String?
+  bannerPicture   String?
+  peopleWorkedWith Int     @default(0)
+  link            String?  // Add this line
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+  userId          String   @unique
 }
 
 model Client {
@@ -51,18 +54,30 @@ model Client {
 }
 
 model Invoice {
-  id            String   @id @default(cuid())
-  invoiceHash   String   @unique
-  issuerAddress String
-  clientAddress String
-  tokenAddress  String
-  amount        String
-  dueDate       DateTime
-  status        String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  issuer        User     @relation("IssuedInvoices", fields: [issuerAddress], references: [address])
-  client        User     @relation("ReceivedInvoices", fields: [clientAddress], references: [address])
+  id                    String   @id @default(cuid())
+  invoiceId             String   @unique
+  issuerAddress         String
+  clientAddress         String
+  tokenAddress          String
+  amount                String
+  dueDate               DateTime
+  issuedDate            DateTime @default(now())
+  creationTransactionHash String?
+  paymentTransactionHash String?
+  paid                  Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  issuer                User     @relation("IssuedInvoices", fields: [issuerAddress], references: [address])
+  client                User     @relation("ReceivedInvoices", fields: [clientAddress], references: [address])
+  payments              Payment[]
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  transactionHash String
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId       String
 }
 
 model Transaction {
@@ -95,3 +110,8 @@ model Stream {
 }
 
 // You can add other models here as needed for your application
+
+
+
+
+

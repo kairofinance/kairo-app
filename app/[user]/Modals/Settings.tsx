@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   Dialog,
@@ -14,13 +13,21 @@ interface SettingsProps {
   isOpen: boolean;
   onClose: () => void;
   profileData: any;
-  editedProfileData: any;
+  editedProfileData: {
+    username: string;
+    bio: string;
+    website: string;
+    email: string;
+    link: string;
+  };
   handleInputChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
+  handleSubmit: (formData: any) => Promise<void>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
+  handleBannerFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  bannerFileInputRef: React.RefObject<HTMLInputElement>;
   t: (key: string) => string;
 }
 
@@ -33,8 +40,16 @@ export default function Settings({
   handleSubmit,
   handleFileChange,
   fileInputRef,
+  handleBannerFileChange,
+  bannerFileInputRef,
   t,
 }: SettingsProps) {
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleSubmit(editedProfileData);
+    onClose();
+  };
+
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-10">
       <DialogBackdrop className="fixed inset-0 bg-zinc-500 bg-opacity-75 transition-opacity" />
@@ -61,17 +76,19 @@ export default function Settings({
                   Account Settings
                 </DialogTitle>
                 <div className="mt-2">
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={onSubmit} className="space-y-6">
                     <div className="col-span-full flex items-center gap-x-8">
-                      <Image
-                        src={
-                          profileData.profilePicture || "/default-profile.png"
-                        }
-                        alt="Profile"
-                        width={100}
-                        height={100}
-                        className="rounded-full"
-                      />
+                      {profileData.profilePicture &&
+                        profileData.profilePicture !==
+                          "/default-profile.png" && (
+                          <Image
+                            src={profileData.profilePicture}
+                            alt="Profile"
+                            width={100}
+                            height={100}
+                            className="rounded-full"
+                          />
+                        )}
                       <div>
                         <button
                           type="button"
@@ -81,12 +98,44 @@ export default function Settings({
                           Change avatar
                         </button>
                         <p className="mt-2 text-xs leading-5 text-zinc-400">
-                          JPG or PNG. 1MB max.
+                          JPG or PNG. 2MB max.
                         </p>
                         <input
                           type="file"
                           ref={fileInputRef}
                           onChange={handleFileChange}
+                          className="hidden"
+                          accept="image/jpeg,image/png"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-full flex items-center gap-x-8">
+                      {profileData.bannerPicture &&
+                        profileData.bannerPicture !== "/default-banner.png" && (
+                          <Image
+                            src={profileData.bannerPicture}
+                            alt="Banner"
+                            width={200}
+                            height={100}
+                            className="rounded-md"
+                          />
+                        )}
+                      <div>
+                        <button
+                          type="button"
+                          className="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-white/20"
+                          onClick={() => bannerFileInputRef.current?.click()}
+                        >
+                          Change banner
+                        </button>
+                        <p className="mt-2 text-xs leading-5 text-zinc-400">
+                          JPG or PNG. 2MB max.
+                        </p>
+                        <input
+                          type="file"
+                          ref={bannerFileInputRef}
+                          onChange={handleBannerFileChange}
                           className="hidden"
                           accept="image/jpeg,image/png"
                         />
@@ -133,20 +182,20 @@ export default function Settings({
 
                     <div className="col-span-full">
                       <label
-                        htmlFor="email"
+                        htmlFor="link"
                         className="block text-sm font-medium leading-6 text-white"
                       >
-                        Email address
+                        Profile Link
                       </label>
                       <div className="mt-2">
                         <input
-                          id="email"
-                          name="email"
-                          type="email"
-                          autoComplete="email"
-                          value={editedProfileData.email}
+                          id="link"
+                          name="link"
+                          type="url"
+                          value={editedProfileData.link}
                           onChange={handleInputChange}
                           className="block w-full rounded-md px-2 border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-red-500 sm:text-sm sm:leading-6"
+                          placeholder="https://example.com"
                         />
                       </div>
                     </div>

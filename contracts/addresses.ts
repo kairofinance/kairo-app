@@ -4,22 +4,18 @@ type AddressMap = {
   [chainId: number]: `0x${string}`;
 };
 
-export const VERIFIER_ADDRESS: AddressMap = {
-  [sepolia.id]: "0x5d3245eeca5825883ac25fb52dd52a880eae114c",
-};
-
 export const INVOICE_MANAGER_ADDRESS: AddressMap = {
-  [sepolia.id]: "0x6d4cacdce4ee6b0f9a869c88eabcc3f34dcae69f",
+  [sepolia.id]: "0x6ADd0aE245E14d7556DCca10b8aF0024D16620Fe" as `0x${string}`,
 };
 
 // Helper function to get the address for the current chain
 export function getAddress(
-  addressMap: AddressMap,
+  addressOrMap: `0x${string}` | AddressMap,
   chainId: number
 ): `0x${string}` {
-  const address = addressMap[chainId];
-  if (!address) {
-    throw new Error(`Address not found for chain ID: ${chainId}`);
+  if (typeof addressOrMap === "string") return addressOrMap;
+  if (!addressOrMap[chainId]) {
+    throw new Error(`Contract address not found for chain ${chainId}`);
   }
-  return address;
+  return addressOrMap[chainId];
 }

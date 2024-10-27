@@ -1,26 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Stats from "./components/Stats";
+import Stats, { Stat } from "./components/Stats";
 import RecentActivity from "./components/RecentActivity";
-import { debounce } from "lodash";
-import { useQuery } from "@tanstack/react-query";
-import DOMPurify from "dompurify";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { useAccount } from "wagmi";
 import { Locale } from "@/utils/i18n-config";
+import DOMPurify from "dompurify";
+import { debounce } from "lodash";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const secondaryNavigation = [
   { name: "Last 7 days", period: "last7days" },
   { name: "Last 30 days", period: "last30days" },
   { name: "All-time", period: "alltime" },
 ];
-
-interface Stat {
-  name: string;
-  value: string;
-  change?: string;
-  changeType: "positive" | "negative" | "neutral";
-}
 
 interface Transaction {
   id: number;
@@ -53,6 +47,33 @@ const defaultStats: Stat[] = [
 interface DashboardClientProps {
   initialDictionary: any;
   initialLang: Locale;
+}
+
+interface Invoice {
+  id: string;
+  invoiceId: string;
+  amount: string;
+  token?: string;
+  clientAddress: string;
+  issuerAddress: string;
+  paid: boolean;
+  dueDate: string;
+  paidDate?: string | null;
+  status: "Paid" | "Created";
+  issuedDate: string;
+  tokenAddress: string; // Add this line
+}
+
+interface DayInvoices {
+  date: string;
+  dateTime: string;
+  invoices: Invoice[];
+}
+
+interface UserProfile {
+  address: string;
+  username: string | null;
+  pfp: string | null;
 }
 
 export default function DashboardClient({
@@ -174,6 +195,186 @@ export default function DashboardClient({
     [debouncedFetchTransactions]
   );
 
+  const { data: invoicesData, isLoading: isLoadingInvoices } = useQuery({
+    queryKey: ["invoices", address],
+    queryFn: async () => {
+      if (!address) return { invoices: [] };
+      const response = await fetch(`/api/invoices?address=${address}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("Raw invoices data:", data); // Debug log
+      return data;
+    },
+    enabled: !!address,
+  });
+
+  const groupedInvoices = useMemo(() => {
+    console.log("Grouping invoices. Raw data:", invoicesData); // Debug log
+    if (!invoicesData?.invoices) return [];
+    const grouped: Record<string, Invoice[]> = {};
+    invoicesData.invoices.forEach((invoice: Invoice) => {
+      console.log("Processing invoice:", invoice); // Debug log for each invoice
+      const date = new Date(invoice.issuedDate).toISOString().split("T")[0];
+      if (!grouped[date]) {
+        grouped[date] = [];
+      }
+      grouped[date].push(invoice);
+    });
+    const result = Object.entries(grouped)
+      .map(([date, invoices]) => ({
+        date: new Date(date).toLocaleDateString(lang, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        dateTime: date,
+        invoices,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+      );
+    console.log("Grouped invoices:", result); // Debug log for final grouped result
+    return result;
+  }, [invoicesData, lang]);
+
+  const {
+    data: statsData,
+    isLoading: isLoadingStats,
+    error: statsError,
+  } = useQuery({
+    queryKey: ["stats", address, period],
+    queryFn: async () => {
+      if (!address) return null;
+      const response = await fetch(
+        `/api/stats?address=${address}&period=${period}`
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching stats:", errorData);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorData.error}`
+        );
+      }
+      return response.json();
+    },
+    enabled: !!address,
+  });
+
+  useEffect(() => {
+    if (statsError) {
+      console.error("Stats query error:", statsError);
+    }
+  }, [statsError]);
+
+  const statNames = [
+    "Total Revenue",
+    "Total Invoices",
+    "Paid Invoices",
+    "Unpaid Invoices",
+    "Clients",
+    "Contractors",
+    "Active Projects",
+    "On-Time Payment Rate",
+  ];
+
+  const dashboardStats = useMemo(() => {
+    if (!statsData) return [];
+    return [
+      {
+        value: `$${statsData.totalRevenue?.toFixed(2) || "0.00"}`,
+        changeType: "neutral" as const,
+      },
+      {
+        value: statsData.totalInvoices?.toString() || "0",
+        changeType: "neutral" as const,
+      },
+      {
+        value: statsData.paidInvoices?.toString() || "0",
+        changeType: "positive" as const,
+      },
+      {
+        value: statsData.unpaidInvoices?.toString() || "0",
+        changeType: "negative" as const,
+      },
+      {
+        value: statsData.clientCount?.toString() || "0",
+        changeType: "neutral" as const,
+      },
+      {
+        value: statsData.contractorCount?.toString() || "0",
+        changeType: "neutral" as const,
+      },
+      {
+        value: statsData.activeProjects?.toString() || "0",
+        changeType: "neutral" as const,
+      },
+      {
+        value:
+          statsData.paidInvoices && statsData.paidInvoices > 0
+            ? statsData.onTimePaymentRate !== undefined
+              ? `${statsData.onTimePaymentRate.toFixed(1)}%`
+              : "N/A"
+            : "No paid invoices yet",
+        changeType: "neutral" as const,
+      },
+    ] as Stat[];
+  }, [statsData]);
+
+  const firstStatsGroup = useMemo(() => statNames.slice(0, 4), []);
+  const secondStatsGroup = useMemo(() => statNames.slice(4), []);
+
+  useEffect(() => {
+    // Log debugging information when groupedInvoices changes
+    console.log("Rendering RecentActivity with:", {
+      groupedInvoices,
+      isLoadingInvoices,
+      userAddress: address,
+    });
+  }, [groupedInvoices, isLoadingInvoices, address]);
+
+  // Fetch user profiles for all unique addresses in invoices
+  const uniqueAddresses = useMemo(() => {
+    if (!invoicesData?.invoices) return [];
+    const addresses = new Set<string>();
+    invoicesData.invoices.forEach((invoice: Invoice) => {
+      addresses.add(invoice.issuerAddress.toLowerCase());
+      addresses.add(invoice.clientAddress.toLowerCase());
+    });
+    return Array.from(addresses);
+  }, [invoicesData]);
+
+  const userProfileQueries = useQueries({
+    queries: uniqueAddresses.map((address) => ({
+      queryKey: ["userProfile", address],
+      queryFn: async () => {
+        const response = await fetch(`/api/users?address=${address}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            // User not found, return null
+            return null;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      },
+      retry: false, // Don't retry if user is not found
+    })),
+  });
+
+  const userProfiles = useMemo(() => {
+    const profiles: { [key: string]: UserProfile } = {};
+    userProfileQueries.forEach((query) => {
+      if (query.data) {
+        profiles[query.data.address.toLowerCase()] = query.data;
+      }
+    });
+    return profiles;
+  }, [userProfileQueries]);
+
   return (
     <main className="mt-5 mx-auto max-w-7xl px-2">
       <div className="relative isolate overflow-hidden">
@@ -210,7 +411,18 @@ export default function DashboardClient({
           </div>
         )}
 
-        <Stats stats={stats} isLoading={isLoading} />
+        <div>
+          <Stats
+            statNames={firstStatsGroup}
+            stats={dashboardStats.slice(0, 4)}
+            isLoading={isLoadingStats}
+          />
+          <Stats
+            statNames={secondStatsGroup}
+            stats={dashboardStats.slice(4)}
+            isLoading={isLoadingStats}
+          />
+        </div>
 
         <div className="space-y-16 py-16 xl:space-y-20">
           {/* Recent Activity section */}
@@ -227,8 +439,10 @@ export default function DashboardClient({
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-none">
                   <RecentActivity
-                    transactions={transactions}
-                    isLoading={isLoading}
+                    invoices={groupedInvoices}
+                    isLoading={isLoadingInvoices}
+                    userAddress={address || ""}
+                    userProfiles={userProfiles}
                   />
                 </div>
               </div>
