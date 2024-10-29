@@ -8,7 +8,7 @@ import DashboardClient from "./DashboardClient";
 
 async function getDashboardData() {
   const cookieStore = cookies();
-  const langCookie = cookieStore.get("NEXT_LOCALE");
+  const langCookie = (await cookieStore).get("NEXT_LOCALE");
   const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
   const dictionary = await getDictionary(lang);
 

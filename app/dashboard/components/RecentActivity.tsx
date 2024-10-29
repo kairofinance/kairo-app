@@ -81,7 +81,7 @@ const RecentActivity: React.FC<{
     if (profile && profile.username && profile.pfp) {
       return (
         <div className="flex items-center">
-          <span className="mr-1 text-zinc-500 dark:text-zinc-400">
+          <span className="mr-1 text-zinc-500 dark:text-zinc-400 font-semibold">
             {prefix}
           </span>
           <Image
@@ -119,7 +119,7 @@ const RecentActivity: React.FC<{
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-      timeZone: "UTC", // Ensure we're using UTC time
+      timeZone: "UTC",
     });
   }
 
@@ -190,7 +190,7 @@ const RecentActivity: React.FC<{
         ) : (
           invoices.map((day) => (
             <React.Fragment key={day.dateTime}>
-              <tr className="text-sm leading-6 text-zinc-900 dark:text-white">
+              <tr className="text-sm leading-6 text-kairo-black-a20 dark:text-kairo-white">
                 <th
                   scope="colgroup"
                   colSpan={3}
@@ -225,7 +225,7 @@ const RecentActivity: React.FC<{
                         )}
                         <div className="flex-auto">
                           <div className="flex items-start gap-x-3">
-                            <div className="flex items-center text-sm font-medium leading-6 text-zinc-900 dark:text-white">
+                            <div className="flex items-center text-sm font-semibold leading-6 text-kairo-black-a20 dark:text-kairo-white">
                               {invoice.tokenAddress && (
                                 <Image
                                   src={`/tokens/${getTokenSymbol(
@@ -258,11 +258,11 @@ const RecentActivity: React.FC<{
                           </div>
                         </div>
                       </div>
-                      <div className="absolute bottom-0 right-full h-px w-screen bg-zinc-100 dark:bg-zinc-700" />
-                      <div className="absolute bottom-0 left-0 h-px w-screen bg-zinc-100 dark:bg-zinc-700" />
+                      <div className="absolute bottom-0 right-full h-px w-screen bg-kairo-white dark:bg-zinc-700" />
+                      <div className="absolute bottom-0 left-0 h-px w-screen bg-kairo-white dark:bg-zinc-700" />
                     </td>
                     <td className="hidden py-5 pr-6 sm:table-cell">
-                      <div className="text-sm leading-6 text-zinc-900 dark:text-white">
+                      <div className="text-sm leading-6 text-kairo-black-a20 dark:text-kairo-white">
                         {isUserIssuer
                           ? renderUserInfo(invoice.clientAddress, false)
                           : renderUserInfo(invoice.issuerAddress, true)}
@@ -281,10 +281,9 @@ const RecentActivity: React.FC<{
                       <div className="flex justify-end">
                         <a
                           href={`/invoice/${invoice.invoiceId}`}
-                          className="text-sm font-medium leading-6 text-red-600 hover:text-red-500 dark:text-red-400 dark:hover:text-red-300"
+                          className="text-sm font-medium leading-6 text-red-600 hover:text-kairo-green dark:text-kairo-green-a20 dark:hover:text-kairo-green-a80"
                         >
-                          View
-                          <span className="hidden sm:inline"> invoice</span>
+                          View Invoice
                           <span className="sr-only">
                             , invoice #{DOMPurify.sanitize(invoice.invoiceId)}
                           </span>

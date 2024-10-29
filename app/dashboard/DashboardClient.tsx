@@ -383,7 +383,7 @@ export default function DashboardClient({
       <div className="relative isolate overflow-hidden">
         <header className="pb-4 pt-6 sm:pb-6">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
-            <h1 className="text-base font-semibold leading-7 text-zinc-900 dark:text-white">
+            <h1 className="text-base font-semibold leading-7 text-kairo-black-a20 dark:text-kairo-white">
               {dictionary.dashboard.overview}
             </h1>
             <div className="order-last flex w-full gap-x-8 text-sm font-semibold leading-6 sm:order-none sm:w-auto sm:border-l sm:border-zinc-200 sm:pl-6 sm:leading-7">
@@ -393,8 +393,8 @@ export default function DashboardClient({
                   onClick={() => handlePeriodChange(item.period)}
                   className={
                     period === item.period
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-zinc-700 hover:text-red-600 dark:text-zinc-300 dark:hover:text-red-400"
+                      ? "text-red-600 dark:text-kairo-green-a20"
+                      : "text-zinc-700 hover:text-red-600 dark:text-zinc-300 dark:hover:text-kairo-green-a20"
                   }
                 >
                   {dictionary.dashboard.periods[item.period]}
@@ -406,7 +406,7 @@ export default function DashboardClient({
 
         {error && (
           <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 dark:bg-red-900 dark:border-red-700 dark:text-red-100"
+            className="bg-kairo-green-a80 border border-kairo-green-a20 text-red-700 px-4 py-3 rounded relative mb-4 dark:bg-red-900 dark:border-red-700 dark:text-kairo-green-a80"
             role="alert"
           >
             <strong className="font-bold">Error: </strong>
@@ -431,7 +431,7 @@ export default function DashboardClient({
           {/* Recent Activity section */}
           <div>
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <h2 className="mx-auto max-w-2xl text-base font-semibold leading-6 text-zinc-900 dark:text-white lg:mx-0 lg:max-w-none">
+              <h2 className="mx-auto max-w-2xl text-base font-semibold leading-6 text-kairo-black-a20 dark:text-kairo-white lg:mx-0 lg:max-w-none">
                 {dictionary.dashboard.recentActivity.title}
               </h2>
               <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">

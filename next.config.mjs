@@ -2,12 +2,29 @@
 const nextConfig = {
   reactStrictMode: true,
   webpack: (config) => {
-    config.resolve.fallback = { fs: false, net: false, tls: false };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      canvas: false,
+    };
     return config;
   },
-  transpilePackages: ["wagmi", "viem", "connectkit"],
+  experimental: {
+    optimizeCss: true,
+    esmExternals: true,
+  },
+  transpilePackages: ["@react-pdf/renderer"],
+  compiler: {
+    styledComponents: true,
+  },
   images: {
-    domains: ["images.unsplash.com", "lottie.host"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+        port: "",
+        pathname: "**",
+      },
+    ],
   },
 };
 

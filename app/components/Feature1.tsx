@@ -42,13 +42,13 @@ export default function Feature1({ dictionary }: Feature1Props) {
     <div className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base font-semibold leading-7 text-red-600 dark:text-red-400">
+          <h2 className="text-base font-semibold leading-7 text-red-600 dark:text-kairo-green-a20">
             {t.forSmartInvestor || "For the smart investor"}
           </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-4xl">
+          <p className="mt-2 text-3xl font-bold tracking-tight text-kairo-black-a20 dark:text-kairo-white sm:text-4xl">
             {t.simplifyJourney || "Simplify Your DeFi Journey"}
           </p>
-          <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-200">
+          <p className="mt-6 text-lg leading-8 text-kairo-black-a40 dark:text-zinc-200">
             {t.description ||
               "Grove tokens are designed to give you access to diversified, yield-bearing assets with minimal effort. By holding our tokens, you gain exposure to a wide range of DeFi opportunities, including lending, staking, and liquidity provision."}
           </p>
@@ -57,19 +57,19 @@ export default function Feature1({ dictionary }: Feature1Props) {
           <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
             {features.map((feature) => (
               <div key={feature.name} className="flex flex-col">
-                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-zinc-900 dark:text-white">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-kairo-black-a20 dark:text-kairo-white">
                   <feature.icon
                     aria-hidden="true"
-                    className="h-5 w-5 flex-none text-red-500 dark:text-red-400"
+                    className="h-5 w-5 flex-none text-kairo-green dark:text-kairo-green-a20"
                   />
                   {feature.name}
                 </dt>
-                <div className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600 dark:text-zinc-300">
+                <div className="mt-4 flex flex-auto flex-col text-base leading-7 text-kairo-black-a40 dark:text-zinc-300">
                   <p className="flex-auto">{feature.description}</p>
                   <p className="mt-6">
                     <a
                       href={feature.href}
-                      className="text-sm font-semibold leading-6 text-red-700 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                      className="text-sm font-semibold leading-6 text-red-700 dark:text-kairo-green-a20 hover:text-red-600 dark:hover:text-kairo-green-a80"
                     >
                       {t.learnMore || "Learn more"}{" "}
                       <span aria-hidden="true">→</span>

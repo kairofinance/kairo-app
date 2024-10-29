@@ -18,8 +18,10 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const bgColor = type === "success" ? "bg-green-50" : "bg-red-50";
-  const textColor = type === "success" ? "text-green-800" : "text-red-800";
-  const iconColor = type === "success" ? "text-green-400" : "text-red-400";
+  const textColor =
+    type === "success" ? "text-green-800" : "text-kairo-green-a20";
+  const iconColor =
+    type === "success" ? "text-green-400" : "text-kairo-green-a20";
 
   useEffect(() => {
     setIsVisible(true);

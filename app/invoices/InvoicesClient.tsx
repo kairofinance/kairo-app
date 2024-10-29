@@ -218,10 +218,10 @@ const InvoicesClient: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="border-b border-zinc-200 dark:border-zinc-600 bg-white dark:bg-zinc-800/60 px-4 py-5 sm:px-6 rounded-md mb-8">
+      <div className="border-b border-zinc-200 dark:border-zinc-600 bg-kairo-white dark:bg-zinc-800/60 px-4 py-5 sm:px-6 rounded-md mb-8">
         <div className="-ml-4 -mt-4 flex flex-wrap items-center justify-between sm:flex-nowrap">
           <div className="ml-4 mt-4">
-            <h3 className="text-base font-semibold leading-6 dark:text-zinc-100 text-zinc-900">
+            <h3 className="text-base font-semibold leading-6 dark:text-kairo-white text-kairo-black-a20">
               Invoices
             </h3>
             <p className="mt-1 text-sm text-zinc-500">
@@ -231,7 +231,7 @@ const InvoicesClient: React.FC = () => {
           <div className="ml-4 mt-4 flex-shrink-0">
             <Link
               href="/"
-              className="relative inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              className="relative inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-kairo-white shadow-sm hover:bg-kairo-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
             >
               Create new invoice
             </Link>
@@ -266,7 +266,7 @@ const InvoicesClient: React.FC = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-200 dark:divide-zinc-700">
+            <tbody className="bg-kairo-white dark:bg-kairo-black-a20 divide-y divide-zinc-200 dark:divide-zinc-700">
               {invoices.map((invoice) => {
                 const tokenInfo = getTokenInfo(invoice.tokenAddress);
                 const isOverdue = new Date(invoice.dueDate) < new Date();
@@ -275,7 +275,7 @@ const InvoicesClient: React.FC = () => {
                   address?.toLowerCase();
                 return (
                   <tr key={invoice.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-kairo-black-a20 dark:text-kairo-white">
                       {invoice.invoiceId}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500">
@@ -304,7 +304,7 @@ const InvoicesClient: React.FC = () => {
                       <div className="flex items-center">
                         {new Date(invoice.dueDate).toLocaleDateString()}
                         {isOverdue && (
-                          <ExclamationCircleIcon className="h-5 w-5 text-red-500 ml-2" />
+                          <ExclamationCircleIcon className="h-5 w-5 text-kairo-green ml-2" />
                         )}
                       </div>
                     </td>
@@ -319,7 +319,7 @@ const InvoicesClient: React.FC = () => {
                       {isIncoming && !invoice.paid && (
                         <button
                           onClick={() => handlePayInvoice(invoice)}
-                          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                          className="bg-red-600 hover:bg-red-700 text-kairo-white font-bold py-2 px-4 rounded"
                         >
                           Pay
                         </button>

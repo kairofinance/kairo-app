@@ -124,7 +124,7 @@ export default function CreateInvoice() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+    <div className="max-w-2xl mx-auto mt-10 p-6 bg-kairo-white rounded-lg shadow-md">
       <h1 className="text-2xl font-bold mb-6 text-zinc-800">
         Create New Invoice
       </h1>
@@ -143,7 +143,7 @@ export default function CreateInvoice() {
             onChange={handleInputChange}
             placeholder="0x..."
             required
-            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-kairo-green focus:border-kairo-green"
           />
         </div>
         <div>
@@ -160,7 +160,7 @@ export default function CreateInvoice() {
             onChange={handleInputChange}
             placeholder="0x..."
             required
-            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-kairo-green focus:border-kairo-green"
           />
         </div>
         <div>
@@ -178,7 +178,7 @@ export default function CreateInvoice() {
             onChange={handleInputChange}
             placeholder="0.00"
             required
-            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-kairo-green focus:border-kairo-green"
           />
         </div>
         <div>
@@ -195,12 +195,12 @@ export default function CreateInvoice() {
             value={formData.dueDate}
             onChange={handleInputChange}
             required
-            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+            className="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-kairo-green focus:border-kairo-green"
           />
         </div>
         <button
           type="submit"
-          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-kairo-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kairo-green"
         >
           Create Invoice
         </button>

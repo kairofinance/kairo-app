@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Disclosure,
   DisclosureButton,
@@ -9,25 +9,20 @@ import {
   MenuItem,
   MenuItems,
 } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { MoonIcon, SunIcon, LanguageIcon } from "@heroicons/react/24/solid";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { MoonIcon, SunIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PlusSmallIcon } from "@heroicons/react/24/solid";
-import { useAppKit } from "@reown/appkit/react";
-import { useAccount, useConnect, useEnsName, useDisconnect } from "wagmi";
-import DOMPurify from "isomorphic-dompurify";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import Cookies from "js-cookie";
 import { getDictionary } from "@/utils/get-dictionary";
 import { Locale } from "@/utils/i18n-config";
-import AnimatedButton from "./AnimatedButton";
 
 interface NavbarProps {
   currentLang: Locale;
 }
 
-// @ts-ignore
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
 }
@@ -36,17 +31,9 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
   const [dictionary, setDictionary] = React.useState<any>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const appKit = useAppKit();
   const { address, isConnected } = useAccount();
-  const {
-    data: ensName,
-    isLoading: ensLoading,
-    isError: ensError,
-  } = useEnsName({ address });
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const [isClient, setIsClient] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -60,8 +47,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
 
   useEffect(() => {
     setIsMounted(true);
-    setIsClient(true);
-    // Check for dark mode preference in cookie on component mount
     const darkModePref = Cookies.get("darkMode");
     setDarkMode(darkModePref === "true");
     if (darkModePref === "true") {
@@ -69,38 +54,17 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
     }
   }, []);
 
-  useEffect(() => {
-    console.log("Address:", address);
-    console.log("ENS Name:", ensName);
-    console.log("ENS Loading:", ensLoading);
-    console.log("ENS Error:", ensError);
-  }, [address, ensName, ensLoading, ensError]);
-
-  const handleConnect = useCallback(async () => {
+  const handleSignIn = async () => {
     if (!isConnected) {
-      setIsLoading(true);
       try {
-        await appKit.open(); // Use open() instead of connect()
+        await connect({ connector: connectors[0] }); // Use the first available connector
       } catch (error) {
-        console.error("Connection error:", error);
-      } finally {
-        setIsLoading(false);
+        console.error("Error connecting wallet:", error);
       }
     }
-  }, [appKit, isConnected]);
+  };
 
-  const handleSignOut = useCallback(async () => {
-    try {
-      disconnect();
-      // You might want to reset some app state here
-      // For example: resetAppState();
-    } catch (error) {
-      console.error("Error during sign out:", error);
-      // Optionally, show an error message to the user
-    }
-  }, [disconnect]);
-
-  const toggleDarkMode = useCallback(() => {
+  const toggleDarkMode = () => {
     setDarkMode((prevMode) => {
       const newMode = !prevMode;
       Cookies.set("darkMode", newMode.toString(), { expires: 365 });
@@ -111,52 +75,26 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
       }
       return newMode;
     });
-  }, []);
-
-  const handleLanguageChange = (newLang: string) => {
-    Cookies.set("NEXT_LOCALE", newLang, { expires: 365 });
-    router.refresh(); // This will trigger a re-render of the page with the new language
   };
 
-  const getLogoText = useCallback((lang: string) => {
-    return lang === "ja" ? "かいろ" : "Kairo";
-  }, []);
-
-  const sanitizedDisplayAddress = useMemo(() => {
-    if (ensLoading) return "Loading...";
-    if (ensError) {
-      console.error("Error fetching ENS name:", ensError);
-      return address
-        ? `${address.slice(0, 6)}...${address.slice(-4)}`
-        : "Connected";
-    }
-
-    const displayText =
-      ensName ||
-      (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Connected");
-
-    return typeof window === "undefined"
-      ? displayText
-      : DOMPurify.sanitize(displayText);
-  }, [ensName, address, ensLoading, ensError]);
+  const handleSignOut = () => {
+    disconnect();
+  };
 
   if (!isMounted || !dictionary) {
-    return null; // or a loading placeholder
+    return null;
   }
 
-  // Move userNavigation inside the component
   const userNavigation = [
     {
       name: dictionary.navbar.yourProfile,
       href: address ? `/${address}` : "#",
-      onClick: address ? undefined : handleConnect,
     },
     { name: dictionary.navbar.settings, href: "#" },
     { name: dictionary.navbar.signOut, href: "#", onClick: handleSignOut },
   ];
 
   const navigation = [
-    { name: "Invoices", href: "/invoices" },
     { name: dictionary.navbar.dashboard, href: "/dashboard" },
   ];
 
@@ -166,29 +104,22 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
     href: `${item.href}`,
   }));
 
-  const languages = [
-    { code: "en", name: "English" },
-    { code: "fr", name: "Français" },
-    { code: "es", name: "Español" },
-    { code: "pt", name: "Português" },
-    { code: "ja", name: "日本語" },
-    { code: "zh", name: "中文" },
-    { code: "de", name: "Deutsch" },
-  ];
-
   return (
     <Disclosure as="nav" className="dark:bg-opacity-30 border-b-1 shadow-sm">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between">
+          {/* Left side with logo and navigation */}
           <div className="flex">
             <Link
               href={`/`}
               className="flex flex-shrink-0 items-center place-items-center gap-2"
             >
-              <div className="h-4 w-4 bg-red-500" />
-              <div className="font-bold text-xl text-zinc-900 dark:text-white">
-                {getLogoText(currentLang)}
-              </div>
+              <Image
+                src="/kairo-dark.svg"
+                alt="kairoLogo"
+                width={100}
+                height={30}
+              />
             </Link>
             <div className="hidden md:-my-px md:ml-6 md:flex md:space-x-8">
               {navigationWithCurrent.map((item) => (
@@ -198,7 +129,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                   aria-current={item.current ? "page" : undefined}
                   className={classNames(
                     item.current
-                      ? "border-red-500 dark:text-white text-zinc-900"
+                      ? "border-kairo-green dark:text-kairo-white text-kairo-black-a20"
                       : "border-transparent text-zinc-500 dark:text-zinc-300/60 dark:hover:text-zinc-300 hover:text-zinc-700",
                     "inline-flex items-center border-b-2 px-1 pt-1 text-base font-medium"
                   )}
@@ -208,41 +139,13 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
               ))}
             </div>
           </div>
-          <div className="hidden md:ml-6 md:flex md:items-center gap-4">
-            {/* Language switcher */}
-            {/*<Menu as="div" className="relative ml-3">
-              <div>
-                <MenuButton className="rounded-full p-1 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0">
-                  <LanguageIcon className="h-6 w-6" aria-hidden="true" />
-                </MenuButton>
-              </div>
-              <MenuItems
-                transition
-                className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-zinc-700 py-1 shadow-lg ring-1 ring-black ring-opacity-5 transition focus:outline-none data-[closed]:scale-95 data-[closed]:transform data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-75 data-[enter]:ease-out data-[leave]:ease-in"
-              >
-                {languages.map((language) => (
-                  <MenuItem key={language.code}>
-                    {({ active }) => (
-                      <button
-                        onClick={() => handleLanguageChange(language.code)}
-                        className={classNames(
-                          active ? "bg-zinc-100 dark:bg-zinc-600" : "",
-                          currentLang === language.code ? "font-bold" : "",
-                          "block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 w-full text-left"
-                        )}
-                      >
-                        {language.name}
-                      </button>
-                    )}
-                  </MenuItem>
-                ))}
-              </MenuItems>
-            </Menu> */}
 
-            {/* Dark mode toggle button */}
+          {/* Right side with actions */}
+          <div className="hidden md:ml-6 md:flex md:items-center gap-4">
+            {/* Dark mode toggle */}
             <button
               onClick={toggleDarkMode}
-              className="rounded-full p-1 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-0"
+              className="rounded-full p-1 text-kairo-black-a40 dark:text-zinc-300 hover:bg-kairo-white dark:hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-kairo-green focus:ring-offset-0"
             >
               {darkMode ? (
                 <SunIcon className="h-6 w-6" aria-hidden="true" />
@@ -250,66 +153,60 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                 <MoonIcon className="h-6 w-6" aria-hidden="true" />
               )}
             </button>
-            {/* Profile dropdown */}
-            <div key="wallet">
-              {isClient &&
-                (isConnected ? (
-                  <Menu as="div" className="relative ml-3">
-                    <div>
-                      <MenuButton className="relative rounded-full dark:hover:bg-zinc-800/80 px-3 py-2 gap-2 bg-zinc-800/50 flex text-sm focus:outline-none shadow-md  focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ">
-                        <span className="absolute -inset-1.5" />
-                        <span className="sr-only">Open user menu</span>{" "}
-                        <Image
-                          width="24"
-                          height="24"
-                          className="w-6 h-6 rounded-full bg-white my-auto"
-                          src="/default-profile.png"
-                          alt="profile"
-                        />
-                        <span
-                          className="ml-auto flex items-center gap-x-1 my-auto text-sm font-semibold text-zinc-600 dark:text-zinc-100"
-                          dangerouslySetInnerHTML={{
-                            __html: sanitizedDisplayAddress,
-                          }}
-                        />
-                      </MenuButton>
-                    </div>
-                    <MenuItems
-                      transition
-                      className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-white dark:text-zinc-100 dark:bg-zinc-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                    >
-                      {userNavigation.map((item) => (
-                        <Menu.Item key={item.name}>
-                          {({ active }) => (
-                            <Link
-                              href={item.href}
-                              onClick={item.onClick}
-                              className={classNames(
-                                active ? "bg-zinc-100 dark:bg-zinc-800" : "",
-                                "block px-4 py-2 text-sm dark:text-zinc-100 text-zinc-700"
-                              )}
-                            >
-                              {item.name}
-                            </Link>
+
+            {/* Profile/Connect Button */}
+            {isConnected ? (
+              <Menu as="div" className="relative ml-3">
+                <div>
+                  <MenuButton className="relative rounded-full dark:hover:bg-zinc-800/80 px-3 py-2 gap-2 bg-zinc-800/50 flex text-sm focus:outline-none shadow-md focus:ring-2 focus:ring-kairo-green focus:ring-offset-3">
+                    <span className="absolute -inset-1.5" />
+                    <span className="sr-only">Open user menu</span>
+                    <Image
+                      width="24"
+                      height="24"
+                      className="w-6 h-6 rounded-full bg-kairo-white my-auto"
+                      src="/default-profile.png"
+                      alt="profile"
+                    />
+                    <span className="ml-auto flex items-center gap-x-1 my-auto text-sm font-semibold text-kairo-black-a40 dark:text-kairo-white">
+                      {address
+                        ? `${address.slice(0, 6)}...${address.slice(-4)}`
+                        : "Connected"}
+                    </span>
+                  </MenuButton>
+                </div>
+                <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-kairo-white dark:text-kairo-white dark:bg-zinc-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                  {userNavigation.map((item) => (
+                    <MenuItem key={item.name}>
+                      {({ active }) => (
+                        <Link
+                          href={item.href}
+                          onClick={item.onClick}
+                          className={classNames(
+                            active ? "bg-kairo-white dark:bg-zinc-800" : "",
+                            "block px-4 py-2 text-sm dark:text-kairo-white text-zinc-700"
                           )}
-                        </Menu.Item>
-                      ))}
-                    </MenuItems>
-                  </Menu>
-                ) : (
-                  <button
-                    onClick={handleConnect}
-                    disabled={isLoading}
-                    className="ml-auto flex items-center gap-x-1 rounded-full text-red-500 bg-red-800 bg-opacity-30 px-3 py-2 text-sm font-semibold shadow-lg hover:bg-red-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-                  >
-                    {isLoading ? "Connecting..." : "Connect Wallet"}
-                  </button>
-                ))}
-            </div>
+                        >
+                          {item.name}
+                        </Link>
+                      )}
+                    </MenuItem>
+                  ))}
+                </MenuItems>
+              </Menu>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="ml-auto flex items-center gap-x-1 rounded-full text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-2 text-sm font-semibold shadow-lg hover:bg-red-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
+                Connect Wallet
+              </button>
+            )}
           </div>
+
+          {/* Mobile menu button */}
           <div className="-mr-2 flex items-center md:hidden">
-            {/* Mobile menu button */}
-            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md bg-white dark:bg-zinc-900 p-2 text-zinc-400 dark:text-zinc-100 hover:bg-zinc-100 hover:text-zinc-500 focus:outline-none focus:ring-2 ring-red-500 focus:ring-offset-2">
+            <DisclosureButton className="group relative inline-flex items-center justify-center rounded-md bg-kairo-white dark:bg-kairo-black-a20 p-2 text-zinc-400 dark:text-kairo-white hover:bg-kairo-white hover:text-zinc-500 focus:outline-none focus:ring-2 ring-kairo-green focus:ring-offset-2">
               <span className="absolute -inset-0.5" />
               <span className="sr-only">Open main menu</span>
               <Bars3Icon
@@ -325,6 +222,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
         </div>
       </div>
 
+      {/* Mobile menu */}
       <DisclosurePanel className="md:hidden">
         <div className="space-y-1 pb-3 pt-2">
           {navigationWithCurrent.map((item) => (
@@ -334,8 +232,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
               href={item.href}
               className={classNames(
                 item.current
-                  ? "border-red-500 bg-red-50 text-red-700 dark:text-red-300 dark:bg-zinc-800"
-                  : "border-transparent text-zinc-600 dark:text-zinc-100 hover:border-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-800",
+                  ? "border-kairo-green bg-red-50 text-red-700 dark:text-kairo-green-a80 dark:bg-zinc-800"
+                  : "border-transparent text-kairo-black-a40 dark:text-kairo-white hover:border-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-800",
                 "block border-l-4 py-2 pl-3 pr-4 text-base font-medium"
               )}
               aria-current={item.current ? "page" : undefined}
@@ -346,22 +244,22 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
         </div>
         <div className="border-t border-zinc-200 dark:border-zinc-700 pb-3 pt-4">
           <div className="flex items-center px-4">
-            <div className="flex-shrink-0">
-              <div className="h-10 w-10 rounded-full bg-red-200" />
-            </div>
-            <div className="ml-3">
-              <div className="text-base font-medium text-zinc-800 dark:text-zinc-100">
-                {sanitizedDisplayAddress}
+            {isConnected ? (
+              <div className="ml-3">
+                <div className="text-base font-medium text-zinc-800 dark:text-kairo-white">
+                  {address
+                    ? `${address.slice(0, 6)}...${address.slice(-4)}`
+                    : "Connected"}
+                </div>
               </div>
-            </div>
-            <button
-              type="button"
-              className="relative ml-auto flex-shrink-0 rounded-full p-1 bg-white text-zinc-400 hover:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-            >
-              <span className="absolute -inset-1.5" />
-              <span className="sr-only">View notifications</span>
-              <BellIcon aria-hidden="true" className="h-6 w-6" />
-            </button>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="ml-auto flex items-center gap-x-1 rounded-full text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-2 text-sm font-semibold shadow-lg hover:bg-red-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
+                Connect Wallet
+              </button>
+            )}
           </div>
           <div className="mt-3 space-y-1">
             {userNavigation.map((item) => (
@@ -369,7 +267,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
                 key={item.name}
                 as="a"
                 href={item.href}
-                className="block px-4 py-2 text-base font-medium dark:text-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                onClick={item.onClick}
+                className="block px-4 py-2 text-base font-medium dark:text-kairo-white dark:hover:bg-zinc-800 text-zinc-500 hover:bg-kairo-white hover:text-zinc-800"
               >
                 {item.name}
               </DisclosureButton>
@@ -380,7 +279,5 @@ const Navbar: React.FC<NavbarProps> = ({ currentLang }) => {
     </Disclosure>
   );
 };
-
-Navbar.displayName = "Navbar";
 
 export default Navbar;

@@ -6,9 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { z } from "zod";
 import Cookies from "js-cookie";
 
-const Spinner = () => (
-  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-);
+import Spinner from "@/components/Spinner";
 
 const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { isConnected, address } = useAccount();
@@ -132,7 +130,7 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">
-      <h1 className="text-2xl font-bold dark:text-white mb-4">
+      <h1 className="text-2xl font-bold dark:text-kairo-white mb-4">
         Authentication Required
       </h1>
       <p className="mb-4 dark:text-zinc-300">
@@ -142,7 +140,7 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
       </p>
       <button
         onClick={handleAuthentication}
-        className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        className="bg-kairo-green hover:bg-kairo-green-a40 text-kairo-black font-bold py-2 px-4 rounded"
       >
         {isConnected ? "Sign Authentication Message" : "Connect Wallet"}
       </button>

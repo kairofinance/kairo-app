@@ -8,20 +8,20 @@ type ValidLang = "en" | "fr" | "es" | "pt" | "ja" | "zh" | "de";
 
 export default async function NotFound() {
   const headersList = headers();
-  const acceptLanguage = headersList.get("accept-language");
+  const acceptLanguage = (await headersList).get("accept-language");
   const currentLang = (acceptLanguage?.split(",")[0].split("-")[0] ||
     "en") as ValidLang;
 
   const dictionary = await getDictionary(currentLang as Locale);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-none">
-      <main className="flex-grow flex flex-col items-center justify-center bg-zinc-100 dark:bg-[#141416] bg-gradient-to-t ">
+    <div className="flex flex-col min-h-screen bg-kairo-white dark:bg-none">
+      <main className="flex-grow flex flex-col items-center justify-center bg-kairo-white dark:bg-[#141416] bg-gradient-to-t ">
         <div className="text-center">
-          <h1 className="text-6xl font-bold text-zinc-800 dark:text-zinc-100 mb-4">
+          <h1 className="text-6xl font-bold text-zinc-800 dark:text-kairo-white mb-4">
             404
           </h1>
-          <h2 className="text-2xl font-semibold text-zinc-600 dark:text-zinc-300 mb-4">
+          <h2 className="text-2xl font-semibold text-kairo-black-a40 dark:text-zinc-300 mb-4">
             {dictionary?.notFound?.title || "Page Not Found"}
           </h2>
           <p className="text-xl text-zinc-500 dark:text-zinc-400 mb-8">
@@ -30,7 +30,7 @@ export default async function NotFound() {
           </p>
           <Link
             href="/"
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-300 dark:bg-red-600 dark:hover:bg-red-700"
+            className="bg-kairo-green hover:bg-red-600 text-kairo-white font-bold py-2 px-4 rounded transition duration-300 dark:bg-red-600 dark:hover:bg-red-700"
           >
             {dictionary?.notFound?.goHome || "Go Back Home"}
           </Link>

@@ -7,7 +7,7 @@ import Spinner from "@/components/Spinner";
 
 export default async function Home() {
   const cookieStore = cookies();
-  const langCookie = cookieStore.get("NEXT_LOCALE");
+  const langCookie = (await cookieStore).get("NEXT_LOCALE");
   const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
   const dictionary = await getDictionary(lang);
 

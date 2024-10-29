@@ -56,11 +56,11 @@ export default function Settings({
 
       <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
         <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <DialogPanel className="relative transform overflow-hidden rounded-lg bg-white dark:bg-zinc-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+          <DialogPanel className="relative transform overflow-hidden rounded-lg bg-kairo-white dark:bg-zinc-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
             <div className="absolute left-0 top-0 hidden pl-4 pt-4 sm:block">
               <button
                 type="button"
-                className="rounded-md bg-white dark:bg-zinc-800 text-zinc-400 hover:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="rounded-md bg-kairo-white dark:bg-zinc-800 text-zinc-400 hover:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-kairo-green focus:ring-offset-2"
                 onClick={onClose}
               >
                 <span className="sr-only">Close</span>
@@ -71,7 +71,7 @@ export default function Settings({
               <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
                 <DialogTitle
                   as="h3"
-                  className="text-base font-semibold leading-6 text-zinc-900 dark:text-white"
+                  className="text-base font-semibold leading-6 text-kairo-black-a20 dark:text-kairo-white"
                 >
                   Account Settings
                 </DialogTitle>
@@ -97,7 +97,7 @@ export default function Settings({
                       <div>
                         <button
                           type="button"
-                          className="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-white/20"
+                          className="rounded-md bg-kairo-white/10 px-3 py-2 text-sm font-semibold text-kairo-white shadow-sm hover:bg-kairo-white/20"
                           onClick={() => fileInputRef.current?.click()}
                         >
                           Change avatar
@@ -131,7 +131,7 @@ export default function Settings({
                       <div>
                         <button
                           type="button"
-                          className="rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-white/20"
+                          className="rounded-md bg-kairo-white/10 px-3 py-2 text-sm font-semibold text-kairo-white shadow-sm hover:bg-kairo-white/20"
                           onClick={() => bannerFileInputRef.current?.click()}
                         >
                           Change banner
@@ -152,7 +152,7 @@ export default function Settings({
                     <div className="col-span-full">
                       <label
                         htmlFor="username"
-                        className="block text-sm font-medium leading-6 text-white"
+                        className="block text-sm font-medium leading-6 text-kairo-white"
                       >
                         Username
                       </label>
@@ -163,7 +163,7 @@ export default function Settings({
                           type="text"
                           value={editedProfileData.username}
                           onChange={handleInputChange}
-                          className="block w-full rounded-md px-2 border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-red-500 sm:text-sm sm:leading-6"
+                          className="block w-full rounded-md px-2 border-0 bg-kairo-white/5 py-1.5 text-kairo-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-kairo-green sm:text-sm sm:leading-6"
                         />
                       </div>
                     </div>
@@ -171,7 +171,7 @@ export default function Settings({
                     <div className="col-span-full">
                       <label
                         htmlFor="bio"
-                        className="block text-sm font-medium leading-6 text-white"
+                        className="block text-sm font-medium leading-6 text-kairo-white"
                       >
                         Bio
                       </label>
@@ -182,7 +182,7 @@ export default function Settings({
                           rows={3}
                           value={editedProfileData.bio}
                           onChange={handleInputChange}
-                          className="block w-full rounded-md px-2 border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-red-500 sm:text-sm sm:leading-6 resize-none"
+                          className="block w-full rounded-md px-2 border-0 bg-kairo-white/5 py-1.5 text-kairo-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-kairo-green sm:text-sm sm:leading-6 resize-none"
                         />
                       </div>
                     </div>
@@ -190,7 +190,7 @@ export default function Settings({
                     <div className="col-span-full">
                       <label
                         htmlFor="link"
-                        className="block text-sm font-medium leading-6 text-white"
+                        className="block text-sm font-medium leading-6 text-kairo-white"
                       >
                         Profile Link
                       </label>
@@ -201,7 +201,7 @@ export default function Settings({
                           type="url"
                           value={editedProfileData.link}
                           onChange={handleInputChange}
-                          className="block w-full rounded-md px-2 border-0 bg-white/5 py-1.5 text-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-red-500 sm:text-sm sm:leading-6"
+                          className="block w-full rounded-md px-2 border-0 bg-kairo-white/5 py-1.5 text-kairo-white shadow-sm ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-inset focus:ring-kairo-green sm:text-sm sm:leading-6"
                           placeholder="https://example.com"
                         />
                       </div>
@@ -210,13 +210,13 @@ export default function Settings({
                     <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                       <button
                         type="submit"
-                        className="inline-flex w-full justify-center rounded-md bg-red-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 sm:ml-3 sm:w-auto"
+                        className="inline-flex w-full justify-center rounded-md bg-kairo-green px-3 py-2 text-sm font-semibold text-kairo-white shadow-sm hover:bg-kairo-green-a20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kairo-green sm:ml-3 sm:w-auto"
                       >
                         {t("Save")}
                       </button>
                       <button
                         type="button"
-                        className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 sm:mt-0 sm:w-auto"
+                        className="mt-3 inline-flex w-full justify-center rounded-md bg-kairo-white px-3 py-2 text-sm font-semibold text-kairo-black-a20 shadow-sm ring-1 ring-inset ring-zinc-300 hover:bg-zinc-50 sm:mt-0 sm:w-auto"
                         onClick={onClose}
                       >
                         {t("Cancel")}

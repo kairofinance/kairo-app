@@ -131,7 +131,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-sm rounded bg-white p-4">
+        <Dialog.Panel className="mx-auto max-w-sm rounded bg-kairo-white p-4">
           <ReactCrop
             crop={crop}
             onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -157,7 +157,7 @@ const ImageCropModal: React.FC<ImageCropModalProps> = ({
             </button>
             <button
               onClick={handleCropComplete}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-blue-500 text-kairo-white rounded hover:bg-blue-600"
             >
               Crop
             </button>

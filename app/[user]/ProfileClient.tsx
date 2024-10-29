@@ -97,6 +97,9 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
         }
         const data = await response.json();
         console.log("Received user data:", data);
+        if (!data.user) {
+          throw new Error("User data not found in the response");
+        }
         setUser(data.user);
 
         if (data.user.profile) {
@@ -151,7 +154,11 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
         console.log("Profile fetched and set");
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        setError("Failed to fetch user profile. Please try again later.");
+        setError(
+          `Failed to fetch user profile: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
       } finally {
         setIsLoading(false);
       }
@@ -315,16 +322,25 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       });
   };
 
-  if (isLoading || isEnsLoading) {
+  if (isLoading) {
     return <Spinner />;
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="text-center p-2 flex place-items-center mx-auto place-content-center bg-kairo-green-a80 border border-kairo-green-a20 text-kairo-black">
+        <h2 className="text-lg font-bold mr-2">Error: </h2>
+        <p>{error}</p>
+      </div>
+    );
   }
 
   if (!user) {
-    return <div>User not found</div>;
+    return (
+      <div className="text-center p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+        <p>User not found. Please check the address and try again.</p>
+      </div>
+    );
   }
 
   return (
@@ -340,16 +356,25 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
         <div className="relative">
           <div className="w-full shadow-md h-48 overflow-hidden relative">
             {profileData.bannerPicture &&
-              profileData.bannerPicture !== "/default-banner.png" && (
-                <Image
-                  src={profileData.bannerPicture.replace(/^\//, "")} // Remove leading slash if present
-                  alt="Profile Banner"
-                  fill
-                  style={{ objectFit: "cover" }}
-                  quality={100}
-                  priority
-                />
-              )}
+            profileData.bannerPicture !== "/default-banner.png" ? (
+              <Image
+                src={profileData.bannerPicture.replace(/^\//, "")} // Remove leading slash if present
+                alt="Profile Banner"
+                fill
+                style={{ objectFit: "cover" }}
+                quality={100}
+                priority
+              />
+            ) : (
+              <Image
+                src={profileData.bannerPicture} // Remove leading slash if present
+                alt="Profile Banner"
+                fill
+                style={{ objectFit: "cover" }}
+                quality={100}
+                priority
+              />
+            )}
           </div>
         </div>
         <div className="space-y-8">
@@ -360,7 +385,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsSettingsOpen(true)}
-                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600/80 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-semibold rounded-md text-kairo-black bg-kairo-green hover:bg-kairo-green-a60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kairo-green"
                   >
                     <CogIcon className="h-5 w-5 mr-2" aria-hidden="true" />
                     {t("Settings")}
@@ -369,22 +394,30 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
               </div>
               <div className="relative group rounded-full ml-3">
                 {profileData.profilePicture &&
-                  profileData.profilePicture !== "/default-profile.png" && (
-                    <Image
-                      src={profileData.profilePicture.replace(/^\//, "")} // Remove leading slash if present
-                      alt="Profile"
-                      width={120}
-                      height={120}
-                      className="rounded-full outline-[5px] outline outline-[#0e0e0e]"
-                    />
-                  )}
-                <h1 className="text-xl font-bold mt-5 text-zinc-900 dark:text-zinc-100">
+                profileData.profilePicture !== "/default-profile.png" ? (
+                  <Image
+                    src={profileData.profilePicture.replace(/^\//, "")} // Remove leading slash if present
+                    alt="Profile"
+                    width={120}
+                    height={120}
+                    className="rounded-full outline-[5px] outline outline-kairo-black bg-kairo-white"
+                  />
+                ) : (
+                  <Image
+                    src={profileData.profilePicture} // Remove leading slash if present
+                    alt="Profile"
+                    width={120}
+                    height={120}
+                    className="rounded-full outline-[5px] outline outline-kairo-black bg-kairo-white"
+                  />
+                )}
+                <h1 className="text-xl font-bold mt-5 text-kairo-black-a20 dark:text-kairo-white">
                   {profileData.username || address}
                 </h1>
-                <h2 className="text-sm mt-1 font-medium text-zinc-600 dark:text-zinc-400">
+                <h2 className="text-sm mt-1 font-medium text-kairo-black-a40 dark:text-zinc-400">
                   @{address}
                 </h2>
-                <p className="text-base mt-4 text-zinc-800 dark:text-zinc-100">
+                <p className="text-base mt-4 text-zinc-800 dark:text-kairo-white">
                   {profileData.bio || "No bio available"}
                 </p>
                 {profileData.link && (
@@ -392,7 +425,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
                     href={profileData.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center mt-5 text-md text-red-500 hover:text-red-600"
+                    className="flex items-center mt-5 text-md text-kairo-green hover:text-red-600"
                   >
                     <LinkIcon className="h-5 w-5 mr-2 text-zinc-500" />
                     {new URL(profileData.link).hostname}
@@ -401,7 +434,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
               </div>
             </div>
             {imageError && (
-              <p className="mt-2 text-sm text-red-500">{imageError}</p>
+              <p className="mt-2 text-sm text-kairo-green">{imageError}</p>
             )}
           </div>
         </div>

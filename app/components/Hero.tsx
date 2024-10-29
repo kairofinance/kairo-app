@@ -297,20 +297,20 @@ export default function Hero({ lang, dictionary }: HeroProps) {
         <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:flex lg:items-center lg:gap-x-10 lg:px-8 lg:py-40">
           <div className="mx-auto max-w-2xl lg:mx-0 lg:flex-auto">
             <motion.div className="flex" variants={fadeUpVariant} custom={1}>
-              <div className="relative flex items-center gap-x-4 px-4 py-2 text-sm leading-6 dark:text-red-500 bg-red-800 bg-opacity-30 rounded-full text-zinc-600">
-                <span className="font-semibold  dark:text-red-500 ">
+              <div className="relative flex items-center gap-x-4 px-4 py-2 text-sm leading-6 dark:text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full text-kairo-black-a40">
+                <span className="font-semibold  dark:text-kairo-green ">
                   {t.beta || "Testnet"}
                 </span>
                 <span
                   aria-hidden="true"
-                  className="h-4 w-px bg-zinc-400/10 dark:bg-zinc-900/10 dark:bg-red-500"
+                  className="h-4 w-px bg-zinc-400/10 dark:bg-kairo-green"
                 />
                 <a href="/dashboard" className="flex items-center gap-x-1">
                   <span aria-hidden="true" className="absolute inset-0" />
                   {t.liveNow || "Live Now"}
                   <ChevronRightIcon
                     aria-hidden="true"
-                    className="-mr-2 h-5 w-5 text-zinc-400 dark:text-red-500"
+                    className="-mr-2 h-5 w-5 text-zinc-400 dark:text-kairo-green"
                   />
                 </a>
               </div>
@@ -321,16 +321,16 @@ export default function Hero({ lang, dictionary }: HeroProps) {
               variants={fadeUpVariant}
               custom={2}
             >
-              <h1 className="mt-4 max-w-lg text-3xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-6xl">
-                {t.title || "Create an Invoice"}
+              <h1 className="mt-4 max-w-lg text-3xl font-bold tracking-tight text-kairo-black-a20 dark:text-kairo-white sm:text-6xl">
+                {t.title || "Create an instant invoice"}
               </h1>
               <motion.div
                 className="flex gap-2 place-items-center"
                 initial="initial"
                 animate="animate"
               >
-                <ArrowTrendingUpIcon className="w-4 h-4 text-red-500" />
-                <p className="text-red-500">
+                <ArrowTrendingUpIcon className="w-4 h-4 text-kairo-green" />
+                <p className="text-kairo-green">
                   1200 created in the last 24 hours
                 </p>
               </motion.div>
@@ -341,10 +341,10 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                 <div className="p-5 dark:bg-zinc-800/60 bg-zinc-400/80 rounded-lg space-y-5">
                   <div className="flex place-content-between">
                     <div className="space-y-2">
-                      <h1 className="dark:text-zinc-500 text-zinc-100  text-lg">
+                      <h1 className="dark:text-zinc-500 text-kairo-white  text-lg">
                         Amount
                         {!isValidAmount() && (
-                          <span className="text-red-500 ml-1">*</span>
+                          <span className="text-kairo-green ml-1">*</span>
                         )}
                       </h1>
                       <input
@@ -359,7 +359,7 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                       className="relative inline-block text-left my-auto"
                     >
                       <div>
-                        <Menu.Button className="p-3 cursor-pointer w-[9rem] bg-zinc-800 rounded-full my-auto flex text-lg place-items-center gap-2 text-zinc-100 font-bold">
+                        <Menu.Button className="p-3 cursor-pointer w-[9rem] bg-zinc-800 rounded-full my-auto flex text-lg place-items-center gap-2 text-kairo-white font-bold">
                           <Image
                             src={selectedToken.image}
                             width={30}
@@ -368,7 +368,7 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                             className="rounded-full"
                           />
                           <span>{selectedToken.name}</span>
-                          <ChevronDownIcon className="w-6 h-6 text-zinc-100 bg-zinc-800 ml-auto" />
+                          <ChevronDownIcon className="w-6 h-6 text-kairo-white bg-zinc-800 ml-auto" />
                         </Menu.Button>
                       </div>
                       <Transition
@@ -380,7 +380,7 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                       >
-                        <Menu.Items className="absolute z-50 right-0 mt-2 w-[10rem] origin-top-right divide-y divide-zinc-100 rounded-md bg-white dark:text-zinc-100 dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Menu.Items className="absolute z-50 right-0 mt-2 w-[10rem] origin-top-right divide-y divide-kairo-white rounded-md bg-kairo-white dark:text-kairo-white dark:bg-zinc-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                           <div className="px-1 py-1">
                             {tokens.map((token) => (
                               <Menu.Item key={token.name}>
@@ -388,8 +388,8 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                                   <button
                                     className={`${
                                       active
-                                        ? "bg-zinc-500 dark:bg-zinc-700 text-white"
-                                        : "text-zinc-900 dark:text-zinc-100"
+                                        ? "bg-zinc-500 dark:bg-zinc-700 text-kairo-white"
+                                        : "text-kairo-black-a20 dark:text-kairo-white"
                                     } group flex w-full items-center rounded-md px-2 py-2 font-bold text-xl`}
                                     onClick={() => setSelectedToken(token)}
                                   >
@@ -411,10 +411,10 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                     </Menu>
                   </div>
                   <div className="border-t-[1px] border-zinc-700 py-4 relative">
-                    <h1 className="dark:text-zinc-500 text-zinc-100 text-lg">
+                    <h1 className="dark:text-zinc-500 text-kairo-white text-lg">
                       Due
                       {!isValidDueDate() && (
-                        <span className="text-red-500 ml-1">*</span>
+                        <span className="text-kairo-green ml-1">*</span>
                       )}
                     </h1>
                     <div className="relative rounded-lg">
@@ -439,10 +439,10 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                   </div>
                 </div>
                 <div className="p-5 dark:bg-zinc-800/60 bg-zinc-400/80 rounded-lg relative space-y-2">
-                  <h1 className="dark:text-zinc-500 text-zinc-100 text-lg">
+                  <h1 className="dark:text-zinc-500 text-kairo-white text-lg">
                     For
                     {!isValidClientAddress() && (
-                      <span className="text-red-500 ml-1">*</span>
+                      <span className="text-kairo-green ml-1">*</span>
                     )}
                   </h1>
                   <div className="rounded-lg">
@@ -455,13 +455,13 @@ export default function Hero({ lang, dictionary }: HeroProps) {
                       onBlur={() => setIsClientAddressFocused(false)}
                     />
                   </div>
-                  <ArrowDownIcon className="w-8 h-8 text-zinc-100 absolute bg-[#141416] p-2 -top-7 right-1/2 rounded-full" />
+                  <ArrowDownIcon className="w-8 h-8 text-kairo-white absolute bg-[#141416] p-2 -top-7 right-1/2 rounded-full" />
                 </div>
               </div>
               <motion.button
                 onClick={isConnected ? handleSubmit : handleConnect}
                 disabled={isLoading || isPending}
-                className="w-full mt-4 text-center place-items-center flex items-center gap-x-1 rounded-md text-red-500 bg-red-800 bg-opacity-30 px-3 py-3 text-sm font-semibold shadow-lg hover:bg-red-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                className="w-full mt-4 text-center place-items-center flex items-center gap-x-1 rounded-md text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-3 text-sm font-semibold shadow-lg hover:bg-red-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                 variants={fadeUpVariant}
                 custom={4}
               >
@@ -496,8 +496,8 @@ export default function Hero({ lang, dictionary }: HeroProps) {
       {alertState && (
         <div
           className={`fixed bottom-4 right-4 p-4 rounded-md ${
-            alertState.type === "success" ? "bg-green-500" : "bg-red-500"
-          } text-white`}
+            alertState.type === "success" ? "bg-green-500" : "bg-kairo-green"
+          } text-kairo-white`}
         >
           {alertState.message}
           <button onClick={dismissAlert} className="ml-2 font-bold">
