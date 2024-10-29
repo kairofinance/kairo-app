@@ -15,8 +15,8 @@ const publicClient = createPublicClient({
 });
 
 async function getProfileData(user: string) {
-  const cookieStore = cookies();
-  const langCookie = (await cookieStore).get("NEXT_LOCALE");
+  const cookieStore = await cookies();
+  const langCookie = cookieStore.get("NEXT_LOCALE");
   const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
   const dictionary = await getDictionary(lang);
 
@@ -43,15 +43,9 @@ async function getProfileData(user: string) {
   };
 }
 
-export default async function ProfilePage({
-  params,
-}: {
-  params: { user: string };
-}) {
+export default async function ProfilePage({ params }: any) {
   const { dictionary, lang, address, ensName } = await getProfileData(
-    (
-      await params
-    ).user
+    params.user
   );
 
   return (

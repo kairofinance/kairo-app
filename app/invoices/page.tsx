@@ -7,7 +7,7 @@ import Spinner from "@/components/Spinner";
 import InvoicesClient from "./InvoicesClient";
 
 async function getInvoicesData() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const langCookie = cookieStore.get("NEXT_LOCALE");
   const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
   const dictionary = await getDictionary(lang);
@@ -21,7 +21,7 @@ export default async function InvoicesPage() {
   return (
     <AuthWrapper>
       <Suspense fallback={<Spinner />}>
-        <InvoicesClient />
+        <InvoicesClient dictionary={dictionary} lang={lang} />
       </Suspense>
     </AuthWrapper>
   );

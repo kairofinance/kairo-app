@@ -50,7 +50,15 @@ const tokens: Token[] = [
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
-const InvoicesClient: React.FC = () => {
+interface InvoicesClientProps {
+  dictionary: any; // Replace 'any' with your actual dictionary type
+  lang: string;
+}
+
+const InvoicesClient: React.FC<InvoicesClientProps> = ({
+  dictionary,
+  lang,
+}) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { address } = useAccount();

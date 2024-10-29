@@ -3,7 +3,7 @@ import AuthWrapper from "@/auth/AuthWrapper";
 import Spinner from "@/components/Spinner";
 import InvoiceIdClient from "./InvoiceIdClient";
 
-export default function InvoicePage({ params }: { params: { id: string } }) {
+export default async function InvoicePage({ params }: any) {
   return (
     <AuthWrapper>
       <Suspense fallback={<Spinner />}>

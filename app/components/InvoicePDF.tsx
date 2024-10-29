@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import {
   Document,
   Page,
@@ -281,7 +282,7 @@ const InvoicePDF = ({ invoice, tokenInfo }: InvoicePDFProps) => {
             <Text style={styles.invoiceNumber}>#{invoice.invoiceId}</Text>
           </View>
           <View style={styles.headerRight}>
-            <Image src={LOGO_BASE64} style={styles.logo} />
+            <img src={LOGO_BASE64} style={styles.logo} alt="" />
             <View style={styles.dates}>
               <View style={styles.dateRow}>
                 <Text style={styles.dateLabel}>Issue Date:</Text>
