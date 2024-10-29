@@ -24,7 +24,7 @@ export default function LayoutContent({ children, lang }: LayoutContentProps) {
         id="alert-container"
         className="fixed top-16 left-0 right-0 z-50"
       ></div>
-      <main className="flex-grow">
+      <main className="flex-grow m-auto place-content-center">
         <CustomErrorBoundary>{children}</CustomErrorBoundary>
       </main>
       <Footer />
