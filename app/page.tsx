@@ -13,7 +13,7 @@ export default async function Home() {
 
   return (
     <Suspense fallback={<Spinner />}>
-      <Hero lang={lang} dictionary={dictionary} />
+      <Hero />
     </Suspense>
   );
 }

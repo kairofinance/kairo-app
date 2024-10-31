@@ -19,7 +19,7 @@ interface LayoutContentProps {
 export default function LayoutContent({ children, lang }: LayoutContentProps) {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar currentLang={lang} />
+      <Navbar />
       <div
         id="alert-container"
         className="fixed top-16 left-0 right-0 z-50"
