@@ -11,7 +11,7 @@ import AlertMessage from "@/components/AlertMessage";
 import Settings from "./modals/settings";
 import { CogIcon, LinkIcon } from "@heroicons/react/24/outline";
 import ImageCropModal from "./modals/ImageCropModal";
-import { blobToFile, dataURLtoFile, isDataURL } from "../../utils/fileHelpers";
+import { blobToFile, uploadImageToVercelBlob } from "@/utils/fileHelpers";
 
 interface ProfileClientProps {
   address: string;
@@ -54,8 +54,6 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
     email: "",
     link: "",
   });
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
   const { signMessageAsync } = useSignMessage();
   const { alertState, showAlert, dismissAlert } = useAlert();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -78,14 +76,9 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
   const [cropType, setCropType] = useState<"avatar" | "banner">("avatar");
 
   useEffect(() => {
-    console.log("ProfileClient useEffect triggered");
     const fetchUserProfile = async () => {
-      if (profileFetchedRef.current) {
-        console.log("Profile already fetched, skipping");
-        return;
-      }
+      if (profileFetchedRef.current) return;
 
-      console.log("Fetching user profile");
       setIsLoading(true);
       setError(null);
       try {
@@ -96,7 +89,6 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log("Received user data:", data);
         if (!data.user) {
           throw new Error("User data not found in the response");
         }
@@ -151,9 +143,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
           initialProfileDataRef.current = defaultValues;
         }
         profileFetchedRef.current = true;
-        console.log("Profile fetched and set");
       } catch (error) {
-        console.error("Error fetching user profile:", error);
         setError(
           `Failed to fetch user profile: ${
             error instanceof Error ? error.message : "Unknown error"
@@ -167,7 +157,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
     fetchUserProfile();
   }, []);
 
-  const handleFileChange = (
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "avatar" | "banner"
   ) => {
@@ -188,22 +178,14 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
 
       setImageError(null);
 
-      const imageUrl = URL.createObjectURL(file);
-      setCropImageSrc(imageUrl);
-      setCropType(type);
-      setIsCropModalOpen(true);
+      const uploadedImageUrl = await uploadImageToVercelBlob(file);
+
+      setProfileData((prevData) => ({
+        ...prevData,
+        [type === "avatar" ? "profilePicture" : "bannerPicture"]:
+          uploadedImageUrl,
+      }));
     }
-  };
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setEditedProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (formData: any) => {
@@ -212,7 +194,6 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       return;
     }
 
-    console.log("Submitting profile update with data:", formData);
     try {
       const message = `Update profile for ${connectedAddress}`;
       const signature = await signMessageAsync({ message });
@@ -222,52 +203,6 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       form.append("signature", signature);
       form.append("message", message);
       form.append("profileData", JSON.stringify(formData));
-
-      if (
-        profileData.profilePicture &&
-        profileData.profilePicture !==
-          initialProfileDataRef.current?.profilePicture
-      ) {
-        let profilePictureFile;
-        if (profileData.profilePicture.startsWith("blob:")) {
-          profilePictureFile = await blobToFile(
-            profileData.profilePicture,
-            "profile.png"
-          );
-        } else if (isDataURL(profileData.profilePicture)) {
-          profilePictureFile = dataURLtoFile(
-            profileData.profilePicture,
-            "profile.png"
-          );
-        }
-        if (profilePictureFile) {
-          form.append("profilePicture", profilePictureFile);
-        }
-      }
-
-      if (
-        profileData.bannerPicture &&
-        profileData.bannerPicture !==
-          initialProfileDataRef.current?.bannerPicture
-      ) {
-        let bannerPictureFile;
-        if (profileData.bannerPicture.startsWith("blob:")) {
-          bannerPictureFile = await blobToFile(
-            profileData.bannerPicture,
-            "banner.png"
-          );
-        } else if (isDataURL(profileData.bannerPicture)) {
-          bannerPictureFile = dataURLtoFile(
-            profileData.bannerPicture,
-            "banner.png"
-          );
-        }
-        if (bannerPictureFile) {
-          form.append("bannerPicture", bannerPictureFile);
-        }
-      }
-
-      console.log("Form data being sent:", form);
 
       const response = await fetch("/api/updateProfile", {
         method: "POST",
@@ -282,7 +217,6 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
         );
       }
 
-      console.log("Profile updated successfully:", result);
       setProfileData((prev) => ({
         ...prev,
         ...result.profile,
@@ -290,7 +224,6 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       setEditedProfileData(result.profile);
       showAlert("Profile updated successfully", "success");
     } catch (error) {
-      console.error("Error updating profile:", error);
       showAlert(
         `Failed to update profile: ${
           error instanceof Error ? error.message : String(error)
@@ -300,21 +233,33 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
     }
   };
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    fetch(croppedImageUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const file = new File(
-          [blob],
-          cropType === "avatar" ? "profile.png" : "banner.png",
-          { type: "image/png" }
-        );
-        setProfileData((prevData) => ({
-          ...prevData,
-          [cropType === "avatar" ? "profilePicture" : "bannerPicture"]:
-            URL.createObjectURL(file),
-        }));
-      });
+  const handleCropComplete = async (croppedImageUrl: string) => {
+    try {
+      const response = await fetch(croppedImageUrl);
+      const blob = await response.blob();
+      const file = new File(
+        [blob],
+        cropType === "avatar" ? "profile.png" : "banner.png",
+        { type: "image/png" }
+      );
+
+      const uploadedImageUrl = await uploadImageToVercelBlob(file);
+
+      setProfileData((prevData) => ({
+        ...prevData,
+        [cropType === "avatar" ? "profilePicture" : "bannerPicture"]:
+          uploadedImageUrl,
+      }));
+    } catch (error) {
+      setImageError("Failed to process the cropped image.");
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setEditedProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   if (isLoading) {
@@ -350,26 +295,14 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       <div className="mx-auto relative max-w-3xl px-4 sm:px-6 lg:px-8 mt-10">
         <div className="relative">
           <div className="w-full shadow-md h-48 overflow-hidden relative">
-            {profileData.bannerPicture &&
-            profileData.bannerPicture !== "/default-banner.png" ? (
-              <Image
-                src={profileData.bannerPicture.replace(/^\//, "")} // Remove leading slash if present
-                alt="Profile Banner"
-                fill
-                style={{ objectFit: "cover" }}
-                quality={100}
-                priority
-              />
-            ) : (
-              <Image
-                src={profileData.bannerPicture} // Remove leading slash if present
-                alt="Profile Banner"
-                fill
-                style={{ objectFit: "cover" }}
-                quality={100}
-                priority
-              />
-            )}
+            <Image
+              src={profileData.bannerPicture || "/default-banner.png"}
+              alt="Profile Banner"
+              fill
+              style={{ objectFit: "cover" }}
+              quality={100}
+              priority
+            />
           </div>
         </div>
         <div className="space-y-8">
@@ -388,38 +321,13 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
                 )}
               </div>
               <div className="relative group rounded-full ml-3">
-                {profileData.profilePicture &&
-                profileData.profilePicture !== "/default-profile.png" ? (
-                  profileData.profilePicture.startsWith("blob:") ? (
-                    <Image
-                      src={profileData.profilePicture}
-                      alt="Profile"
-                      width={120}
-                      height={120}
-                      className="rounded-full ring bg-kairo-white"
-                    />
-                  ) : (
-                    <Image
-                      src={
-                        profileData.profilePicture.startsWith("http")
-                          ? profileData.profilePicture
-                          : profileData.profilePicture.replace(/^\//, "")
-                      }
-                      alt="Profile"
-                      width={120}
-                      height={120}
-                      className="rounded-full bg-kairo-black-a100 p-[1px]"
-                    />
-                  )
-                ) : (
-                  <Image
-                    src="/default-profile.png"
-                    alt="Profile"
-                    width={120}
-                    height={120}
-                    className="rounded-full outline-[5px] outline outline-kairo-black bg-kairo-white"
-                  />
-                )}
+                <Image
+                  src={profileData.profilePicture || "/default-profile.png"}
+                  alt="Profile"
+                  width={120}
+                  height={120}
+                  className="rounded-full bg-kairo-black-a100 p-[1px]"
+                />
                 <h1 className="text-xl font-bold mt-5 text-kairo-black-a20 text-kairo-white">
                   {profileData.username || address}
                 </h1>

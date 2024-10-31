@@ -4,7 +4,7 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { ArrowDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { ArrowTrendingUpIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract, useReadContract } from "wagmi";
@@ -19,15 +19,15 @@ import ProgressBar from "./ProgressBar";
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
-const fadeUpVariant = {
+const fadeInVariant = {
   hidden: { opacity: 0, y: 20 },
   visible: (custom: number) => ({
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.8,
-      delay: custom * 0.2,
-      ease: "easeOut",
+      duration: 0.6,
+      delay: custom * 0.15,
+      ease: [0.42, 0, 0.58, 1],
     },
   }),
 };
@@ -55,6 +55,7 @@ export default function Hero() {
   const [clientAddress, setClientAddress] = useState("");
   const [progressStep, setProgressStep] = useState(-1);
   const { alertState, showAlert, dismissAlert } = useAlert();
+  const [invoiceCount, setInvoiceCount] = useState<number | null>(null);
 
   const appKit = useAppKit();
   const { address, isConnected } = useAppKitAccount();
@@ -65,6 +66,23 @@ export default function Hero() {
     abi: InvoiceManagerABI,
     functionName: "nextInvoiceId",
   });
+
+  useEffect(() => {
+    const fetchInvoiceCount = async () => {
+      try {
+        const response = await fetch("/api/invoices/count?period=last24hours");
+        if (!response.ok) {
+          throw new Error("Failed to fetch invoice count");
+        }
+        const data = await response.json();
+        setInvoiceCount(data.count);
+      } catch (error) {
+        console.error("Error fetching invoice count:", error);
+      }
+    };
+
+    fetchInvoiceCount();
+  }, []);
 
   const handleConnect = async () => {
     if (!isConnected) {
@@ -194,10 +212,16 @@ export default function Hero() {
 
   return (
     <div className="mx-auto flex flex-col justify-center items-center relative">
-      <motion.div className="relative isolate pt-14">
+      <motion.div
+        className="relative isolate pt-14"
+        initial="hidden"
+        animate="visible"
+        variants={fadeInVariant}
+        custom={0}
+      >
         <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:flex lg:items-center lg:gap-x-10 lg:px-8 lg:py-40">
           <div className="mx-auto max-w-2xl lg:mx-0 lg:flex-auto">
-            <motion.div className="flex" variants={fadeUpVariant} custom={1}>
+            <motion.div className="flex" variants={fadeInVariant} custom={1}>
               <div className="relative flex items-center gap-x-4 px-4 py-2 text-sm leading-6 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full">
                 <span className="font-semibold text-kairo-green">Testnet</span>
                 <span aria-hidden="true" className="h-4 w-px bg-kairo-green" />
@@ -211,7 +235,7 @@ export default function Hero() {
 
             <motion.div
               className="space-y-3"
-              variants={fadeUpVariant}
+              variants={fadeInVariant}
               custom={2}
             >
               <h1 className="mt-4 max-w-lg text-3xl font-bold tracking-tight text-kairo-white sm:text-6xl">
@@ -220,16 +244,22 @@ export default function Hero() {
               <motion.div className="flex gap-2 place-items-center">
                 <ArrowTrendingUpIcon className="w-4 h-4 text-kairo-green" />
                 <p className="text-kairo-green">
-                  1200 created in the last 24 hours
+                  {invoiceCount !== null
+                    ? `${invoiceCount} created in the last 24 hours`
+                    : "Loading..."}
                 </p>
               </motion.div>
             </motion.div>
 
-            <motion.div className="my-8" variants={fadeUpVariant} custom={3}>
+            <motion.div className="my-8" variants={fadeInVariant} custom={3}>
               <div className="rounded-lg bg-kairo-black-a20 bg-opacity-30 p-2 space-y-2">
                 <div className="p-5 bg-kairo-black-a20 bg-opacity-60 rounded-lg space-y-5">
                   {/* Amount Input Section */}
-                  <div className="flex place-content-between">
+                  <motion.div
+                    className="flex place-content-between"
+                    variants={fadeInVariant}
+                    custom={4}
+                  >
                     <div className="space-y-2">
                       <h1 className="text-kairo-white font-semibold text-lg">
                         Amount{" "}
@@ -297,10 +327,14 @@ export default function Hero() {
                         </Menu.Items>
                       </Transition>
                     </Menu>
-                  </div>
+                  </motion.div>
 
                   {/* Due Date Section */}
-                  <div className="border-t-[1px] border-zinc-700 py-4 relative">
+                  <motion.div
+                    className="border-t-[1px] border-zinc-700 py-4 relative"
+                    variants={fadeInVariant}
+                    custom={5}
+                  >
                     <h1 className="text-kairo-white font-semibold text-lg">
                       Due{" "}
                       {!isValidDueDate() && (
@@ -326,11 +360,15 @@ export default function Hero() {
                         </svg>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
 
                 {/* Client Address Section */}
-                <div className="p-5 bg-kairo-black-a20 bg-opacity-60 rounded-lg relative space-y-2">
+                <motion.div
+                  className="p-5 bg-kairo-black-a20 bg-opacity-60 rounded-lg relative space-y-2"
+                  variants={fadeInVariant}
+                  custom={6}
+                >
                   <h1 className="text-kairo-white font-semibold text-lg">
                     For{" "}
                     {!isValidClientAddress() && (
@@ -346,7 +384,7 @@ export default function Hero() {
                     />
                   </div>
                   <ArrowDownIcon className="w-8 h-8 text-kairo-white absolute bg-[#141416] p-2 -top-7 right-1/2 rounded-full" />
-                </div>
+                </motion.div>
               </div>
 
               {/* Submit Button */}
@@ -354,6 +392,8 @@ export default function Hero() {
                 onClick={isConnected ? handleSubmit : handleConnect}
                 disabled={isLoading || isPending}
                 className="w-full mt-4 text-center place-items-center flex items-center gap-x-1 rounded-md text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-3 text-sm font-semibold shadow-lg hover:bg-kairo-green/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kairo-green disabled:opacity-50"
+                variants={fadeInVariant}
+                custom={7}
               >
                 <p className="mx-auto text-xl">
                   {isConnected
@@ -373,6 +413,8 @@ export default function Hero() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
                   className="z-50 mt-12"
+                  variants={fadeInVariant}
+                  custom={8}
                 >
                   <div className="bg-zinc-800/50 p-6 rounded-md shadow-lg max-w-2xl mx-auto">
                     <ProgressBar step={progressStep} />

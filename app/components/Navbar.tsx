@@ -22,23 +22,18 @@ const Navbar = () => {
   const userNavigation = useMemo(
     () => [
       {
-        name: "Your Profile",
-        href: address ? `/${address}` : "#",
-      },
-      { name: "Settings", href: "#" },
-      {
         name: "Sign Out",
         href: "#",
         onClick: disconnect,
       },
     ],
-    [address, disconnect]
+    [disconnect]
   );
 
   return (
     <Disclosure
       as="nav"
-      className="bg-kairo-black-a20 bg-opacity-20 border-b border-kairo-black-a40/40 shadow-sm"
+      className="bg-kairo-black-a20 bg-opacity-10 border-b border-kairo-black-a40/20 shadow-sm"
     >
       {({ open: isOpen }) => (
         <>
@@ -98,7 +93,7 @@ const Navbar = () => {
                             <Link
                               href={item.href}
                               onClick={item.onClick}
-                              className={`block px-4 py-2 text-sm text-kairo-white ${
+                              className={`block px-4 py-2 text-sm rounded-md text-kairo-white ${
                                 active ? "bg-kairo-black-a40" : ""
                               }`}
                             >

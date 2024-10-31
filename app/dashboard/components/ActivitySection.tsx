@@ -13,7 +13,7 @@ const filterOptions = [
   { label: "All", value: "all" },
   { label: "Paid", value: "paid" },
   { label: "Sent", value: "sent" },
-  { label: "Received", value: "received" },
+  { label: "Unpaid", value: "received" },
 ];
 
 export default function ActivitySection({
@@ -30,7 +30,7 @@ export default function ActivitySection({
   };
 
   return (
-    <div className="space-y-16 py-16 xl:space-y-20">
+    <div className="space-y-16 py-16 xl:space-y-20 ">
       <div>
         <div className="mx-auto max-w-7xl">
           <h2 className="mx-auto max-w-2xl text-base font-semibold leading-6 text-kairo-white lg:mx-0 lg:max-w-none">

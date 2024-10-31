@@ -73,7 +73,6 @@ export async function GET(request: NextRequest) {
     await prisma.$disconnect();
   }
 }
-
 export async function POST(request: NextRequest) {
   try {
     const {

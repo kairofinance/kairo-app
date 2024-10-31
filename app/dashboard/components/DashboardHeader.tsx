@@ -22,7 +22,7 @@ export default function DashboardHeader({
 }: DashboardHeaderProps) {
   return (
     <header className="pb-4 pt-6 sm:pb-6">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap">
         <h1 className="text-base font-semibold leading-7 text-kairo-white">
           {title}
         </h1>

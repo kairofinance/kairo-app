@@ -1,8 +1,7 @@
-import React from "react";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/utils/get-dictionary";
-import { i18n, Locale } from "@/utils/i18n-config";
+import { i18n } from "@/utils/i18n-config";
 import Spinner from "@/components/Spinner";
 import ProfileClient from "./ProfileClient";
 import { getEthereumClient } from "@/utils/ethereum-client";
@@ -39,11 +38,6 @@ export default async function ProfilePage({ params }: Props) {
 
   const { dictionary, lang } = await getLanguageSettings();
 
-  const headers = getCacheHeaders({
-    maxAge: 60, // 1 minute
-    staleWhileRevalidate: 30,
-  });
-
   return (
     <div className="min-h-screen">
       <Suspense
@@ -79,21 +73,18 @@ export async function generateMetadata({ params }: Props) {
 
   const displayName = params.user.endsWith(".eth") ? params.user : address;
 
-  const headers = getCacheHeaders({
-    maxAge: 3600, // 1 hour for metadata
-    staleWhileRevalidate: 300,
-  });
-
   return {
     title: `${displayName}'s Profile | Kairo`,
     description: `View ${displayName}'s profile on Kairo`,
     other: {
-      headers,
+      headers: getCacheHeaders({
+        maxAge: 3600, // 1 hour for metadata
+        staleWhileRevalidate: 300,
+      }),
     },
   };
 }
 
-// Generate the static params for the page
 export async function generateStaticParams() {
   return [];
 }

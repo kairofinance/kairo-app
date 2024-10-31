@@ -116,7 +116,7 @@ const RecentActivity: React.FC<{
       }
       return (
         <div>
-          <span className="mr-1 text-zinc-500 text-zinc-400">{prefix}</span>
+          <span className="mr-1 text-kairo-white">{prefix}</span>
           {DOMPurify.sanitize(address)}
         </div>
       );
