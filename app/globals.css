@@ -47,7 +47,7 @@
   transition-duration: 0.15s;
   ::selection {
     color: white;
-    background: rgb(137, 249, 94);
+    background: rgb(84, 141, 62);
   }
 }
 

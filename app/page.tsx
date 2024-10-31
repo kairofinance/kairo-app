@@ -4,6 +4,7 @@ import { getDictionary } from "@/utils/get-dictionary";
 import { cookies } from "next/headers";
 import { i18n, Locale } from "@/utils/i18n-config";
 import Spinner from "@/components/Spinner";
+import ContentSkeleton from "@/components/shared/ui/ContentSkeleton";
 
 export default async function Home() {
   const cookieStore = cookies();
@@ -13,7 +14,7 @@ export default async function Home() {
 
   return (
     <Suspense fallback={<Spinner />}>
-      <Hero lang={lang} dictionary={dictionary} />
+      <Hero />
     </Suspense>
   );
 }

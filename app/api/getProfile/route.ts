@@ -3,6 +3,7 @@ import { PrismaClient, User, Profile } from "@prisma/client";
 import { createPublicClient, http, Address } from "viem";
 import { mainnet } from "viem/chains";
 import { verifyMessage } from "viem";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const prisma = new PrismaClient();
 const DEFAULT_PROFILE_PICTURE = "/default-profile.png";
@@ -17,6 +18,11 @@ const publicClient = createPublicClient({
 type UserWithProfile = User & { profile: Profile | null };
 
 export async function GET(req: NextRequest) {
+  const headers = getCacheHeaders({
+    maxAge: 300, // 5 minutes
+    staleWhileRevalidate: 60,
+  });
+
   const { searchParams } = new URL(req.url);
   const addressOrEns = searchParams.get("addressOrEns");
 
@@ -115,7 +121,15 @@ export async function GET(req: NextRequest) {
     // If the user accessed with an address but has an ENS, suggest a redirect
     const suggestedRoute = ensName && addressOrEns !== ensName ? ensName : null;
 
-    return NextResponse.json({ user, suggestedRoute });
+    return NextResponse.json(
+      { user, suggestedRoute },
+      {
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error: any) {
     console.error("Detailed error:", error);
     return NextResponse.json(
@@ -124,7 +138,13 @@ export async function GET(req: NextRequest) {
         details: error.message,
         stack: error.stack,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();
@@ -132,6 +152,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const headers = getCacheHeaders({
+    public: false,
+    maxAge: 0,
+    mustRevalidate: true,
+  });
+
   try {
     const { address, signature, message } = await request.json();
 
@@ -168,7 +194,15 @@ export async function POST(request: NextRequest) {
       where: { userId: user.id },
     });
 
-    return NextResponse.json({ user, profile });
+    return NextResponse.json(
+      { user, profile },
+      {
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error in getProfile:", error);
     return NextResponse.json(
@@ -176,7 +210,13 @@ export async function POST(request: NextRequest) {
         error: "Internal server error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();

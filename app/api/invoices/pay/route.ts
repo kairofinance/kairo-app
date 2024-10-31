@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
+  const headers = getCacheHeaders({
+    public: false,
+    maxAge: 0,
+    mustRevalidate: true,
+  });
+
   try {
     const { invoiceId, paymentTransactionHash } = await request.json();
 
@@ -43,7 +50,15 @@ export async function POST(request: NextRequest) {
 
     console.log("Updated invoice in database:", formattedInvoice);
 
-    return NextResponse.json({ invoice: formattedInvoice });
+    return NextResponse.json(
+      { invoice: formattedInvoice },
+      {
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error updating invoice payment:", error);
     return NextResponse.json(
@@ -51,7 +66,13 @@ export async function POST(request: NextRequest) {
         error: "Internal server error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();

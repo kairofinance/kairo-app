@@ -14,7 +14,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ step }) => {
           <div
             key={index}
             className={`text-sm font-medium ${
-              index <= step ? "text-red-600" : "text-gray-500"
+              index <= step ? "text-kairo-green" : "text-gray-500"
             }`}
           >
             {stepName}

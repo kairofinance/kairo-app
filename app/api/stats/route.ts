@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAddress } from "viem";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
+  const headers = getCacheHeaders({
+    maxAge: 300, // 5 minutes
+    staleWhileRevalidate: 60,
+  });
+
   const { searchParams } = new URL(request.url);
   const address = searchParams.get("address");
   const period = searchParams.get("period") || "last7days";
@@ -97,7 +103,12 @@ export async function GET(request: NextRequest) {
 
     console.log("Returning stats:", result);
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+    });
   } catch (error) {
     console.error("Error fetching stats:", error);
     return NextResponse.json(
@@ -105,7 +116,13 @@ export async function GET(request: NextRequest) {
         error: "Internal Server Error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();

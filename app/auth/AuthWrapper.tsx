@@ -1,12 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, ReactNode } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+  useMemo,
+} from "react";
 import { useAccount, useSignMessage, useConnect } from "wagmi";
 import { usePathname, useRouter } from "next/navigation";
 import { z } from "zod";
 import Cookies from "js-cookie";
-
 import Spinner from "@/components/Spinner";
+import debounce from "lodash/debounce";
 
 const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { isConnected, address } = useAccount();
@@ -22,48 +28,51 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
     setIsMounted(true);
   }, []);
 
-  const checkAuthentication = useCallback(async () => {
-    if (pathname === "/" || !isConnected || !address) {
-      setIsAuthenticated(false);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
+  const checkAuthentication = useCallback(
+    debounce(async () => {
+      if (pathname === "/" || !isConnected || !address) {
         setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
 
-      const response = await fetch(
-        `/api/auth?address=${encodeURIComponent(address)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem("authToken");
+        if (!token) {
+          setIsAuthenticated(false);
+          return;
         }
-      );
-      if (!response.ok) {
-        throw new Error("Authentication check failed");
+
+        const response = await fetch(
+          `/api/auth?address=${encodeURIComponent(address)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Authentication check failed");
+        }
+        const data = await response.json();
+        setIsAuthenticated(data.isAuthenticated);
+      } catch (error) {
+        console.error("Authentication check error:", error);
+        setIsAuthenticated(false);
+        localStorage.removeItem("authToken");
+      } finally {
+        setIsLoading(false);
       }
-      const data = await response.json();
-      setIsAuthenticated(data.isAuthenticated);
-    } catch (error) {
-      console.error("Authentication check error:", error);
-      setIsAuthenticated(false);
-      localStorage.removeItem("authToken");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [address, isConnected, pathname]);
+    }, 300), // Debounce for 300ms
+    [address, isConnected, pathname]
+  );
 
   useEffect(() => {
     checkAuthentication();
   }, [checkAuthentication]);
 
-  const handleAuthentication = async () => {
+  const handleAuthentication = useCallback(async () => {
     setIsLoading(true);
     try {
       if (!isConnected) {
@@ -105,12 +114,7 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLanguageChange = (newLang: string) => {
-    Cookies.set("NEXT_LOCALE", newLang, { expires: 365 });
-    router.refresh(); // This will trigger a re-render of the page with the new language
-  };
+  }, [address, isConnected, connect, connectors, signMessageAsync]);
 
   if (!isMounted) {
     return <div> </div>;
@@ -130,17 +134,17 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex flex-col justify-center items-center h-screen">
-      <h1 className="text-2xl font-bold dark:text-kairo-white mb-4">
+      <h1 className="text-2xl font-bold text-kairo-white mb-4">
         Authentication Required
       </h1>
-      <p className="mb-4 dark:text-zinc-300">
+      <p className="mb-4 text-zinc-300">
         {isConnected
           ? "Please sign the message to access this page."
           : "Please connect your wallet to access this page."}
       </p>
       <button
         onClick={handleAuthentication}
-        className="bg-kairo-green hover:bg-kairo-green-a40 text-kairo-black font-bold py-2 px-4 rounded"
+        className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full"
       >
         {isConnected ? "Sign Authentication Message" : "Connect Wallet"}
       </button>

@@ -2,60 +2,98 @@ import React from "react";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/utils/get-dictionary";
-import { cookies } from "next/headers";
 import { i18n, Locale } from "@/utils/i18n-config";
 import Spinner from "@/components/Spinner";
 import ProfileClient from "./ProfileClient";
-import { createPublicClient, http } from "viem";
-import { mainnet } from "viem/chains";
+import { getEthereumClient } from "@/utils/ethereum-client";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
-const publicClient = createPublicClient({
-  chain: mainnet,
-  transport: http(process.env.ETHEREUM_RPC_URL),
-});
+type Props = {
+  params: {
+    user: string;
+  };
+};
 
-async function getProfileData(user: string) {
-  const cookieStore = await cookies();
-  const langCookie = cookieStore.get("NEXT_LOCALE");
-  const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
+async function getLanguageSettings() {
+  const lang = i18n.defaultLocale;
   const dictionary = await getDictionary(lang);
+  return { lang, dictionary };
+}
 
-  let address: string;
-  if (user.endsWith(".eth")) {
-    // It's an ENS name
-    const resolvedAddress = await publicClient.getEnsAddress({ name: user });
-    if (!resolvedAddress) {
-      notFound();
-    }
-    address = resolvedAddress;
-  } else if (user.startsWith("0x")) {
-    // It's an Ethereum address
-    address = user;
-  } else {
+async function resolveEthAddress(userAddress: string | undefined) {
+  if (!userAddress) return null;
+
+  if (userAddress.endsWith(".eth")) {
+    const client = getEthereumClient();
+    return await client.getEnsAddress({ name: userAddress });
+  }
+  return userAddress.startsWith("0x") ? userAddress : null;
+}
+
+export default async function ProfilePage({ params }: Props) {
+  const address = await resolveEthAddress(params.user);
+
+  if (!address) {
     notFound();
   }
 
+  const { dictionary, lang } = await getLanguageSettings();
+
+  const headers = getCacheHeaders({
+    maxAge: 60, // 1 minute
+    staleWhileRevalidate: 30,
+  });
+
+  return (
+    <div className="min-h-screen">
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <Spinner />
+          </div>
+        }
+      >
+        <ProfileClient
+          address={address}
+          ensName={params.user.endsWith(".eth") ? params.user : null}
+          dictionary={dictionary}
+          lang={lang}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+export async function generateMetadata({ params }: Props) {
+  if (!params?.user) {
+    return {
+      title: "Profile Not Found | Kairo",
+      description: "The requested profile could not be found",
+    };
+  }
+
+  const address = await resolveEthAddress(params.user);
+  if (!address) {
+    notFound();
+  }
+
+  const displayName = params.user.endsWith(".eth") ? params.user : address;
+
+  const headers = getCacheHeaders({
+    maxAge: 3600, // 1 hour for metadata
+    staleWhileRevalidate: 300,
+  });
+
   return {
-    dictionary,
-    lang,
-    address,
-    ensName: user.endsWith(".eth") ? user : null,
+    title: `${displayName}'s Profile | Kairo`,
+    description: `View ${displayName}'s profile on Kairo`,
+    other: {
+      headers,
+    },
   };
 }
 
-export default async function ProfilePage({ params }: any) {
-  const { dictionary, lang, address, ensName } = await getProfileData(
-    params.user
-  );
-
-  return (
-    <Suspense fallback={<Spinner />}>
-      <ProfileClient
-        address={address}
-        ensName={ensName}
-        dictionary={dictionary}
-        lang={lang}
-      />
-    </Suspense>
-  );
+// Generate the static params for the page
+export async function generateStaticParams() {
+  return [];
 }

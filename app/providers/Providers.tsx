@@ -1,19 +1,17 @@
 "use client";
 
 import React, { ReactNode } from "react";
-import dynamic from "next/dynamic";
-import { createAppKit } from "@reown/appkit/react";
-import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { mainnet, sepolia } from "@reown/appkit/networks";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  createConfig,
-  Config,
   WagmiProvider,
+  cookieToInitialState,
+  Config,
   createStorage,
   cookieStorage,
-  cookieToInitialState,
 } from "wagmi";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createAppKit } from "@reown/appkit/react";
+import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import { sepolia } from "@reown/appkit/networks";
 
 const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
 
@@ -23,16 +21,16 @@ if (!projectId) {
 
 // Set up the Wagmi Adapter
 const wagmiAdapter = new WagmiAdapter({
-  projectId,
-  networks: [sepolia],
-  ssr: true,
   storage: createStorage({
     storage: cookieStorage,
   }),
+  ssr: true,
+  projectId,
+  networks: [sepolia],
 });
 
 // Create the AppKit instance
-createAppKit({
+const modal = createAppKit({
   adapters: [wagmiAdapter],
   projectId,
   networks: [sepolia],
@@ -44,19 +42,20 @@ createAppKit({
     url: "https://kairo.finance",
     icons: ["../favicon.ico"],
   },
+  features: {
+    analytics: true,
+  },
 });
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-const config = wagmiAdapter.wagmiConfig;
-
-export default function ClientProviders({
+export default function Providers({
   children,
   cookies,
 }: {
   children: ReactNode;
-  cookies: string | null;
+  cookies: string;
 }) {
   const initialState = cookieToInitialState(
     wagmiAdapter.wagmiConfig as Config,
@@ -64,7 +63,10 @@ export default function ClientProviders({
   );
 
   return (
-    <WagmiProvider config={config} initialState={initialState}>
+    <WagmiProvider
+      config={wagmiAdapter.wagmiConfig as Config}
+      initialState={initialState}
+    >
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );

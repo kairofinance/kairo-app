@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const FALLBACK_CURRENCY = "USD";
 
 export async function GET() {
+  const headers = getCacheHeaders({
+    maxAge: 3600, // 1 hour
+    staleWhileRevalidate: 300,
+  });
+
   try {
     const response = await fetch("https://ipapi.co/json/", {
       headers: {
@@ -28,7 +34,15 @@ export async function GET() {
     if (!data.currency) {
       throw new Error("Currency data not found in the response");
     }
-    return NextResponse.json({ currency: data.currency, source: "api" });
+    return NextResponse.json(
+      { currency: data.currency, source: "api" },
+      {
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching currency:", error);
     if (error instanceof Error) {
@@ -42,7 +56,13 @@ export async function GET() {
         currency: FALLBACK_CURRENCY,
         source: "error_fallback",
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
+  const headers = getCacheHeaders({
+    public: false,
+    maxAge: 0,
+    mustRevalidate: true,
+  });
+
   try {
     const { address } = await request.json();
 
@@ -20,7 +27,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ user });
+    return NextResponse.json(
+      { user },
+      {
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error creating/updating user:", error);
     return NextResponse.json(
@@ -28,7 +43,13 @@ export async function POST(request: NextRequest) {
         error: "Internal server error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();
@@ -36,6 +57,11 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const headers = getCacheHeaders({
+    maxAge: 300, // 5 minutes
+    staleWhileRevalidate: 60,
+  });
+
   const { searchParams } = new URL(request.url);
   const address = searchParams.get("address");
 
@@ -69,12 +95,23 @@ export async function GET(request: NextRequest) {
       pfp: user.profile?.profilePicture || null,
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+    });
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();

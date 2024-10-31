@@ -32,10 +32,10 @@ export default function Stats({ dictionary }: StatsProps) {
               key={stat.id}
               className="mx-auto flex max-w-xs flex-col gap-y-4"
             >
-              <dt className="text-base leading-7 text-kairo-black-a40 dark:text-zinc-300">
+              <dt className="text-base leading-7 text-kairo-black-a40 text-zinc-300">
                 {stat.name}
               </dt>
-              <dd className="order-first text-3xl font-semibold tracking-tight text-kairo-black-a20 dark:text-kairo-white sm:text-5xl">
+              <dd className="order-first text-3xl font-semibold tracking-tight text-kairo-black-a20 text-kairo-white sm:text-5xl">
                 {stat.value}
               </dd>
             </div>

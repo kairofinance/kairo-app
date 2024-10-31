@@ -8,9 +8,9 @@ import useTranslation from "next-translate/useTranslation";
 import Spinner from "@/components/Spinner";
 import { useAlert } from "@/hooks/useAlert";
 import AlertMessage from "@/components/AlertMessage";
-import Settings from "./Modals/Settings";
+import Settings from "./modals/settings";
 import { CogIcon, LinkIcon } from "@heroicons/react/24/outline";
-import ImageCropModal from "./Modals/ImageCropModal";
+import ImageCropModal from "./modals/ImageCropModal";
 import { blobToFile, dataURLtoFile, isDataURL } from "../../utils/fileHelpers";
 
 interface ProfileClientProps {
@@ -212,7 +212,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       return;
     }
 
-    console.log("Submitting profile update");
+    console.log("Submitting profile update with data:", formData);
     try {
       const message = `Update profile for ${connectedAddress}`;
       const signature = await signMessageAsync({ message });
@@ -221,13 +221,8 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       form.append("address", connectedAddress);
       form.append("signature", signature);
       form.append("message", message);
-      form.append(
-        "profileData",
-        JSON.stringify({
-          ...formData,
-          link: formData.link, // Make sure to include the link
-        })
-      );
+      form.append("profileData", JSON.stringify(formData));
+
       if (
         profileData.profilePicture &&
         profileData.profilePicture !==
@@ -272,7 +267,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
         }
       }
 
-      console.log("Sending data to update profile:", form);
+      console.log("Form data being sent:", form);
 
       const response = await fetch("/api/updateProfile", {
         method: "POST",
@@ -295,7 +290,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
       setEditedProfileData(result.profile);
       showAlert("Profile updated successfully", "success");
     } catch (error) {
-      console.error("Detailed error updating profile:", error);
+      console.error("Error updating profile:", error);
       showAlert(
         `Failed to update profile: ${
           error instanceof Error ? error.message : String(error)
@@ -395,29 +390,43 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
               <div className="relative group rounded-full ml-3">
                 {profileData.profilePicture &&
                 profileData.profilePicture !== "/default-profile.png" ? (
-                  <Image
-                    src={profileData.profilePicture.replace(/^\//, "")} // Remove leading slash if present
-                    alt="Profile"
-                    width={120}
-                    height={120}
-                    className="rounded-full outline-[5px] outline outline-kairo-black bg-kairo-white"
-                  />
+                  profileData.profilePicture.startsWith("blob:") ? (
+                    <Image
+                      src={profileData.profilePicture}
+                      alt="Profile"
+                      width={120}
+                      height={120}
+                      className="rounded-full ring bg-kairo-white"
+                    />
+                  ) : (
+                    <Image
+                      src={
+                        profileData.profilePicture.startsWith("http")
+                          ? profileData.profilePicture
+                          : profileData.profilePicture.replace(/^\//, "")
+                      }
+                      alt="Profile"
+                      width={120}
+                      height={120}
+                      className="rounded-full bg-kairo-black-a100 p-[1px]"
+                    />
+                  )
                 ) : (
                   <Image
-                    src={profileData.profilePicture} // Remove leading slash if present
+                    src="/default-profile.png"
                     alt="Profile"
                     width={120}
                     height={120}
                     className="rounded-full outline-[5px] outline outline-kairo-black bg-kairo-white"
                   />
                 )}
-                <h1 className="text-xl font-bold mt-5 text-kairo-black-a20 dark:text-kairo-white">
+                <h1 className="text-xl font-bold mt-5 text-kairo-black-a20 text-kairo-white">
                   {profileData.username || address}
                 </h1>
-                <h2 className="text-sm mt-1 font-medium text-kairo-black-a40 dark:text-zinc-400">
+                <h2 className="text-sm mt-1 font-medium text-kairo-black-a40 text-zinc-400">
                   @{address}
                 </h2>
-                <p className="text-base mt-4 text-zinc-800 dark:text-kairo-white">
+                <p className="text-base mt-4 text-zinc-800 text-kairo-white">
                   {profileData.bio || "No bio available"}
                 </p>
                 {profileData.link && (
@@ -425,7 +434,7 @@ const ProfileClient: React.FC<ProfileClientProps> = ({
                     href={profileData.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center mt-5 text-md text-kairo-green hover:text-red-600"
+                    className="flex items-center mt-5 text-md text-kairo-green hover:text-kairo-green"
                   >
                     <LinkIcon className="h-5 w-5 mr-2 text-zinc-500" />
                     {new URL(profileData.link).hostname}

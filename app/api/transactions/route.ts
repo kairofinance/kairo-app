@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { rateLimit } from "../middleware/rateLimit";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const prisma = new PrismaClient();
 
@@ -109,6 +110,11 @@ const getActualTransactions = async (period: string) => {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const headers = getCacheHeaders({
+    maxAge: 300, // 5 minutes
+    staleWhileRevalidate: 60,
+  });
+
   try {
     const rateLimitResult = await rateLimit(request);
     if (rateLimitResult) return rateLimitResult;
@@ -135,7 +141,12 @@ export async function GET(request: NextRequest) {
       transactions = await getActualTransactions(period);
     }
 
-    return NextResponse.json(transactions);
+    return NextResponse.json(transactions, {
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+    });
   } catch (error) {
     console.error("Error in GET /api/transactions:", error);
     return NextResponse.json(
@@ -143,7 +154,13 @@ export async function GET(request: NextRequest) {
         error: "Internal Server Error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }

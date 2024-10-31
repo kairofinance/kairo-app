@@ -3,6 +3,7 @@ import { verifyMessage } from "viem";
 import { PrismaClient } from "@prisma/client";
 import sharp from "sharp";
 import { put } from "@vercel/blob";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
 const prisma = new PrismaClient();
 
@@ -13,6 +14,12 @@ const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png"];
 
 export async function POST(request: Request) {
+  const headers = getCacheHeaders({
+    public: false, // Private since it's user-specific
+    maxAge: 0, // No caching for POST requests
+    mustRevalidate: true,
+  });
+
   try {
     const formData = await request.formData();
     const address = formData.get("address") as string;
@@ -181,7 +188,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { message: "Profile updated successfully", profile: user.profile },
-      { status: 200 }
+      {
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } catch (error) {
     console.error("Detailed error updating profile:", error);
@@ -191,7 +203,13 @@ export async function POST(request: Request) {
         details: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      }
     );
   } finally {
     await prisma.$disconnect();

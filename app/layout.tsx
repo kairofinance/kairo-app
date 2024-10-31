@@ -1,14 +1,12 @@
 import React from "react";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import type { Metadata } from "next";
-import ClientProviders from "./providers/ClientProviders";
-import { i18n, Locale } from "@/utils/i18n-config";
-import { cookies, headers } from "next/headers";
 import "react-loading-skeleton/dist/skeleton.css";
-import LayoutContent from "@/components/LayoutContent";
-
-const inter = Inter({ subsets: ["latin"] });
+import Providers from "./providers/Providers";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { headers } from "next/headers";
+import RouteTransition from "@/components/shared/ui/RouteTransition";
 
 export const metadata: Metadata = {
   title: "Kairo",
@@ -22,21 +20,21 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const headersInstance = await headers();
-  const cookies = headersInstance.get("cookie");
-  const langCookie = cookies
-    ?.split("; ")
-    .find((cookie) => cookie.startsWith("NEXT_LOCALE="));
-  const lang = langCookie
-    ? (langCookie.split("=")[1] as Locale)
-    : i18n.defaultLocale;
+  const cookieHeader = (await headers()).get("cookie");
 
   return (
-    <html lang={lang}>
-      <body className={`${inter.className} dark:bg-kairo-black bg-kairo-white`}>
-        <ClientProviders cookies={cookies ? cookies.toString() : ""}>
-          <LayoutContent lang={lang}>{children}</LayoutContent>
-        </ClientProviders>
+    <html>
+      <body className="bg-kairo-black">
+        <Providers cookies={cookieHeader || ""}>
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-grow">
+              <RouteTransition />
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </Providers>
       </body>
     </html>
   );

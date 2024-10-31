@@ -200,7 +200,7 @@ export default function CreateInvoice() {
         </div>
         <button
           type="submit"
-          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-kairo-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kairo-green"
+          className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-kairo-white bg-kairo-green hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kairo-green"
         >
           Create Invoice
         </button>
