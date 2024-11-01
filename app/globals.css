@@ -68,3 +68,65 @@ input[type="date"]::-moz-calendar-picker-indicator {
   opacity: 0;
   cursor: pointer;
 }
+
+.react-datepicker {
+  @apply bg-kairo-black/90 border border-kairo-black-a40 !important;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.react-datepicker__header {
+  @apply bg-kairo-black-a20/50 border-kairo-black-a40 p-4 !important;
+}
+
+.react-datepicker__current-month {
+  @apply text-kairo-white font-medium mb-4 !important;
+}
+
+.react-datepicker__day-name {
+  @apply text-kairo-white/60 font-medium !important;
+  width: 2rem !important;
+  line-height: 2rem !important;
+}
+
+.react-datepicker__day {
+  @apply text-kairo-white/90 font-medium transition-colors duration-200 !important;
+  width: 2rem !important;
+  line-height: 2rem !important;
+  margin: 0.2rem !important;
+}
+
+.react-datepicker__day:hover {
+  @apply bg-kairo-green text-kairo-black rounded-md !important;
+}
+
+.react-datepicker__day--selected {
+  @apply bg-kairo-green text-kairo-black rounded-md !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  @apply bg-kairo-green/20 text-kairo-green rounded-md !important;
+}
+
+.react-datepicker__day--disabled {
+  @apply text-kairo-white/20 hover:bg-transparent hover:text-kairo-white/20 cursor-not-allowed !important;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-kairo-white/60 !important;
+}
+
+.react-datepicker__navigation:hover *::before {
+  @apply border-kairo-green !important;
+}
+
+.react-datepicker-popper[data-placement^="bottom"]
+  .react-datepicker__triangle::before,
+.react-datepicker-popper[data-placement^="bottom"]
+  .react-datepicker__triangle::after {
+  @apply border-b-kairo-black-a20 !important;
+}
+
+/* Add backdrop blur to the calendar */
+.react-datepicker-popper {
+  backdrop-filter: blur(8px);
+}

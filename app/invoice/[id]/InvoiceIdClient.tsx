@@ -42,27 +42,79 @@ interface InvoiceAddressDisplayProps {
   label: string;
 }
 
+interface Contact {
+  id: string;
+  name: string;
+  address: string;
+}
+
 const InvoiceAddressDisplay = ({
   address,
   label,
 }: InvoiceAddressDisplayProps) => {
   const { address: currentAddress } = useAppKitAccount();
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactName, setContactName] = useState<string | null>(null);
   const isCurrentUser =
     currentAddress?.toLowerCase() === address?.toLowerCase();
 
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (!currentAddress || !address) return;
+
+      try {
+        const response = await fetch(`/api/contacts?address=${currentAddress}`);
+        if (!response.ok) throw new Error("Failed to fetch contacts");
+        const data = await response.json();
+        setContacts(data.contacts);
+
+        // Find matching contact
+        const matchingContact = data.contacts.find(
+          (contact: Contact) =>
+            contact.address.toLowerCase() === address.toLowerCase()
+        );
+        setContactName(matchingContact?.name || null);
+      } catch (error) {
+        console.error("Error fetching contacts:", error);
+      }
+    };
+
+    fetchContacts();
+  }, [currentAddress, address]);
+
   return (
-    <div className="space-y-2">
-      <h2 className="text-kairo-white/70 text-sm font-medium">{label}</h2>
-      <div className="text-kairo-white text-lg font-medium break-all">
+    <div className="space-y-1.5">
+      <h2 className="text-kairo-white/70 text-xs sm:text-sm font-medium">
+        {label}
+      </h2>
+      <div className="text-kairo-white text-base sm:text-lg font-medium">
         {!address ? (
           "No Address"
         ) : (
-          <span>
-            <AddressDisplay address={address} showFull />
-            {isCurrentUser && (
-              <span className="text-kairo-white/60 ml-2">(You)</span>
+          <div className="space-y-1">
+            {contactName ? (
+              <>
+                <div className="text-kairo-white font-medium">
+                  {contactName}
+                  {isCurrentUser && (
+                    <span className="text-kairo-white/60 text-sm ml-2">
+                      (You)
+                    </span>
+                  )}
+                </div>
+                <div className="text-kairo-white/60 text-sm">
+                  <AddressDisplay address={address} showFull />
+                </div>
+              </>
+            ) : (
+              <span className="flex flex-wrap items-center gap-2">
+                <AddressDisplay address={address} showFull />
+                {isCurrentUser && (
+                  <span className="text-kairo-white/60 text-sm">(You)</span>
+                )}
+              </span>
             )}
-          </span>
+          </div>
         )}
       </div>
     </div>
@@ -481,16 +533,16 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   return (
     <div className="min-h-screen bg-kairo-black">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        {/* Add breadcrumb navigation */}
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
+        {/* Update breadcrumb navigation */}
         <motion.nav
           aria-label="Breadcrumb"
-          className="mb-8"
+          className="mb-4 sm:mb-8"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <ol role="list" className="flex items-center space-x-4">
+          <ol role="list" className="flex items-center space-x-2 sm:space-x-4">
             <li>
               <div>
                 <Link
@@ -526,17 +578,21 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
           </ol>
         </motion.nav>
 
-        <motion.div className="space-y-8" initial="hidden" animate="visible">
+        <motion.div
+          className="space-y-6 sm:space-y-8"
+          initial="hidden"
+          animate="visible"
+        >
           {/* Header Section */}
           <motion.div
-            className="flex flex-col gap-2"
+            className="flex flex-col gap-1 sm:gap-2"
             variants={fadeInVariant}
             custom={0}
           >
-            <h1 className="text-3xl font-bold text-kairo-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-kairo-white">
               Invoice #{invoiceId}
             </h1>
-            <p className="text-kairo-white/60">
+            <p className="text-sm sm:text-base text-kairo-white/60">
               Created on{" "}
               {new Date(invoice.issuedDate).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -546,38 +602,32 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
             </p>
           </motion.div>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left Column - Invoice Details */}
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+            {/* Left Column */}
             <motion.div
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
               variants={fadeInVariant}
               custom={1}
             >
-              <motion.div
-                className="rounded-xl bg-kairo-black-a20/40 p-6 space-y-6 backdrop-blur-sm"
-                variants={fadeInVariant}
-                custom={2}
-              >
-                <motion.div
-                  className="flex items-center gap-4"
-                  variants={fadeInVariant}
-                  custom={3}
-                >
+              <motion.div className="rounded-xl bg-kairo-black-a20/40 p-4 sm:p-6 space-y-4 sm:space-y-6 backdrop-blur-sm">
+                {/* Amount Display */}
+                <motion.div className="flex items-center gap-3 sm:gap-4">
                   <Image
                     src={`/tokens/${
                       getTokenInfo(invoice.tokenAddress).symbol
                     }.png`}
                     alt={getTokenInfo(invoice.tokenAddress).symbol}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                    style={{ width: "auto", height: "auto" }}
+                    width={32}
+                    height={32}
+                    className="rounded-full sm:w-10 sm:h-10"
                   />
                   <div>
-                    <p className="text-3xl font-bold text-kairo-white">
+                    <p className="text-xl sm:text-3xl font-bold text-kairo-white">
                       {formatAmount(invoice.amount)}{" "}
-                      {getTokenInfo(invoice.tokenAddress).symbol}
+                      <span className="text-lg sm:text-2xl">
+                        {getTokenInfo(invoice.tokenAddress).symbol}
+                      </span>
                     </p>
                   </div>
                 </motion.div>
@@ -652,19 +702,15 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
               </motion.div>
             </motion.div>
 
-            {/* Right Column - Status and Actions */}
+            {/* Right Column */}
             <motion.div
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
               variants={fadeInVariant}
               custom={7}
             >
               {/* Amount Breakdown Card */}
-              <motion.div
-                className="rounded-xl bg-kairo-black-a20/40 p-6 space-y-4 backdrop-blur-sm"
-                variants={fadeInVariant}
-                custom={8}
-              >
-                <h2 className="text-xl font-bold text-kairo-white mb-4">
+              <motion.div className="rounded-xl bg-kairo-black-a20/40 p-4 sm:p-6 space-y-3 sm:space-y-4 backdrop-blur-sm">
+                <h2 className="text-lg sm:text-xl font-bold text-kairo-white mb-2 sm:mb-4">
                   Amount Breakdown
                 </h2>
                 <div className="space-y-3">
@@ -743,11 +789,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
               </motion.div>
 
               {/* Status Card */}
-              <motion.div
-                className="rounded-xl bg-kairo-black-a20/40 p-6 space-y-6 backdrop-blur-sm"
-                variants={fadeInVariant}
-                custom={9}
-              >
+              <motion.div className="rounded-xl bg-kairo-black-a20/40 p-4 sm:p-6 space-y-4 sm:space-y-6 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-kairo-white">Status</h2>
                   <span

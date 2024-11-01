@@ -11,6 +11,7 @@ import {
   formatRelativeTime,
 } from "@/utils/date-format";
 import AddressDisplay from "@/components/shared/AddressDisplay";
+import Link from "next/link";
 
 interface Invoice {
   id: string;
@@ -102,8 +103,10 @@ const RecentActivity: React.FC<{
       const prefix = isIssuer ? "From: " : "To: ";
 
       return (
-        <div className="flex items-center">
-          <span className="mr-1 text-kairo-white/60">{prefix}</span>
+        <div className="flex items-center flex-wrap sm:flex-nowrap">
+          <span className="mr-1 text-kairo-white/60 whitespace-nowrap">
+            {prefix}
+          </span>
           <AddressDisplay
             address={address}
             className="text-kairo-white/90 hover:text-kairo-white transition-colors duration-200"
@@ -122,176 +125,259 @@ const RecentActivity: React.FC<{
         : "Incoming";
     }
 
-    const renderSkeletonRow = () => (
-      <tr>
-        <td className="relative py-5 pr-6">
-          <div className="flex gap-x-6">
-            <Skeleton circle width={20} height={20} />
-            <div className="flex-auto">
-              <div className="flex items-start gap-x-3">
-                <Skeleton width={100} />
-                <Skeleton width={60} />
-              </div>
-              <div className="mt-1">
-                <Skeleton width={80} />
-              </div>
-            </div>
-          </div>
-        </td>
-        <td className="hidden py-5 pr-6 sm:table-cell">
-          <Skeleton width={150} />
-          <div className="mt-1">
-            <Skeleton width={100} />
-          </div>
-        </td>
-        <td className="py-5 text-right">
-          <Skeleton width={50} />
-        </td>
-      </tr>
-    );
-
     return (
-      <table className="w-full text-left">
-        <tbody
+      <div className="w-full">
+        <div
           className={`transition-opacity duration-300 ease-in-out ${
             isLoading ? "opacity-50" : "opacity-100"
           }`}
         >
           {isLoading ? (
-            Array.from({ length: 5 }).map((_, index) => (
-              <React.Fragment key={index}>
-                {index === 0 && (
-                  <tr>
-                    <th colSpan={3} className="pt-8 pb-4">
-                      <Skeleton width={200} />
-                    </th>
-                  </tr>
-                )}
-                {renderSkeletonRow()}
-              </React.Fragment>
-            ))
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-kairo-black-a20/40 rounded-lg p-4 space-y-4"
+                >
+                  <Skeleton height={24} />
+                  <Skeleton height={20} />
+                  <Skeleton height={20} />
+                </div>
+              ))}
+            </div>
           ) : filteredInvoices.length === 0 ? (
-            <tr>
-              <td colSpan={3} className="py-12 text-center text-kairo-white/90">
-                No recent activity available
-              </td>
-            </tr>
+            <div className="text-center text-kairo-white/90 py-12">
+              No recent activity available
+            </div>
           ) : (
-            filteredInvoices.map((day) => (
-              <React.Fragment key={day.dateTime}>
-                <tr className="text-sm leading-6">
-                  <th
-                    scope="colgroup"
-                    colSpan={3}
-                    className="relative isolate pt-10 pb-4 font-bold"
-                  >
+            <div className="space-y-8">
+              {filteredInvoices.map((day) => (
+                <div key={day.dateTime} className="space-y-4">
+                  <div className="relative py-4">
                     <time
                       dateTime={DOMPurify.sanitize(day.dateTime)}
-                      className="text-kairo-white/80 text-base"
+                      className="text-kairo-white/80 text-base font-bold"
                     >
                       {formatDate(DOMPurify.sanitize(day.date))}
                     </time>
-                    <div className="absolute inset-y-0 left-0 -z-10 w-screen border-b border-kairo-black-a40" />
-                  </th>
-                </tr>
-                {day.invoices.map((invoice) => {
-                  const invoiceStatus = getInvoiceStatus(invoice, userAddress);
-                  const isUserIssuer =
-                    invoice.issuerAddress.toLowerCase() ===
-                    userAddress.toLowerCase();
-                  return (
-                    <tr
-                      key={invoice.id}
-                      className="group  transition-colors duration-200"
-                    >
-                      <td className="relative py-6 pr-6">
-                        <div className="flex gap-x-6">
-                          {invoiceStatus === "Paid" ? (
-                            <CheckCircleIcon
-                              className="hidden h-6 w-5 flex-none text-green-400 sm:block"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <DocumentIcon
-                              className="hidden h-6 w-5 flex-none text-blue-400 sm:block"
-                              aria-hidden="true"
-                            />
-                          )}
-                          <div className="flex-auto">
-                            <div className="flex items-start gap-x-3">
-                              <div className="flex items-center text-sm font-bold leading-6 text-kairo-white">
-                                {invoice.tokenAddress && (
-                                  <Image
-                                    src={`/tokens/${getTokenSymbol(
-                                      invoice.tokenAddress
-                                    )}.png`}
-                                    alt={`${getTokenSymbol(
-                                      invoice.tokenAddress
-                                    )} logo`}
-                                    width={24}
-                                    height={24}
-                                    className="mr-2"
-                                  />
+                    <div className="absolute inset-0 -z-10 border-b border-kairo-black-a40" />
+                  </div>
+
+                  {/* Mobile Grid View */}
+                  <div className="block lg:hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {day.invoices.map((invoice) => {
+                        const invoiceStatus = getInvoiceStatus(
+                          invoice,
+                          userAddress
+                        );
+                        const isUserIssuer =
+                          invoice.issuerAddress.toLowerCase() ===
+                          userAddress.toLowerCase();
+                        return (
+                          <div
+                            key={invoice.id}
+                            className="bg-kairo-black-a20/40 rounded-lg p-4 space-y-4 backdrop-blur-sm"
+                          >
+                            {/* Amount and Status */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {invoiceStatus === "Paid" ? (
+                                  <CheckCircleIcon className="h-5 w-5 text-green-400" />
+                                ) : (
+                                  <DocumentIcon className="h-5 w-5 text-blue-400" />
                                 )}
-                                {formatAmount(
-                                  invoice.amount,
-                                  invoice.tokenAddress
-                                )}
+                                <div className="flex items-center text-sm font-bold text-kairo-white">
+                                  {invoice.tokenAddress && (
+                                    <Image
+                                      src={`/tokens/${getTokenSymbol(
+                                        invoice.tokenAddress
+                                      )}.png`}
+                                      alt={`${getTokenSymbol(
+                                        invoice.tokenAddress
+                                      )} logo`}
+                                      width={20}
+                                      height={20}
+                                      className="mr-2"
+                                    />
+                                  )}
+                                  {formatAmount(
+                                    invoice.amount,
+                                    invoice.tokenAddress
+                                  )}
+                                </div>
                               </div>
                               <div
                                 className={classNames(
                                   statuses[invoiceStatus],
-                                  "rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset"
+                                  "rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
                                 )}
                               >
                                 {invoiceStatus}
                               </div>
                             </div>
-                            <div className="mt-1.5 text-sm leading-5 text-kairo-white/60">
+
+                            {/* Invoice ID */}
+                            <div className="text-sm text-kairo-white/60">
                               Invoice #{DOMPurify.sanitize(invoice.invoiceId)}
                             </div>
+
+                            {/* Address Info */}
+                            <div className="space-y-1">
+                              <div className="text-sm text-kairo-white/90">
+                                {isUserIssuer
+                                  ? renderUserInfo(invoice.clientAddress, false)
+                                  : renderUserInfo(invoice.issuerAddress, true)}
+                              </div>
+                              <div className="text-sm text-kairo-white/60">
+                                {invoice.status === "Paid"
+                                  ? `Paid ${formatRelativeTime(
+                                      invoice.paidDate || "N/A"
+                                    )}`
+                                  : `Created ${formatRelativeTime(
+                                      invoice.issuedDate
+                                    )}`}
+                              </div>
+                            </div>
+
+                            {/* View Invoice Button */}
+                            <div className="pt-2">
+                              <Link
+                                href={`/invoice/${invoice.invoiceId}`}
+                                className="flex items-center justify-center font-semibold gap-x-2 px-3 py-1.5 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full transition-colors duration-200"
+                              >
+                                View Invoice
+                              </Link>
+                            </div>
                           </div>
-                        </div>
-                        <div className="absolute bottom-0 right-full h-px w-screen bg-kairo-black-a40/50" />
-                        <div className="absolute bottom-0 left-0 h-px w-screen bg-kairo-black-a40/50" />
-                      </td>
-                      <td className="hidden py-6 pr-6 sm:table-cell">
-                        <div className="text-sm leading-6 text-kairo-white/90">
-                          {isUserIssuer
-                            ? renderUserInfo(invoice.clientAddress, false)
-                            : renderUserInfo(invoice.issuerAddress, true)}
-                        </div>
-                        <div className="mt-1.5 text-sm leading-5 text-kairo-white/60">
-                          {invoice.status === "Paid"
-                            ? `Paid ${formatRelativeTime(
-                                invoice.paidDate || "N/A"
-                              )}`
-                            : `Created ${formatRelativeTime(
-                                invoice.issuedDate
-                              )}`}
-                        </div>
-                      </td>
-                      <td className="py-6 text-right">
-                        <div className="flex justify-end">
-                          <a
-                            href={`/invoice/${invoice.invoiceId}`}
-                            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full transition-colors duration-200"
-                          >
-                            View Invoice
-                            <span className="sr-only">
-                              , invoice #{DOMPurify.sanitize(invoice.invoiceId)}
-                            </span>
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </React.Fragment>
-            ))
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block">
+                    <table className="w-full">
+                      <tbody>
+                        {day.invoices.map((invoice) => {
+                          const invoiceStatus = getInvoiceStatus(
+                            invoice,
+                            userAddress
+                          );
+                          const isUserIssuer =
+                            invoice.issuerAddress.toLowerCase() ===
+                            userAddress.toLowerCase();
+                          return (
+                            <tr
+                              key={invoice.id}
+                              className="group transition-colors duration-200"
+                            >
+                              <td className="relative py-6">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                  <div className="flex items-start gap-3 min-w-[200px]">
+                                    <div className="hidden sm:block">
+                                      {invoiceStatus === "Paid" ? (
+                                        <CheckCircleIcon
+                                          className="h-6 w-5 flex-none text-green-400"
+                                          aria-hidden="true"
+                                        />
+                                      ) : (
+                                        <DocumentIcon
+                                          className="h-6 w-5 flex-none text-blue-400"
+                                          aria-hidden="true"
+                                        />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <div className="flex items-center text-sm font-bold leading-6 text-kairo-white">
+                                          {invoice.tokenAddress && (
+                                            <Image
+                                              src={`/tokens/${getTokenSymbol(
+                                                invoice.tokenAddress
+                                              )}.png`}
+                                              alt={`${getTokenSymbol(
+                                                invoice.tokenAddress
+                                              )} logo`}
+                                              width={24}
+                                              height={24}
+                                              className="mr-2"
+                                            />
+                                          )}
+                                          {formatAmount(
+                                            invoice.amount,
+                                            invoice.tokenAddress
+                                          )}
+                                        </div>
+                                        <div
+                                          className={classNames(
+                                            statuses[invoiceStatus],
+                                            "rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset whitespace-nowrap"
+                                          )}
+                                        >
+                                          {invoiceStatus}
+                                        </div>
+                                      </div>
+                                      <div className="mt-1 text-sm leading-5 text-kairo-white/60">
+                                        Invoice #
+                                        {DOMPurify.sanitize(invoice.invoiceId)}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex-1 flex justify-center min-w-0">
+                                    <div className="flex flex-col justify-center max-w-[300px]">
+                                      <div className="text-sm leading-6 text-kairo-white/90">
+                                        {isUserIssuer
+                                          ? renderUserInfo(
+                                              invoice.clientAddress,
+                                              false
+                                            )
+                                          : renderUserInfo(
+                                              invoice.issuerAddress,
+                                              true
+                                            )}
+                                      </div>
+                                      <div className="mt-1 text-sm leading-5 text-kairo-white/60">
+                                        {invoice.status === "Paid"
+                                          ? `Paid ${formatRelativeTime(
+                                              invoice.paidDate || "N/A"
+                                            )}`
+                                          : `Created ${formatRelativeTime(
+                                              invoice.issuedDate
+                                            )}`}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex justify-end min-w-[140px]">
+                                    <Link
+                                      href={`/invoice/${invoice.invoiceId}`}
+                                      className="relative flex items-center font-semibold gap-x-2 px-3 py-1.5 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full transition-colors duration-200 whitespace-nowrap"
+                                    >
+                                      View Invoice
+                                      <span className="sr-only">
+                                        , invoice #
+                                        {DOMPurify.sanitize(invoice.invoiceId)}
+                                      </span>
+                                    </Link>
+                                  </div>
+                                </div>
+                                <div className="absolute bottom-0 right-full h-px w-screen bg-kairo-black-a40/50" />
+                                <div className="absolute bottom-0 left-0 h-px w-screen bg-kairo-black-a40/50" />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </tbody>
-      </table>
+        </div>
+      </div>
     );
   }
 );

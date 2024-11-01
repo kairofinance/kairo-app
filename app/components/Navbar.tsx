@@ -20,7 +20,7 @@ interface MenuItemProps {
 }
 
 const navigation = [
-  { name: "Create", href: "/" },
+  { name: "New Invoice", href: "/" },
   { name: "Dashboard", href: "/dashboard" },
   { name: "Contacts", href: "/contacts" },
 ];
@@ -171,7 +171,7 @@ const Navbar = () => {
               {!isConnected && (
                 <button
                   onClick={() => open({ view: "Connect" })}
-                  className="w-full mt-2 rounded-full bg-kairo-green-a20 px-3 py-2 text-sm font-semibold text-kairo-green hover:bg-kairo-green/50"
+                  className="relative flex w-full mt-2 place-items-center place-content-center items-center font-semibold gap-x-4 px-3 py-1 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full"
                 >
                   Connect Wallet
                 </button>
