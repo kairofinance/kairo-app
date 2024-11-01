@@ -51,21 +51,26 @@ const Navbar = () => {
         <>
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
-              {/* Logo */}
-              <div className="flex-shrink-0">
-                <Link href="/" className="flex items-center">
-                  <Image
-                    src="/kairo-dark.svg"
-                    alt="Kairo"
-                    width={120}
-                    height={30}
-                    priority
-                    style={{
-                      width: "120px",
-                      height: "auto",
-                    }}
-                  />
-                </Link>
+              {/* Logo and Testnet Indicator */}
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <Link href="/" className="flex items-center">
+                    <Image
+                      src="/kairo-dark.svg"
+                      alt="Kairo"
+                      width={120}
+                      height={30}
+                      priority
+                      style={{
+                        width: "120px",
+                        height: "auto",
+                      }}
+                    />
+                  </Link>
+                </div>
+                <div className="hidden sm:flex items-center px-2.5 py-1 text-sm leading-6 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full">
+                  <span className="font-semibold">Testnet</span>
+                </div>
               </div>
 
               {/* Centered Navigation */}
