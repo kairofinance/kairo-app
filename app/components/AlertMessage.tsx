@@ -17,11 +17,6 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
   onDismiss,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const bgColor = type === "success" ? "bg-green-50" : "bg-red-50";
-  const textColor =
-    type === "success" ? "text-green-800" : "text-kairo-green-a20";
-  const iconColor =
-    type === "success" ? "text-green-400" : "text-kairo-green-a20";
 
   useEffect(() => {
     setIsVisible(true);
@@ -35,47 +30,37 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
 
   return (
     <div
-      className={`fixed top-16 left-0 right-0 z-50 transition-opacity duration-300 ease-in-out ${
-        isVisible ? "opacity-100" : "opacity-0"
+      className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ease-in-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
       }`}
     >
-      <div className={`rounded-md ${bgColor} p-4 max-w-7xl mx-auto`}>
-        <div className="flex">
-          <div className="flex-shrink-0">
-            {type === "success" ? (
-              <CheckCircleIcon
-                className={`h-5 w-5 ${iconColor}`}
-                aria-hidden="true"
-              />
-            ) : (
-              <XCircleIcon
-                className={`h-5 w-5 ${iconColor}`}
-                aria-hidden="true"
-              />
-            )}
-          </div>
-          <div className="ml-3">
-            <p className={`text-sm font-medium ${textColor}`}>{message}</p>
-          </div>
-          <div className="ml-auto pl-3">
-            <div className="-mx-1.5 -my-1.5">
-              <button
-                type="button"
-                className={`inline-flex rounded-md ${bgColor} p-1.5 ${textColor} hover:bg-${
-                  type === "success" ? "green" : "red"
-                }-100 focus:outline-none focus:ring-2 focus:ring-${
-                  type === "success" ? "green" : "red"
-                }-600 focus:ring-offset-2 focus:ring-offset-${
-                  type === "success" ? "green" : "red"
-                }-50`}
-                onClick={() => setIsVisible(false)}
-              >
-                <span className="sr-only">Dismiss</span>
-                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+      <div
+        className={`rounded-lg shadow-lg backdrop-blur-sm ${
+          type === "success"
+            ? "bg-kairo-green/10 text-kairo-green"
+            : "bg-red-500/10 text-red-400"
+        } p-4 flex items-center gap-3 min-w-[320px]`}
+      >
+        <div className="flex-shrink-0">
+          {type === "success" ? (
+            <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <XCircleIcon className="h-5 w-5" aria-hidden="true" />
+          )}
         </div>
+        <p className="text-sm font-medium flex-1">{message}</p>
+        <button
+          type="button"
+          className={`flex-shrink-0 rounded-md p-1.5 transition-colors duration-200 ${
+            type === "success"
+              ? "hover:bg-kairo-green/20"
+              : "hover:bg-red-500/20"
+          }`}
+          onClick={() => setIsVisible(false)}
+        >
+          <span className="sr-only">Dismiss</span>
+          <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+        </button>
       </div>
     </div>
   );

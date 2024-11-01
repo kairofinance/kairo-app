@@ -11,7 +11,10 @@ import {
   useDisconnect,
 } from "@reown/appkit/react";
 
-const navigation = [{ name: "Dashboard", href: "/dashboard" }];
+const navigation = [
+  { name: "Create", href: "/" },
+  { name: "Dashboard", href: "/dashboard" },
+];
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -38,9 +41,9 @@ const Navbar = () => {
       {({ open: isOpen }) => (
         <>
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex h-16 justify-between">
-              {/* Logo and Desktop Navigation */}
-              <div className="flex">
+            <div className="flex h-16 items-center justify-between">
+              {/* Logo */}
+              <div className="flex-shrink-0">
                 <Link href="/" className="flex items-center">
                   <Image
                     src="/kairo-dark.svg"
@@ -48,15 +51,22 @@ const Navbar = () => {
                     width={120}
                     height={30}
                     priority
-                    style={{ height: "auto" }}
+                    style={{
+                      width: "120px",
+                      height: "auto",
+                    }}
                   />
                 </Link>
-                <div className="hidden md:ml-6 md:flex md:space-x-8">
+              </div>
+
+              {/* Centered Navigation */}
+              <div className="hidden md:flex flex-1 justify-center">
+                <div className="flex space-x-8">
                   {navigation.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`inline-flex items-center border-b-2 px-1 pt-1 text-base font-medium ${
+                      className={`inline-flex items-center border-b-2 p-3 px-1 pt-8 text-base font-medium ${
                         pathname === item.href
                           ? "border-kairo-green text-kairo-white"
                           : "border-transparent text-kairo-white/60 hover:text-kairo-white"
@@ -69,7 +79,7 @@ const Navbar = () => {
               </div>
 
               {/* Desktop Actions */}
-              <div className="hidden md:ml-6 md:flex md:items-center">
+              <div className="hidden md:flex md:items-center">
                 {isConnected ? (
                   <Menu as="div" className="relative ml-3">
                     <Menu.Button className="flex items-center gap-2 rounded-full bg-kairo-black-a20 px-3 py-2 hover:bg-kairo-black-a40">

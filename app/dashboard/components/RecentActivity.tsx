@@ -5,6 +5,7 @@ import Image from "next/image";
 import { formatUnits } from "viem";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
+import { useEnsName } from "wagmi";
 
 interface Invoice {
   id: string;
@@ -32,11 +33,9 @@ function classNames(...classes: string[]) {
 }
 
 const statuses = {
-  Paid: "text-green-700 bg-green-50 ring-green-600/20 text-green-400 bg-green-900/50 ring-green-500/30",
-  Created:
-    "text-blue-700 bg-blue-50 ring-blue-600/20 text-blue-400 bg-blue-900/50 ring-blue-500/30",
-  Incoming:
-    "text-yellow-700 bg-yellow-50 ring-yellow-600/20 text-yellow-400 bg-yellow-900/50 ring-yellow-500/30",
+  Paid: "text-green-400 bg-green-900/30 ring-green-500/30",
+  Created: "text-blue-400 bg-blue-900/30 ring-blue-500/30",
+  Incoming: "text-yellow-400 bg-yellow-900/30 ring-yellow-500/30",
 };
 
 const tokenDecimals: { [key: string]: number } = {
@@ -49,6 +48,20 @@ interface UserProfile {
   address: string;
   username: string | null;
   pfp: string | null;
+}
+
+function AddressDisplay({ address }: { address: string }) {
+  const { data: ensName, isLoading } = useEnsName({
+    address: address as `0x${string}`,
+  });
+
+  if (isLoading) {
+    return <Skeleton width={100} />;
+  }
+
+  return (
+    <span>{ensName || `${address.slice(0, 6)}...${address.slice(-4)}`}</span>
+  );
 }
 
 const RecentActivity: React.FC<{
@@ -97,27 +110,22 @@ const RecentActivity: React.FC<{
     function renderUserInfo(address: string, isIssuer: boolean) {
       const profile = userProfiles[address.toLowerCase()];
       const prefix = isIssuer ? "From: " : "To: ";
+
       if (profile && profile.username && profile.pfp) {
         return (
           <div className="flex items-center">
             <span className="mr-1 text-zinc-500 text-zinc-400 font-semibold">
               {prefix}
             </span>
-            <Image
-              src={profile.pfp}
-              alt={`${profile.username}'s profile picture`}
-              width={24}
-              height={24}
-              className="rounded-full mr-2"
-            />
             <span>{profile.username}</span>
           </div>
         );
       }
+
       return (
-        <div>
+        <div className="flex items-center">
           <span className="mr-1 text-kairo-white">{prefix}</span>
-          {DOMPurify.sanitize(address)}
+          <AddressDisplay address={address} />
         </div>
       );
     }
@@ -192,23 +200,26 @@ const RecentActivity: React.FC<{
             ))
           ) : filteredInvoices.length === 0 ? (
             <tr>
-              <td colSpan={3} className="py-12 text-center text-kairo-white">
+              <td colSpan={3} className="py-12 text-center text-kairo-white/90">
                 No recent activity available
               </td>
             </tr>
           ) : (
             filteredInvoices.map((day) => (
               <React.Fragment key={day.dateTime}>
-                <tr className="text-sm leading-6 text-kairo-white">
+                <tr className="text-sm leading-6">
                   <th
                     scope="colgroup"
                     colSpan={3}
-                    className="relative isolate pt-8 pb-4 font-bold"
+                    className="relative isolate pt-10 pb-4 font-bold"
                   >
-                    <time dateTime={DOMPurify.sanitize(day.dateTime)}>
+                    <time
+                      dateTime={DOMPurify.sanitize(day.dateTime)}
+                      className="text-kairo-white/80 text-base"
+                    >
                       {DOMPurify.sanitize(day.date)}
                     </time>
-                    <div className="absolute inset-y-0 left-0 -z-10 w-screen border-b border-kairo-black-a100" />
+                    <div className="absolute inset-y-0 left-0 -z-10 w-screen border-b border-kairo-black-a40" />
                   </th>
                 </tr>
                 {day.invoices.map((invoice) => {
@@ -217,17 +228,20 @@ const RecentActivity: React.FC<{
                     invoice.issuerAddress.toLowerCase() ===
                     userAddress.toLowerCase();
                   return (
-                    <tr key={invoice.id}>
-                      <td className="relative py-5 pr-6">
+                    <tr
+                      key={invoice.id}
+                      className="group  transition-colors duration-200"
+                    >
+                      <td className="relative py-6 pr-6">
                         <div className="flex gap-x-6">
                           {invoiceStatus === "Paid" ? (
                             <CheckCircleIcon
-                              className="hidden h-6 w-5 flex-none text-green-500 sm:block"
+                              className="hidden h-6 w-5 flex-none text-green-400 sm:block"
                               aria-hidden="true"
                             />
                           ) : (
                             <DocumentIcon
-                              className="hidden h-6 w-5 flex-none text-blue-500 sm:block"
+                              className="hidden h-6 w-5 flex-none text-blue-400 sm:block"
                               aria-hidden="true"
                             />
                           )}
@@ -242,8 +256,8 @@ const RecentActivity: React.FC<{
                                     alt={`${getTokenSymbol(
                                       invoice.tokenAddress
                                     )} logo`}
-                                    width={20}
-                                    height={20}
+                                    width={24}
+                                    height={24}
                                     className="mr-2"
                                   />
                                 )}
@@ -255,27 +269,27 @@ const RecentActivity: React.FC<{
                               <div
                                 className={classNames(
                                   statuses[invoiceStatus],
-                                  "rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+                                  "rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset"
                                 )}
                               >
                                 {invoiceStatus}
                               </div>
                             </div>
-                            <div className="mt-1 text-xs leading-5 text-zinc-500 text-zinc-400">
+                            <div className="mt-1.5 text-sm leading-5 text-kairo-white/60">
                               Invoice #{DOMPurify.sanitize(invoice.invoiceId)}
                             </div>
                           </div>
                         </div>
-                        <div className="absolute bottom-0 right-full h-px w-screen bg-kairo-white bg-zinc-700" />
-                        <div className="absolute bottom-0 left-0 h-px w-screen bg-kairo-white bg-zinc-700" />
+                        <div className="absolute bottom-0 right-full h-px w-screen bg-kairo-black-a40/50" />
+                        <div className="absolute bottom-0 left-0 h-px w-screen bg-kairo-black-a40/50" />
                       </td>
-                      <td className="hidden py-5 pr-6 sm:table-cell">
-                        <div className="text-sm leading-6 text-kairo-black-a20 text-kairo-white">
+                      <td className="hidden py-6 pr-6 sm:table-cell">
+                        <div className="text-sm leading-6 text-kairo-white/90">
                           {isUserIssuer
                             ? renderUserInfo(invoice.clientAddress, false)
                             : renderUserInfo(invoice.issuerAddress, true)}
                         </div>
-                        <div className="mt-1 text-xs leading-5 text-zinc-500 text-zinc-400">
+                        <div className="mt-1.5 text-sm leading-5 text-kairo-white/60">
                           {invoice.status === "Paid"
                             ? `Paid on ${DOMPurify.sanitize(
                                 invoice.paidDate || "N/A"
@@ -285,11 +299,11 @@ const RecentActivity: React.FC<{
                               )} UTC`}
                         </div>
                       </td>
-                      <td className="py-5 text-right">
+                      <td className="py-6 text-right">
                         <div className="flex justify-end">
                           <a
                             href={`/invoice/${invoice.invoiceId}`}
-                            className="text-sm font-medium leading-6 text-kairo-green hover:text-kairo-green text-kairo-green-a20 hover:text-kairo-green-a80"
+                            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full transition-colors duration-200"
                           >
                             View Invoice
                             <span className="sr-only">

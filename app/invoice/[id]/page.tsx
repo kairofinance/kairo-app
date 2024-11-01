@@ -2,36 +2,33 @@ import { Suspense } from "react";
 import AuthWrapper from "@/auth/AuthWrapper";
 import Spinner from "@/components/Spinner";
 import InvoiceIdClient from "./InvoiceIdClient";
-import { getCacheHeaders } from "@/utils/cache-headers";
+import { Metadata } from "next";
 
 interface InvoicePageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function generateMetadata({ params }: InvoicePageProps) {
-  const headers = getCacheHeaders({
-    maxAge: 3600, // 1 hour
-    staleWhileRevalidate: 300,
-  });
-
+export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: `Invoice #${params.id} | Kairo`,
-    description: `View invoice details`,
-    other: {
-      headers,
+    title: "Invoice Details | Kairo",
+    description: "View invoice details",
+    openGraph: {
+      title: "Invoice Details | Kairo",
+      description: "View invoice details",
     },
   };
 }
 
-export default function InvoicePage({ params }: InvoicePageProps) {
-  const { id: invoiceId } = params;
+export default async function InvoicePage({ params }: InvoicePageProps) {
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   return (
     <AuthWrapper>
       <Suspense fallback={<Spinner />}>
-        <InvoiceIdClient invoiceId={invoiceId} />
+        <InvoiceIdClient invoiceId={id} />
       </Suspense>
     </AuthWrapper>
   );

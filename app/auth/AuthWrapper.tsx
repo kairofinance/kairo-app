@@ -1,82 +1,89 @@
 "use client";
 
-import React, {
-  useEffect,
-  useState,
-  useCallback,
-  ReactNode,
-  useMemo,
-} from "react";
-import { useAccount, useSignMessage, useConnect } from "wagmi";
-import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState, useCallback, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { z } from "zod";
-import Cookies from "js-cookie";
 import Spinner from "@/components/Spinner";
 import debounce from "lodash/debounce";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useSignMessage } from "wagmi";
+import { motion, AnimatePresence } from "framer-motion";
+
+const fadeVariant = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.3 },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.2 },
+  },
+};
 
 const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { isConnected, address } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { signMessageAsync } = useSignMessage();
+  const { address, isConnected } = useAppKitAccount();
+  const appKit = useAppKit();
   const pathname = usePathname();
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const { signMessageAsync } = useSignMessage();
+  const [authState, setAuthState] = useState<
+    "loading" | "authenticated" | "unauthenticated"
+  >("loading");
   const [isMounted, setIsMounted] = useState(false);
-  const router = useRouter();
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  // Check authentication status
+  const checkAuthentication = useCallback(async () => {
+    if (pathname === "/") {
+      setAuthState("authenticated");
+      return;
+    }
 
-  const checkAuthentication = useCallback(
-    debounce(async () => {
-      if (pathname === "/" || !isConnected || !address) {
-        setIsAuthenticated(false);
-        setIsLoading(false);
+    if (!isConnected || !address) {
+      setAuthState("unauthenticated");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setAuthState("unauthenticated");
         return;
       }
 
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          setIsAuthenticated(false);
-          return;
+      const response = await fetch(
+        `/api/auth?address=${encodeURIComponent(address)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        const response = await fetch(
-          `/api/auth?address=${encodeURIComponent(address)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Authentication check failed");
-        }
-        const data = await response.json();
-        setIsAuthenticated(data.isAuthenticated);
-      } catch (error) {
-        console.error("Authentication check error:", error);
-        setIsAuthenticated(false);
-        localStorage.removeItem("authToken");
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error("Authentication check failed");
       }
-    }, 300), // Debounce for 300ms
-    [address, isConnected, pathname]
-  );
 
+      const data = await response.json();
+      setAuthState(data.isAuthenticated ? "authenticated" : "unauthenticated");
+    } catch (error) {
+      console.error("Authentication check error:", error);
+      localStorage.removeItem("authToken");
+      setAuthState("unauthenticated");
+    }
+  }, [address, isConnected, pathname]);
+
+  // Initial mount and auth check
   useEffect(() => {
+    setIsMounted(true);
     checkAuthentication();
   }, [checkAuthentication]);
 
+  // Handle authentication
   const handleAuthentication = useCallback(async () => {
-    setIsLoading(true);
     try {
       if (!isConnected) {
-        await connect({ connector: connectors[0] });
+        await appKit.open({ view: "Connect" });
+        return;
       }
 
       if (address) {
@@ -102,53 +109,76 @@ const AuthWrapper: React.FC<{ children: ReactNode }> = ({ children }) => {
         if (response.ok) {
           const { token } = await response.json();
           localStorage.setItem("authToken", token);
-          setIsAuthenticated(true);
+          setAuthState("authenticated");
         } else {
           throw new Error("Authentication failed");
         }
       }
     } catch (error) {
       console.error("Authentication error:", error);
-      setIsAuthenticated(false);
       localStorage.removeItem("authToken");
-    } finally {
-      setIsLoading(false);
+      setAuthState("unauthenticated");
     }
-  }, [address, isConnected, connect, connectors, signMessageAsync]);
+  }, [address, isConnected, appKit, signMessageAsync]);
 
+  // Show nothing until mounted
   if (!isMounted) {
-    return <div> </div>;
+    return null;
   }
 
-  if (pathname === "/" || isAuthenticated) {
-    return <>{children}</>;
-  }
-
-  if (isLoading) {
+  // Show loading state
+  if (authState === "loading") {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={fadeVariant}
+        className="flex justify-center items-center min-h-screen"
+      >
         <Spinner />
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex flex-col justify-center items-center h-screen">
-      <h1 className="text-2xl font-bold text-kairo-white mb-4">
-        Authentication Required
-      </h1>
-      <p className="mb-4 text-zinc-300">
-        {isConnected
-          ? "Please sign the message to access this page."
-          : "Please connect your wallet to access this page."}
-      </p>
-      <button
-        onClick={handleAuthentication}
-        className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full"
-      >
-        {isConnected ? "Sign Authentication Message" : "Connect Wallet"}
-      </button>
-    </div>
+    <AnimatePresence mode="wait">
+      {authState === "authenticated" ? (
+        <motion.div
+          key="content"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={fadeVariant}
+        >
+          {children}
+        </motion.div>
+      ) : (
+        <motion.div
+          key="auth"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={fadeVariant}
+          className="flex flex-col justify-center items-center min-h-screen"
+        >
+          <h1 className="text-2xl font-bold text-kairo-white mb-4">
+            Authentication Required
+          </h1>
+          <p className="mb-4 text-zinc-300">
+            {isConnected
+              ? "Please sign the message to access this page."
+              : "Please connect your wallet to access this page."}
+          </p>
+          <button
+            onClick={handleAuthentication}
+            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full"
+          >
+            {isConnected ? "Sign Authentication Message" : "Connect Wallet"}
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

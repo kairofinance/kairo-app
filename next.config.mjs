@@ -4,9 +4,31 @@ const nextConfig = {
   images: {
     domains: ["pspn4pqflsrqqzjp.public.blob.vercel-storage.com"],
   },
-  transpilePackages: ["@react-pdf/renderer", "viem"],
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+
+    return config;
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
+  },
+  experimental: {
+    optimizeCss: true,
+    optimizeFonts: true,
+    optimisticClientCache: false,
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Link",
+            value: "",
+          },
+        ],
+      },
+    ];
   },
 };
 

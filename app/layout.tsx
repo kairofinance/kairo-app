@@ -23,7 +23,7 @@ export default async function RootLayout({
   const cookieHeader = (await headers()).get("cookie");
 
   return (
-    <html>
+    <html lang="en">
       <body className="bg-kairo-black">
         <Providers cookies={cookieHeader || ""}>
           <div className="min-h-screen flex flex-col">

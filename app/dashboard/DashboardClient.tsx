@@ -9,6 +9,7 @@ import DashboardHeader from "./components/DashboardHeader";
 import { Locale } from "@/utils/i18n-config";
 import dynamic from "next/dynamic";
 import Spinner from "@/components/Spinner";
+import type { Stat } from "./components/Stats";
 
 const secondaryNavigation = [
   { name: "Last 7 days", period: "last7days" },
@@ -43,6 +44,98 @@ function groupInvoicesByDate(invoices: any[]) {
 
   return Object.values(grouped);
 }
+
+const calculatePercentageChange = (
+  current: number,
+  previous: number
+): string => {
+  if (previous === 0 || isNaN(current) || isNaN(previous)) return "";
+  const change = ((current - previous) / previous) * 100;
+  return isNaN(change) ? "" : `${Math.abs(change).toFixed(1)}%`;
+};
+
+const formatStats = (data: any): Stat[] => {
+  return [
+    {
+      name: "Total Revenue",
+      value: `$${data.totalRevenue.toLocaleString()}`,
+      changeType:
+        data.totalRevenue > data.previousTotalRevenue ? "increase" : "decrease",
+      change: calculatePercentageChange(
+        data.totalRevenue,
+        data.previousTotalRevenue
+      ),
+    },
+    {
+      name: "Active Projects",
+      value: data.activeProjects,
+      changeType:
+        data.activeProjects > data.previousActiveProjects
+          ? "increase"
+          : "decrease",
+      change: calculatePercentageChange(
+        data.activeProjects,
+        data.previousActiveProjects
+      ),
+    },
+    {
+      name: "Clients",
+      value: data.clientCount,
+      changeType:
+        data.clientCount > data.previousClientCount ? "increase" : "decrease",
+      change: calculatePercentageChange(
+        data.clientCount,
+        data.previousClientCount
+      ),
+    },
+    {
+      name: "Contractors",
+      value: data.contractorCount,
+      changeType:
+        data.contractorCount > data.previousContractorCount
+          ? "increase"
+          : "decrease",
+      change: calculatePercentageChange(
+        data.contractorCount,
+        data.previousContractorCount
+      ),
+    },
+    {
+      name: "Total Invoices",
+      value: data.totalInvoices,
+      changeType:
+        data.totalInvoices > data.previousTotalInvoices
+          ? "increase"
+          : "decrease",
+      change: calculatePercentageChange(
+        data.totalInvoices,
+        data.previousTotalInvoices
+      ),
+    },
+    {
+      name: "Paid Invoices",
+      value: data.paidInvoices,
+      changeType:
+        data.paidInvoices > data.previousPaidInvoices ? "increase" : "decrease",
+      change: calculatePercentageChange(
+        data.paidInvoices,
+        data.previousPaidInvoices
+      ),
+    },
+    {
+      name: "Unpaid Invoices",
+      value: data.unpaidInvoices,
+      changeType:
+        data.unpaidInvoices > data.previousUnpaidInvoices
+          ? "increase"
+          : "decrease",
+      change: calculatePercentageChange(
+        data.unpaidInvoices,
+        data.previousUnpaidInvoices
+      ),
+    },
+  ];
+};
 
 export default function DashboardClient({
   initialDictionary,
@@ -124,12 +217,20 @@ export default function DashboardClient({
     return profiles;
   }, [userProfileQueries]);
 
-  const handlePeriodChange = useCallback(
-    debounce((newPeriod: string) => {
-      setPeriod(newPeriod);
-    }, 300),
-    []
+  const handlePeriodChange = useCallback((newPeriod: string) => {
+    setPeriod(newPeriod);
+  }, []);
+
+  const debouncedHandlePeriodChange = useMemo(
+    () => debounce(handlePeriodChange, 300),
+    [handlePeriodChange]
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedHandlePeriodChange.cancel();
+    };
+  }, [debouncedHandlePeriodChange]);
 
   const { statNames, dashboardStats, groupedInvoices } = useMemo(
     () => ({
@@ -143,52 +244,7 @@ export default function DashboardClient({
         "Active Projects",
         "On-Time Payment Rate",
       ],
-      dashboardStats: statsData
-        ? [
-            {
-              name: "Total Revenue",
-              value: statsData.totalRevenue.toFixed(2),
-              changeType: "neutral" as const,
-            },
-            {
-              name: "Total Invoices",
-              value: statsData.totalInvoices.toString(),
-              changeType: "neutral" as const,
-            },
-            {
-              name: "Paid Invoices",
-              value: statsData.paidInvoices.toString(),
-              changeType: "positive" as const,
-            },
-            {
-              name: "Unpaid Invoices",
-              value: statsData.unpaidInvoices.toString(),
-              changeType: "negative" as const,
-            },
-            {
-              name: "Clients",
-              value: statsData.clientCount.toString(),
-              changeType: "neutral" as const,
-            },
-            {
-              name: "Contractors",
-              value: statsData.contractorCount.toString(),
-              changeType: "neutral" as const,
-            },
-            {
-              name: "Active Projects",
-              value: statsData.activeProjects.toString(),
-              changeType: "neutral" as const,
-            },
-            {
-              name: "On-Time Payment Rate",
-              value: isNaN(statsData.onTimePaymentRate)
-                ? "N/A"
-                : `${(statsData.onTimePaymentRate * 100).toFixed(2)}%`,
-              changeType: "neutral" as const,
-            },
-          ]
-        : [],
+      dashboardStats: statsData ? formatStats(statsData) : [],
       groupedInvoices: invoicesData?.invoices
         ? groupInvoicesByDate(invoicesData.invoices)
         : [],
@@ -221,7 +277,7 @@ export default function DashboardClient({
           title={initialDictionary.dashboard.overview}
           periods={secondaryNavigation}
           currentPeriod={period}
-          onPeriodChange={handlePeriodChange}
+          onPeriodChange={debouncedHandlePeriodChange}
           dictionary={initialDictionary}
         />
 

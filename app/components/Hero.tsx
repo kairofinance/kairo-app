@@ -4,7 +4,7 @@ import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { ArrowDownIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { ArrowTrendingUpIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract, useReadContract } from "wagmi";
@@ -16,6 +16,8 @@ import { useAlert } from "../hooks/useAlert";
 import { isAddress } from "viem";
 import { motion } from "framer-motion";
 import ProgressBar from "./ProgressBar";
+import Spinner from "./Spinner";
+import AlertMessage from "./AlertMessage";
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
@@ -46,6 +48,182 @@ const tokens = [
     decimals: 18,
   },
 ];
+
+const Bubble = ({
+  size,
+  position,
+  delay,
+}: {
+  size: number;
+  position: { x: number; y: number };
+  delay: number;
+}) => {
+  const randomMovement = 15; // Maximum distance the bubble can move in any direction
+
+  return (
+    <motion.div
+      className="absolute rounded-full bg-kairo-green/10 cursor-pointer backdrop-blur-sm"
+      style={{
+        width: size,
+        height: size,
+        left: `${position.x}%`,
+        top: `${position.y}%`,
+      }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{
+        scale: [1, 1.2, 1],
+        opacity: [0.1, 0.2, 0.1],
+        x: [0, randomMovement, -randomMovement, 0],
+        y: [0, -randomMovement, randomMovement, 0],
+      }}
+      transition={{
+        duration: 8,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay,
+      }}
+      whileHover={{
+        scale: 1.5,
+        opacity: 0.3,
+        transition: { duration: 0.3 },
+      }}
+      whileTap={{
+        scale: 0.8,
+        opacity: 0.4,
+      }}
+      drag
+      dragConstraints={{
+        left: -50,
+        right: 50,
+        top: -50,
+        bottom: 50,
+      }}
+      dragElastic={0.1}
+    />
+  );
+};
+
+const BackgroundGradient = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mousePosition = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mousePosition.current = {
+        x: e.clientX,
+        y: e.clientY,
+      };
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    let animationFrameId: number;
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Create gradient based on mouse position
+      const gradient = ctx.createRadialGradient(
+        mousePosition.current.x,
+        mousePosition.current.y,
+        0,
+        mousePosition.current.x,
+        mousePosition.current.y,
+        300
+      );
+
+      // Using kairo-green with different opacity levels
+      gradient.addColorStop(0, "rgba(137, 249, 94, 0.03)");
+      gradient.addColorStop(0.5, "rgba(137, 249, 94, 0.02)");
+      gradient.addColorStop(1, "rgba(137, 249, 94, 0)");
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 0 }}
+    />
+  );
+};
+
+const getCreateButtonText = (
+  isConnected: boolean,
+  isLoading: boolean,
+  isPending: boolean,
+  progressStep: number
+) => {
+  if (!isConnected) {
+    return isLoading ? (
+      <span className="flex items-center justify-center gap-2">
+        <Spinner inline size={15} />
+        <span>Connecting...</span>
+      </span>
+    ) : (
+      "Connect Wallet"
+    );
+  }
+
+  switch (progressStep) {
+    case 0:
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <Spinner inline size={15} />
+          <span>Creating Invoice...</span>
+        </span>
+      );
+    case 1:
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <Spinner inline size={15} />
+          <span>Confirming Transaction...</span>
+        </span>
+      );
+    case 2:
+      return (
+        <span className="flex items-center justify-center gap-2">
+          <Spinner inline size={15} />
+          <span>Finalizing...</span>
+        </span>
+      );
+    default:
+      return isPending ? (
+        <span className="flex items-center justify-center gap-2">
+          <Spinner inline size={15} />
+          <span>Creating Invoice...</span>
+        </span>
+      ) : (
+        "Create Invoice"
+      );
+  }
+};
 
 export default function Hero() {
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
@@ -211,15 +389,16 @@ export default function Hero() {
   };
 
   return (
-    <div className="mx-auto flex flex-col justify-center items-center relative">
+    <div className="mx-auto flex flex-col justify-center items-center relative overflow-hidden">
+      <BackgroundGradient />
       <motion.div
-        className="relative isolate pt-14"
+        className="relative isolate pt-8 sm:pt-14"
         initial="hidden"
         animate="visible"
         variants={fadeInVariant}
         custom={0}
       >
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:flex lg:items-center lg:gap-x-10 lg:px-8 lg:py-40">
+        <div className="mx-auto max-w-7xl px-6 py-12 sm:py-24 lg:flex lg:items-center lg:gap-x-10 lg:px-8 lg:py-32">
           <div className="mx-auto max-w-2xl lg:mx-0 lg:flex-auto">
             <motion.div className="flex" variants={fadeInVariant} custom={1}>
               <div className="relative flex items-center gap-x-4 px-4 py-2 text-sm leading-6 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full">
@@ -238,47 +417,72 @@ export default function Hero() {
               variants={fadeInVariant}
               custom={2}
             >
-              <h1 className="mt-4 max-w-lg text-3xl font-bold tracking-tight text-kairo-white sm:text-6xl">
+              <motion.h1
+                className="mt-4 max-w-lg text-3xl font-bold tracking-tight text-kairo-white sm:text-6xl"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
                 Create an instant invoice
-              </h1>
-              <motion.div className="flex gap-2 place-items-center">
+              </motion.h1>
+              <motion.div
+                className="flex gap-2 place-items-center"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
                 <ArrowTrendingUpIcon className="w-4 h-4 text-kairo-green" />
-                <p className="text-kairo-green">
+                <motion.p
+                  className="text-kairo-green font-medium"
+                  animate={{ opacity: [1, 0.7, 1] }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
                   {invoiceCount !== null
                     ? `${invoiceCount} created in the last 24 hours`
                     : "Loading..."}
-                </p>
+                </motion.p>
               </motion.div>
             </motion.div>
 
-            <motion.div className="my-8" variants={fadeInVariant} custom={3}>
-              <div className="rounded-lg bg-kairo-black-a20 bg-opacity-30 p-2 space-y-2">
-                <div className="p-5 bg-kairo-black-a20 bg-opacity-60 rounded-lg space-y-5">
+            <motion.div
+              className="my-8"
+              variants={fadeInVariant}
+              custom={3}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <div className="rounded-xl bg-kairo-black-a20/40 p-3 space-y-3 backdrop-blur-sm">
+                <div className="p-6 bg-kairo-black-a20/60 rounded-lg space-y-6">
                   {/* Amount Input Section */}
                   <motion.div
                     className="flex place-content-between"
                     variants={fadeInVariant}
                     custom={4}
                   >
-                    <div className="space-y-2">
-                      <h1 className="text-kairo-white font-semibold text-lg">
-                        Amount{" "}
+                    <div className="space-y-3">
+                      <h1 className="text-kairo-white/90 font-medium text-lg flex items-center gap-2">
+                        Amount
                         {!isValidAmount() && (
-                          <span className="text-kairo-green ml-1">*</span>
+                          <span className="text-kairo-green text-sm">*</span>
                         )}
                       </h1>
                       <input
                         placeholder="0"
                         value={amount}
                         onChange={handleAmountChange}
-                        className="text-zinc-200 text-4xl w-full bg-transparent outline-none placeholder-zinc-200/60"
+                        className="text-kairo-white text-4xl font-medium w-full bg-transparent outline-none placeholder-kairo-white/40 focus:placeholder-kairo-white/20"
                       />
                     </div>
                     <Menu
                       as="div"
                       className="relative inline-block text-left my-auto"
                     >
-                      <Menu.Button className="p-3 cursor-pointer w-[9rem] bg-kairo-black bg-opacity-40 rounded-full my-auto flex text-lg place-items-center gap-2 text-kairo-white font-bold">
+                      <Menu.Button className="p-3 cursor-pointer w-[9rem] bg-kairo-black/40 rounded-full my-auto flex text-lg place-items-center gap-2 text-kairo-white font-medium hover:bg-kairo-black/60 transition-colors duration-200">
                         <Image
                           src={selectedToken.image}
                           width={30}
@@ -298,7 +502,7 @@ export default function Hero() {
                         leaveFrom="transform opacity-100 scale-100"
                         leaveTo="transform opacity-0 scale-95"
                       >
-                        <Menu.Items className="absolute z-50 right-0 mt-2 w-[10rem] origin-top-right divide-y divide-kairo-white rounded-md text-kairo-white bg-kairo-black shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <Menu.Items className="absolute z-50 right-0 mt-2 w-[10rem] origin-top-right divide-y divide-kairo-black-a40 rounded-lg text-kairo-white bg-kairo-black shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                           <div className="px-1 py-1">
                             {tokens.map((token) => (
                               <Menu.Item key={token.name}>
@@ -306,9 +510,9 @@ export default function Hero() {
                                   <button
                                     className={`${
                                       active
-                                        ? "bg-kairo-black-a20 bg-opacity-60 text-kairo-white"
-                                        : "text-kairo-white bg-kairo-black bg-opacity-60"
-                                    } group flex w-full items-center rounded-md px-2 py-2 font-bold text-xl`}
+                                        ? "bg-kairo-black-a20/60 text-kairo-white"
+                                        : "text-kairo-white/90"
+                                    } group flex w-full items-center rounded-md px-3 py-2.5 font-bold text-lg transition-colors duration-200`}
                                     onClick={() => setSelectedToken(token)}
                                   >
                                     <Image
@@ -331,30 +535,30 @@ export default function Hero() {
 
                   {/* Due Date Section */}
                   <motion.div
-                    className="border-t-[1px] border-zinc-700 py-4 relative"
+                    className="border-t border-kairo-black-a40/50 py-6 relative"
                     variants={fadeInVariant}
                     custom={5}
                   >
-                    <h1 className="text-kairo-white font-semibold text-lg">
-                      Due{" "}
+                    <h1 className="text-kairo-white/90 font-medium text-lg flex items-center gap-2">
+                      Due Date
                       {!isValidDueDate() && (
-                        <span className="text-kairo-green ml-1">*</span>
+                        <span className="text-kairo-green text-sm">*</span>
                       )}
                     </h1>
-                    <div className="relative rounded-lg">
+                    <div className="relative rounded-lg mt-3">
                       <input
                         type="date"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="text-zinc-200 text-4xl bg-transparent w-full outline-none cursor-pointer"
+                        className="text-kairo-white text-4xl font-medium bg-transparent w-full outline-none cursor-pointer focus:text-kairo-green transition-colors duration-200"
                         min={new Date().toISOString().split("T")[0]}
                       />
                       <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          fill="gray"
+                          fill="currentColor"
                           viewBox="0 0 24 24"
-                          className="h-6 w-6"
+                          className="h-6 w-6 text-kairo-white/60"
                         >
                           <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zM19 20H5V10h14v10zM5 8V6h14v2H5z" />
                         </svg>
@@ -365,14 +569,14 @@ export default function Hero() {
 
                 {/* Client Address Section */}
                 <motion.div
-                  className="p-5 bg-kairo-black-a20 bg-opacity-60 rounded-lg relative space-y-2"
+                  className="p-6 bg-kairo-black-a20/60 rounded-lg relative"
                   variants={fadeInVariant}
                   custom={6}
                 >
-                  <h1 className="text-kairo-white font-semibold text-lg">
-                    For{" "}
+                  <h1 className="text-kairo-white/90 font-medium text-lg flex items-center gap-2">
+                    Recipient
                     {!isValidClientAddress() && (
-                      <span className="text-kairo-green ml-1">*</span>
+                      <span className="text-kairo-green text-sm">*</span>
                     )}
                   </h1>
                   <div className="rounded-lg">
@@ -380,10 +584,10 @@ export default function Hero() {
                       placeholder="0x... or ENS"
                       value={clientAddress}
                       onChange={(e) => setClientAddress(e.target.value)}
-                      className="text-zinc-200 text-4xl bg-transparent outline-none w-full placeholder-zinc-200/60"
+                      className="text-kairo-white text-4xl font-medium bg-transparent outline-none w-full placeholder-kairo-white/40 focus:placeholder-kairo-white/20"
                     />
                   </div>
-                  <ArrowDownIcon className="w-8 h-8 text-kairo-white absolute bg-[#141416] p-2 -top-7 right-1/2 rounded-full" />
+                  <ArrowDownIcon className="w-8 h-8 text-kairo-white absolute bg-[#141416] p-2 -top-7 right-1/2 rounded-full shadow-lg" />
                 </motion.div>
               </div>
 
@@ -391,19 +595,19 @@ export default function Hero() {
               <motion.button
                 onClick={isConnected ? handleSubmit : handleConnect}
                 disabled={isLoading || isPending}
-                className="w-full mt-4 text-center place-items-center flex items-center gap-x-1 rounded-md text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-3 text-sm font-semibold shadow-lg hover:bg-kairo-green/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kairo-green disabled:opacity-50"
+                className="w-full mt-4 text-center place-items-center flex items-center justify-center gap-x-2 rounded-lg text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-4 py-3 text-sm font-medium shadow-lg hover:bg-kairo-green/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kairo-green disabled:opacity-50 disabled:cursor-not-allowed h-12 transition-all duration-200"
                 variants={fadeInVariant}
                 custom={7}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1.2 }}
               >
-                <p className="mx-auto text-xl">
-                  {isConnected
-                    ? isPending
-                      ? "Creating Invoice..."
-                      : "Create Invoice"
-                    : isLoading
-                    ? "Connecting..."
-                    : "Connect Wallet"}
-                </p>
+                {getCreateButtonText(
+                  isConnected,
+                  isLoading,
+                  isPending,
+                  progressStep
+                )}
               </motion.button>
 
               {/* Progress Bar */}
@@ -421,24 +625,19 @@ export default function Hero() {
                   </div>
                 </motion.div>
               )}
+
+              {/* Alert */}
+              {alertState && (
+                <AlertMessage
+                  message={alertState.message}
+                  type={alertState.type}
+                  onDismiss={dismissAlert}
+                />
+              )}
             </motion.div>
           </div>
         </div>
       </motion.div>
-
-      {/* Alert */}
-      {alertState && (
-        <div
-          className={`fixed bottom-4 right-4 p-4 rounded-md ${
-            alertState.type === "success" ? "bg-green-500" : "bg-kairo-green"
-          } text-kairo-white`}
-        >
-          {alertState.message}
-          <button onClick={dismissAlert} className="ml-2 font-bold">
-            ×
-          </button>
-        </div>
-      )}
     </div>
   );
 }

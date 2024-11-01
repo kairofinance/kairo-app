@@ -17,7 +17,7 @@ export default async function NotFound() {
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow flex flex-col items-center justify-center bg-kairo-black bg-gradient-to-t ">
-        <div className="text-center">
+        <div className="text-center place-content-center place-items-center">
           <h1 className="text-6xl font-bold text-kairo-white mb-4">404</h1>
           <h2 className="text-2xl font-semibold text-kairo-white mb-4">
             {dictionary?.notFound?.title || "Page Not Found"}
@@ -28,7 +28,7 @@ export default async function NotFound() {
           </p>
           <Link
             href="/"
-            className="bg-kairo-green text-kairo-white font-bold py-2 px-4 rounded transition duration-300 hover:bg-kairo-green-a40"
+            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full"
           >
             {dictionary?.notFound?.goHome || "Go Back Home"}
           </Link>

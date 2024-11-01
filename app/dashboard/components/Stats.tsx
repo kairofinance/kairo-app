@@ -4,8 +4,9 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 export interface Stat {
   name: string;
-  value: string;
-  changeType: "neutral" | "positive" | "negative";
+  value: string | number;
+  changeType?: "increase" | "decrease";
+  change?: string;
 }
 
 interface StatsProps {
@@ -14,49 +15,49 @@ interface StatsProps {
   isLoading: boolean;
 }
 
-/**
- * Stats component
- *
- * Displays a grid of statistical data.
- *
- * @param {Object} props - Component props
- * @param {string[]} props.statNames - Array of stat names to display
- * @param {Stat[]} props.stats - Array of stat objects to display
- * @param {boolean} props.isLoading - Loading state of the component
- * @returns {React.ReactElement} Rendered Stats component
- */
-const Stats: React.FC<StatsProps> = React.memo(
-  ({ statNames, stats, isLoading }) => {
-    return (
-      <div className="border-b border-b-kairo-black-a40 ">
-        <dl className="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:px-2 xl:px-0">
-          {statNames.map((name, statIdx) => (
-            <div
-              key={name}
-              className={`flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-kairo-black-a40 px-4 py-10 sm:px-6 lg:border-t-0 xl:px-8 ${
-                statIdx % 2 === 1
-                  ? "sm:border-l"
-                  : statIdx === 2
-                  ? "lg:border-l"
-                  : ""
-              } border-kairo-white/5`}
-            >
-              <dt className="text-sm leading-6 text-kairo-white">{name}</dt>
-              <dd className="w-full flex-none text-3xl font-bold leading-10 tracking-tight text-kairo-white">
-                {isLoading ? (
-                  <Skeleton width={100} height={36} />
-                ) : (
-                  stats[statIdx]?.value || "N/A"
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    );
-  }
-);
-
-Stats.displayName = "Stats";
-
-export default Stats;
+export default function Stats({ statNames, stats, isLoading }: StatsProps) {
+  return (
+    <div className="mt-4 first:mt-0">
+      <dl className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+        {isLoading
+          ? Array(4)
+              .fill(0)
+              .map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-kairo-black-a20/30 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 xl:px-8 rounded-lg"
+                >
+                  <Skeleton width={120} />
+                  <Skeleton width={80} height={30} className="mt-2" />
+                </div>
+              ))
+          : stats.map((stat, index) => (
+              <div
+                key={index}
+                className="relative overflow-hidden bg-kairo-black-a20/30 px-3 py-4 sm:px-4 sm:py-5 lg:px-6 rounded-lg transition-all duration-300 hover:bg-kairo-black-a20/50"
+              >
+                <dt className="truncate text-xs sm:text-sm font-medium text-kairo-white/70">
+                  {statNames[index]}
+                </dt>
+                <dd className="mt-2 flex items-baseline gap-x-2">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-semibold text-kairo-white">
+                    {stat.value}
+                  </div>
+                  {stat.change && (
+                    <div
+                      className={`inline-flex items-baseline rounded-full px-2 py-0.5 text-xs sm:text-sm font-medium ${
+                        stat.changeType === "increase"
+                          ? "bg-green-500/10 text-green-400"
+                          : "bg-red-500/10 text-red-400"
+                      }`}
+                    >
+                      {stat.change}
+                    </div>
+                  )}
+                </dd>
+              </div>
+            ))}
+      </dl>
+    </div>
+  );
+}

@@ -1,10 +1,24 @@
 import React from "react";
 import ScaleLoader from "react-spinners/ScaleLoader";
 
-const Spinner: React.FC = () => {
+interface SpinnerProps {
+  inline?: boolean;
+  size?: number;
+  color?: string;
+}
+
+const Spinner: React.FC<SpinnerProps> = ({
+  inline = false,
+  size = 35,
+  color = "#99fa72",
+}) => {
+  if (inline) {
+    return <ScaleLoader color={color} height={size} />;
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-15">
-      <ScaleLoader color="#99fa72" />
+      <ScaleLoader color={color} height={size} />
     </div>
   );
 };
