@@ -11,7 +11,7 @@ import RouteTransition from "@/components/shared/ui/RouteTransition";
 export const metadata: Metadata = {
   title: "Kairo - Web3 Billing Platform",
   description:
-    "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing with enterprise-grade security.",
+    "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing.",
   keywords: [
     "Web3 billing",
     "crypto payments",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Kairo - Web3 Billing Platform",
     description:
-      "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing with enterprise-grade security.",
+      "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing",
     url: "https://kairo.finance", // Replace with your actual domain
     siteName: "Kairo",
     images: [
