@@ -12,6 +12,10 @@ interface ActivitySectionProps {
   userProfiles: { [key: string]: any };
 }
 
+interface MenuItemProps {
+  active: boolean;
+}
+
 const filterOptions = [
   { label: "All", value: "all" },
   { label: "Paid", value: "paid" },
@@ -66,7 +70,7 @@ export default function ActivitySection({
                   <div className="py-1">
                     {filterOptions.map((option) => (
                       <Menu.Item key={option.value}>
-                        {({ active }) => (
+                        {({ active }: MenuItemProps) => (
                           <button
                             className={`
                               relative w-full text-left px-3 py-1.5 text-sm transition-all duration-200

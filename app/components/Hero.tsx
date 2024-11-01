@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import ProgressBar from "./ProgressBar";
 import Spinner from "./Spinner";
 import AlertMessage from "./AlertMessage";
+import { useRouter } from "next/navigation";
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
@@ -225,6 +226,10 @@ const getCreateButtonText = (
   }
 };
 
+interface MenuItemProps {
+  active: boolean;
+}
+
 export default function Hero() {
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
   const [isLoading, setIsLoading] = useState(false);
@@ -315,6 +320,8 @@ export default function Hero() {
     );
   };
 
+  const router = useRouter();
+
   const handleSubmit = async () => {
     if (!isValidAmount() || !isValidDueDate() || !isValidClientAddress()) {
       showAlert("Please fill out all fields correctly.", "error");
@@ -351,6 +358,10 @@ export default function Hero() {
 
       setProgressStep(1);
 
+      const invoiceId = nextInvoiceId
+        ? (Number(nextInvoiceId) - 1).toString()
+        : undefined;
+
       // Create invoice in database
       const invoiceResponse = await fetch("/api/invoices", {
         method: "POST",
@@ -362,9 +373,7 @@ export default function Hero() {
           amount: parsedAmount.toString(),
           dueDate: new Date(dueDate).toISOString(),
           creationTransactionHash: result,
-          invoiceId: nextInvoiceId
-            ? (Number(nextInvoiceId) - 1).toString()
-            : undefined,
+          invoiceId,
         }),
       });
 
@@ -374,14 +383,36 @@ export default function Hero() {
 
       showAlert(`Invoice created successfully!`, "success");
       setProgressStep(2);
-    } catch (error) {
+
+      // Reset form and redirect after a short delay
+      setTimeout(() => {
+        setAmount("");
+        setDueDate("");
+        setClientAddress("");
+        setProgressStep(-1);
+        // Redirect to the invoice page
+        router.push(`/invoice/${invoiceId}`);
+      }, 1500); // Reduced to 1.5 seconds for better UX
+    } catch (error: any) {
       console.error("Error creating invoice:", error);
-      showAlert(
-        `Failed to create invoice: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "error"
-      );
+
+      if (
+        error.message.includes("User rejected") ||
+        error.message.includes("User denied") ||
+        error.message.includes("rejected the request")
+      ) {
+        showAlert("Transaction cancelled", "error");
+        setProgressStep(-1);
+        return;
+      }
+
+      let errorMessage = "Failed to create invoice. Please try again.";
+
+      if (error.message.includes("insufficient funds")) {
+        errorMessage = "Insufficient funds to create invoice";
+      }
+
+      showAlert(errorMessage, "error");
       setProgressStep(-1);
     } finally {
       setIsLoading(false);
@@ -506,7 +537,7 @@ export default function Hero() {
                           <div className="px-1 py-1">
                             {tokens.map((token) => (
                               <Menu.Item key={token.name}>
-                                {({ active }) => (
+                                {({ active }: MenuItemProps) => (
                                   <button
                                     className={`${
                                       active

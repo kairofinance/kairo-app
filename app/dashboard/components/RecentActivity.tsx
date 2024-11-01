@@ -5,7 +5,12 @@ import Image from "next/image";
 import { formatUnits } from "viem";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { useEnsName } from "wagmi";
+import {
+  formatDate,
+  formatDateTime,
+  formatRelativeTime,
+} from "@/utils/date-format";
+import AddressDisplay from "@/components/shared/AddressDisplay";
 
 interface Invoice {
   id: string;
@@ -48,20 +53,6 @@ interface UserProfile {
   address: string;
   username: string | null;
   pfp: string | null;
-}
-
-function AddressDisplay({ address }: { address: string }) {
-  const { data: ensName, isLoading } = useEnsName({
-    address: address as `0x${string}`,
-  });
-
-  if (isLoading) {
-    return <Skeleton width={100} />;
-  }
-
-  return (
-    <span>{ensName || `${address.slice(0, 6)}...${address.slice(-4)}`}</span>
-  );
 }
 
 const RecentActivity: React.FC<{
@@ -108,24 +99,15 @@ const RecentActivity: React.FC<{
     }
 
     function renderUserInfo(address: string, isIssuer: boolean) {
-      const profile = userProfiles[address.toLowerCase()];
       const prefix = isIssuer ? "From: " : "To: ";
-
-      if (profile && profile.username && profile.pfp) {
-        return (
-          <div className="flex items-center">
-            <span className="mr-1 text-zinc-500 text-zinc-400 font-semibold">
-              {prefix}
-            </span>
-            <span>{profile.username}</span>
-          </div>
-        );
-      }
 
       return (
         <div className="flex items-center">
-          <span className="mr-1 text-kairo-white">{prefix}</span>
-          <AddressDisplay address={address} />
+          <span className="mr-1 text-kairo-white/60">{prefix}</span>
+          <AddressDisplay
+            address={address}
+            className="text-kairo-white/90 hover:text-kairo-white transition-colors duration-200"
+          />
         </div>
       );
     }
@@ -138,16 +120,6 @@ const RecentActivity: React.FC<{
       return invoice.issuerAddress.toLowerCase() === userAddress.toLowerCase()
         ? "Created"
         : "Incoming";
-    }
-
-    function formatDateTime(dateString: string): string {
-      const date = new Date(dateString);
-      return date.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-        timeZone: "UTC",
-      });
     }
 
     const renderSkeletonRow = () => (
@@ -217,7 +189,7 @@ const RecentActivity: React.FC<{
                       dateTime={DOMPurify.sanitize(day.dateTime)}
                       className="text-kairo-white/80 text-base"
                     >
-                      {DOMPurify.sanitize(day.date)}
+                      {formatDate(DOMPurify.sanitize(day.date))}
                     </time>
                     <div className="absolute inset-y-0 left-0 -z-10 w-screen border-b border-kairo-black-a40" />
                   </th>
@@ -291,12 +263,12 @@ const RecentActivity: React.FC<{
                         </div>
                         <div className="mt-1.5 text-sm leading-5 text-kairo-white/60">
                           {invoice.status === "Paid"
-                            ? `Paid on ${DOMPurify.sanitize(
+                            ? `Paid ${formatRelativeTime(
                                 invoice.paidDate || "N/A"
                               )}`
-                            : `Created at ${formatDateTime(
+                            : `Created ${formatRelativeTime(
                                 invoice.issuedDate
-                              )} UTC`}
+                              )}`}
                         </div>
                       </td>
                       <td className="py-6 text-right">

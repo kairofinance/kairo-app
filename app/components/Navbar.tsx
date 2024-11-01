@@ -11,9 +11,18 @@ import {
   useDisconnect,
 } from "@reown/appkit/react";
 
+interface DisclosureRenderProps {
+  open: boolean;
+}
+
+interface MenuItemProps {
+  active: boolean;
+}
+
 const navigation = [
   { name: "Create", href: "/" },
   { name: "Dashboard", href: "/dashboard" },
+  { name: "Contacts", href: "/contacts" },
 ];
 
 const Navbar = () => {
@@ -38,7 +47,7 @@ const Navbar = () => {
       as="nav"
       className="bg-kairo-black-a20 bg-opacity-10 border-b border-kairo-black-a40/20 shadow-sm"
     >
-      {({ open: isOpen }) => (
+      {({ open: isOpen }: DisclosureRenderProps) => (
         <>
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
@@ -99,7 +108,7 @@ const Navbar = () => {
                     <Menu.Items className="absolute right-0 z-10 mt-2 w-48 rounded-lg bg-kairo-black-a20 py-1 shadow-lg">
                       {userNavigation.map((item) => (
                         <Menu.Item key={item.name}>
-                          {({ active }) => (
+                          {({ active }: MenuItemProps) => (
                             <Link
                               href={item.href}
                               onClick={item.onClick}

@@ -15,10 +15,12 @@ import { useEnsName } from "wagmi";
 import Spinner from "@/components/Spinner";
 import { ERC20ABI } from "contracts/ERC20.sol/ERC20";
 import { client } from "../../../wagmi.config";
-import { PDFDownloadButton } from "@/components/PDFDownloadButton";
 import { PDFViewer } from "@/components/PDFViewer";
 import ContentSkeleton from "@/components/shared/ui/ContentSkeleton";
 import { XCircleIcon } from "@heroicons/react/24/solid";
+import { HomeIcon } from "@heroicons/react/20/solid";
+import Link from "next/link";
+import AddressDisplay from "@/components/shared/AddressDisplay";
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
@@ -35,17 +37,16 @@ const fadeInVariant = {
   }),
 };
 
-interface AddressDisplayProps {
+interface InvoiceAddressDisplayProps {
   address: string | undefined;
   label: string;
 }
 
-const AddressDisplay = ({ address, label }: AddressDisplayProps) => {
+const InvoiceAddressDisplay = ({
+  address,
+  label,
+}: InvoiceAddressDisplayProps) => {
   const { address: currentAddress } = useAppKitAccount();
-  const { data: ensName, isLoading } = useEnsName({
-    address: address as `0x${string}`,
-  });
-
   const isCurrentUser =
     currentAddress?.toLowerCase() === address?.toLowerCase();
 
@@ -53,14 +54,15 @@ const AddressDisplay = ({ address, label }: AddressDisplayProps) => {
     <div className="space-y-2">
       <h2 className="text-kairo-white/70 text-sm font-medium">{label}</h2>
       <div className="text-kairo-white text-lg font-medium break-all">
-        {isLoading ? (
-          <Spinner />
-        ) : !address ? (
+        {!address ? (
           "No Address"
-        ) : isCurrentUser ? (
-          "You"
         ) : (
-          ensName || address
+          <span>
+            <AddressDisplay address={address} showFull />
+            {isCurrentUser && (
+              <span className="text-kairo-white/60 ml-2">(You)</span>
+            )}
+          </span>
         )}
       </div>
     </div>
@@ -304,6 +306,40 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await fetch(`/api/invoices/${invoice.invoiceId}/pdf`, {
+        headers: {
+          "x-user-address": address || "",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to download PDF");
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${invoice.invoiceId}.pdf`;
+
+      // Trigger download
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      setError("Failed to download PDF");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-kairo-black">
@@ -446,6 +482,50 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
   return (
     <div className="min-h-screen bg-kairo-black">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        {/* Add breadcrumb navigation */}
+        <motion.nav
+          aria-label="Breadcrumb"
+          className="mb-8"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ol role="list" className="flex items-center space-x-4">
+            <li>
+              <div>
+                <Link
+                  href="/dashboard"
+                  className="text-kairo-white/60 hover:text-kairo-white transition-colors duration-200"
+                >
+                  <HomeIcon
+                    className="h-5 w-5 flex-shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">Dashboard</span>
+                </Link>
+              </div>
+            </li>
+            <li>
+              <div className="flex items-center">
+                <svg
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                  className="h-5 w-5 flex-shrink-0 text-kairo-white/30"
+                >
+                  <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
+                </svg>
+                <span
+                  className="ml-4 text-sm font-medium text-kairo-white"
+                  aria-current="page"
+                >
+                  Invoice #{invoiceId}
+                </span>
+              </div>
+            </li>
+          </ol>
+        </motion.nav>
+
         <motion.div className="space-y-8" initial="hidden" animate="visible">
           {/* Header Section */}
           <motion.div
@@ -507,7 +587,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                   variants={fadeInVariant}
                   custom={4}
                 >
-                  <AddressDisplay
+                  <InvoiceAddressDisplay
                     address={invoice.issuerAddress}
                     label="From"
                   />
@@ -518,7 +598,10 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                   variants={fadeInVariant}
                   custom={5}
                 >
-                  <AddressDisplay address={invoice.clientAddress} label="To" />
+                  <InvoiceAddressDisplay
+                    address={invoice.clientAddress}
+                    label="To"
+                  />
                 </motion.div>
 
                 <motion.div
@@ -546,7 +629,25 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                   <h2 className="text-kairo-white/70 text-sm font-medium mb-2">
                     Invoice Document
                   </h2>
-                  <PDFViewer url={`/api/invoices/${invoice.invoiceId}/pdf`} />
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-kairo-black-a20/40 hover:bg-kairo-black-a20/60 text-kairo-white/90 hover:text-kairo-white transition-all duration-200 group"
+                  >
+                    <span className="text-sm">Download PDF</span>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
                 </motion.div>
               </motion.div>
             </motion.div>

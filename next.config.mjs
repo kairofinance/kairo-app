@@ -14,7 +14,6 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    optimizeFonts: true,
     optimisticClientCache: false,
   },
   async headers() {
