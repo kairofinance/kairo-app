@@ -9,10 +9,59 @@ import { headers } from "next/headers";
 import RouteTransition from "@/components/shared/ui/RouteTransition";
 
 export const metadata: Metadata = {
-  title: "Kairo",
+  title: "Kairo - Web3 Billing Platform",
   description:
-    "Secure Web3 billing with real-time insights and seamless transactions.",
-  icons: "./favicon.ico",
+    "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing with enterprise-grade security.",
+  keywords: [
+    "Web3 billing",
+    "crypto payments",
+    "blockchain invoicing",
+    "cryptocurrency",
+    "payment solutions",
+    "Web3 payments",
+  ],
+  authors: [{ name: "Kairo" }],
+  creator: "Kairo",
+  publisher: "Kairo",
+  icons: {
+    icon: "./favicon.ico",
+  },
+  openGraph: {
+    title: "Kairo - Web3 Billing Platform",
+    description:
+      "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing with enterprise-grade security.",
+    url: "https://kairo.finance", // Replace with your actual domain
+    siteName: "Kairo",
+    images: [
+      {
+        url: "/preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Kairo Web3 Billing Platform Preview",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kairo - Web3 Billing Platform",
+    description:
+      "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing.",
+    images: ["/preview.png"],
+    creator: "@KairoFinance", // Replace with your Twitter handle
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default async function RootLayout({
