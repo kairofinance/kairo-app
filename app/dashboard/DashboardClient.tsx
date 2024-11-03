@@ -263,7 +263,7 @@ export default function DashboardClient({
 
   if (error) {
     return (
-      <div className="bg-red-900 border-red-700 text-kairo-green-a80 px-4 py-3 rounded relative mb-4">
+      <div className="bg-red-900 border-red-700 text-orange-600-a80 px-4 py-3 rounded relative mb-4">
         <strong className="font-bold">Error: </strong>
         <span className="block sm:inline">{error}</span>
       </div>

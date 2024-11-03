@@ -18,7 +18,7 @@ export default function RouteTransition() {
   return (
     <div
       className={cn(
-        "fixed top-0 left-0 right-0 h-1 bg-kairo-green/50 transition-all duration-500",
+        "fixed top-0 left-0 right-0 h-1 bg-orange-600/50 transition-all duration-500",
         isTransitioning ? "opacity-100" : "opacity-0"
       )}
       style={{

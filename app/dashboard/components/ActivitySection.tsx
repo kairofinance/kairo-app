@@ -38,71 +38,52 @@ export default function ActivitySection({
         <div className="mx-auto max-w-7xl">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-base font-semibold leading-6 text-kairo-white lg:mx-0 lg:max-w-none">
+              <h2 className="text-base font-semibold leading-6 text-white lg:mx-0 lg:max-w-none">
                 {dictionary.dashboard.recentActivity.title}
               </h2>
-              <p className="mt-2 text-sm text-zinc-300">
+              <p className="mt-2 text-sm text-white/60">
                 {dictionary.dashboard.recentActivity.description}
               </p>
             </div>
 
             <Menu as="div" className="relative inline-block text-left">
-              <Menu.Button className="px-4 py-2 cursor-pointer bg-kairo-black-a20/60 rounded-lg flex items-center gap-2 text-kairo-white font-medium hover:bg-kairo-black-a20/80 transition-colors duration-200 border border-zinc-800/50 hover:border-zinc-700/50">
-                <FunnelIcon className="w-4 h-4 text-kairo-white/70" />
-                <span className="text-sm">
+              <Menu.Button className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10">
+                <FunnelIcon className="w-4 h-4 text-white/60 mr-2" />
+                <span>
                   {
                     filterOptions.find((option) => option.value === filter)
                       ?.label
                   }
                 </span>
-                <ChevronDownIcon className="w-4 h-4 text-kairo-white/70" />
+                <ChevronDownIcon className="w-4 h-4 ml-2" />
               </Menu.Button>
               <Transition
                 as={Fragment}
-                enter="transition ease-out duration-100"
+                enter="transition ease-out duration-200"
                 enterFrom="transform opacity-0 scale-95"
                 enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
+                leave="transition ease-in duration-150"
                 leaveFrom="transform opacity-100 scale-100"
                 leaveTo="transform opacity-0 scale-95"
               >
-                <Menu.Items className="absolute z-50 right-0 mt-1 w-32 origin-top-right rounded-lg text-kairo-white bg-kairo-black-a20/95 backdrop-blur-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none border border-zinc-800/50">
-                  <div className="py-1">
+                <Menu.Items className="absolute z-50 right-0 mt-2 w-48 origin-top-right rounded-xl bg-black/80 backdrop-blur-sm border border-white/10 shadow-2xl">
+                  <div className="px-1 py-1">
                     {filterOptions.map((option) => (
                       <Menu.Item key={option.value}>
-                        {({ active }: MenuItemProps) => (
+                        {({ active }) => (
                           <button
                             className={`
-                              relative w-full text-left px-3 py-1.5 text-sm transition-all duration-200
-                              ${
-                                active
-                                  ? "text-kairo-white"
-                                  : "text-kairo-white/90"
-                              }
+                              ${active ? "bg-white/10" : ""}
                               ${
                                 filter === option.value
-                                  ? "bg-kairo-black-a20/40"
-                                  : ""
+                                  ? "text-orange-600"
+                                  : "text-white"
                               }
-                              group hover:pl-5
+                              group flex w-full items-center rounded-lg px-3 py-2 text-sm transition-all duration-200
                             `}
                             onClick={() => setFilter(option.value)}
                           >
-                            <span className="relative z-10 flex items-center gap-2">
-                              <span
-                                className={`
-                                absolute left-0 w-0 h-full bg-kairo-green/10 top-0
-                                transition-all duration-200 -z-10
-                                ${active ? "w-full" : "w-0"}
-                              `}
-                              />
-                              {option.label}
-                              {filter === option.value && (
-                                <span className="ml-auto text-kairo-green">
-                                  •
-                                </span>
-                              )}
-                            </span>
+                            {option.label}
                           </button>
                         )}
                       </Menu.Item>

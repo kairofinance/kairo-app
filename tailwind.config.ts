@@ -14,6 +14,8 @@ const config: Config = {
         "garet-heavy": ["Garet-Heavy", "sans-serif"],
         garet: ["Garet-Book", "sans-serif"],
         montserrat: ["Montserrat", "sans-serif"],
+        hagrid: ["Hagrid", "sans-serif"],
+        "hagrid-text": ["Hagrid Text", "sans-serif"],
       },
       colors: {
         kairo: {
@@ -26,7 +28,7 @@ const config: Config = {
             a100: "#d0feba",
           },
           black: {
-            DEFAULT: "#121212", // a0
+            DEFAULT: "#181818", // a0
             a20: "#282828",
             a40: "#3f3f3f",
             a60: "#575757",

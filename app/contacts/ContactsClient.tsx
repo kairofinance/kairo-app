@@ -1,15 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useQuery } from "@tanstack/react-query";
 import { XCircleIcon, UserPlusIcon } from "@heroicons/react/24/solid";
+import { motion } from "framer-motion";
 import { useAlert } from "@/hooks/useAlert";
 import AlertMessage from "@/components/AlertMessage";
-import Spinner from "@/components/Spinner";
 import ContactList from "./components/ContactList";
 import AddContactModal from "./components/AddContactModal";
+
+const fadeInVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+      delay: custom * 0.1,
+      ease: [0.25, 0.1, 0.25, 1],
+    },
+  }),
+};
 
 interface Contact {
   id: string;
@@ -96,14 +108,14 @@ export default function ContactsClient() {
 
   if (!address) {
     return (
-      <div className="min-h-screen bg-kairo-black">
+      <div className="min-h-screen">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="rounded-xl bg-kairo-black-a20/40 p-8 backdrop-blur-sm text-center">
-            <XCircleIcon className="mx-auto h-12 w-12 text-red-400" />
-            <h3 className="mt-2 text-lg font-medium text-kairo-white">
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 border border-white/10">
+            <XCircleIcon className="mx-auto h-12 w-12 text-orange-600" />
+            <h3 className="mt-2 text-lg font-medium text-white">
               Wallet Not Connected
             </h3>
-            <p className="mt-2 text-sm text-kairo-white/70">
+            <p className="mt-2 text-sm text-white/60">
               Please connect your wallet to view your contacts
             </p>
           </div>
@@ -113,39 +125,57 @@ export default function ContactsClient() {
   }
 
   return (
-    <div className="min-h-screen bg-kairo-black">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-kairo-white">Contacts</h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-lg hover:bg-kairo-green/20 transition-colors duration-200"
-          >
-            <UserPlusIcon className="h-5 w-5" />
-            Add Contact
-          </button>
-        </div>
+        <motion.div
+          className="space-y-8"
+          initial="hidden"
+          animate="visible"
+          variants={fadeInVariant}
+          custom={0}
+        >
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Address Book</h1>
+              <p className="mt-2 text-sm text-white/60">
+                Manage your saved addresses and contacts
+              </p>
+            </div>
 
-        <ContactList
-          contacts={localContacts}
-          onRefetch={refetchContacts}
-          onDelete={handleContactDelete}
-          onEdit={handleContactEdit}
-        />
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
+            >
+              <UserPlusIcon className="h-5 w-5 mr-2" />
+              Add Contact
+            </button>
+          </div>
 
-        <AddContactModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={handleAddContact}
-        />
-
-        {alertState && (
-          <AlertMessage
-            message={alertState.message}
-            type={alertState.type}
-            onDismiss={dismissAlert}
+          {/* Contact List */}
+          <ContactList
+            contacts={localContacts}
+            onRefetch={refetchContacts}
+            onDelete={handleContactDelete}
+            onEdit={handleContactEdit}
           />
-        )}
+
+          {/* Add Contact Modal */}
+          <AddContactModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSuccess={handleAddContact}
+          />
+
+          {/* Alert */}
+          {alertState && (
+            <AlertMessage
+              message={alertState.message}
+              type={alertState.type}
+              onDismiss={dismissAlert}
+            />
+          )}
+        </motion.div>
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ export default function Stats({ stats }: StatsProps) {
           className="relative overflow-hidden rounded-lg bg-kairo-black-a20/40 px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6"
         >
           <dt>
-            <div className="absolute rounded-md bg-kairo-green/10 p-3">
+            <div className="absolute rounded-md bg-orange-600/10 p-3">
               {/* Icon can be added here if needed */}
             </div>
             <p className="ml-16 truncate text-sm font-medium text-kairo-white/70">

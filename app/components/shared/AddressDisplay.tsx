@@ -27,12 +27,12 @@ export default function AddressDisplay({
   return (
     <span
       className={`${className} inline-flex items-center gap-1.5 ${
-        isContact ? "text-kairo-green" : ""
+        isContact ? "text-white font-medium" : ""
       }`}
     >
       {isContact && (
         <UserCircleIcon
-          className="h-4 w-4 text-kairo-green/70"
+          className="h-4 w-4 text-white font-medium"
           title="Saved Contact"
         />
       )}

@@ -394,7 +394,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-kairo-black">
+      <div className="min-h-screen">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-8">
             {/* Header Skeleton */}
@@ -477,7 +477,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-kairo-black">
+      <div className="min-h-screen ">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
           <div className="rounded-xl bg-kairo-black-a20/40 p-8 backdrop-blur-sm text-center">
             <XCircleIcon className="mx-auto h-12 w-12 text-red-400" />
@@ -499,6 +499,25 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     );
   }
 
+  // Update the button styles
+  const buttonClasses = {
+    primary:
+      "inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10",
+    secondary:
+      "inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10",
+  };
+
+  // Update the card styles
+  const cardClasses =
+    "bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6";
+
+  // Update the status badges
+  const statusClasses = {
+    paid: "bg-white/5 text-green-400 border border-green-400/20",
+    pending: "bg-white/5 text-orange-600 border border-orange-600/20",
+  };
+
+  // Update the payment button text styles
   const getPaymentButtonText = () => {
     switch (paymentStep) {
       case "approving":
@@ -531,185 +550,135 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     }
   };
 
+  // Update the main container styles
   return (
-    <div className="min-h-screen bg-kairo-black">
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
-        {/* Update breadcrumb navigation */}
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        {/* Breadcrumb navigation */}
         <motion.nav
           aria-label="Breadcrumb"
-          className="mb-4 sm:mb-8"
+          className="mb-8"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <ol role="list" className="flex items-center space-x-2 sm:space-x-4">
+          <ol className="flex items-center space-x-4">
             <li>
-              <div>
-                <Link
-                  href="/dashboard"
-                  className="text-kairo-white/60 hover:text-kairo-white transition-colors duration-200"
-                >
-                  <HomeIcon
-                    className="h-5 w-5 flex-shrink-0"
-                    aria-hidden="true"
-                  />
-                  <span className="sr-only">Dashboard</span>
-                </Link>
-              </div>
+              <Link
+                href="/dashboard"
+                className="text-white/60 hover:text-white transition-colors duration-200"
+              >
+                <HomeIcon className="h-5 w-5" aria-hidden="true" />
+                <span className="sr-only">Dashboard</span>
+              </Link>
             </li>
-            <li>
-              <div className="flex items-center">
-                <svg
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                  className="h-5 w-5 flex-shrink-0 text-kairo-white/30"
-                >
-                  <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
-                </svg>
-                <span
-                  className="ml-4 text-sm font-medium text-kairo-white"
-                  aria-current="page"
-                >
-                  Invoice #{invoiceId}
-                </span>
-              </div>
+            <li className="flex items-center">
+              <svg
+                className="h-5 w-5 flex-shrink-0 text-white/30"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
+              </svg>
+              <span className="ml-4 text-sm font-medium text-white">
+                Invoice #{invoiceId}
+              </span>
             </li>
           </ol>
         </motion.nav>
 
-        <motion.div
-          className="space-y-6 sm:space-y-8"
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Header Section */}
-          <motion.div
-            className="flex flex-col gap-1 sm:gap-2"
-            variants={fadeInVariant}
-            custom={0}
-          >
-            <h1 className="text-2xl sm:text-3xl font-bold text-kairo-white">
+        {/* Main content */}
+        <div className="space-y-8">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold text-white">
               Invoice #{invoiceId}
             </h1>
-            <p className="text-sm sm:text-base text-kairo-white/60">
-              Created on{" "}
-              {new Date(invoice.issuedDate).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+            <p className="mt-2 text-white/60">
+              Created on {new Date(invoice.issuedDate).toLocaleDateString()}
             </p>
-          </motion.div>
+          </div>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
-            {/* Left Column */}
-            <motion.div
-              className="space-y-4 sm:space-y-6"
-              variants={fadeInVariant}
-              custom={1}
-            >
-              <motion.div className="rounded-xl bg-kairo-black-a20/40 p-4 sm:p-6 space-y-4 sm:space-y-6 backdrop-blur-sm">
-                {/* Amount Display */}
-                <motion.div className="flex items-center gap-3 sm:gap-4">
-                  <Image
-                    src={`/tokens/${
-                      getTokenInfo(invoice.tokenAddress).symbol
-                    }.png`}
-                    alt={getTokenInfo(invoice.tokenAddress).symbol}
-                    width={32}
-                    height={32}
-                    className="rounded-full sm:w-10 sm:h-10"
-                  />
-                  <div>
-                    <p className="text-xl sm:text-3xl font-bold text-kairo-white">
-                      {formatAmount(invoice.amount)}{" "}
-                      <span className="text-lg sm:text-2xl">
-                        {getTokenInfo(invoice.tokenAddress).symbol}
-                      </span>
-                    </p>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  className="pt-6 border-t border-kairo-black-a40/50"
-                  variants={fadeInVariant}
-                  custom={4}
-                >
-                  <InvoiceAddressDisplay
-                    address={invoice.issuerAddress}
-                    label="From"
-                  />
-                </motion.div>
-
-                <motion.div
-                  className="pt-6 border-t border-kairo-black-a40/50"
-                  variants={fadeInVariant}
-                  custom={5}
-                >
-                  <InvoiceAddressDisplay
-                    address={invoice.clientAddress}
-                    label="To"
-                  />
-                </motion.div>
-
-                <motion.div
-                  className="pt-6 border-t border-kairo-black-a40/50"
-                  variants={fadeInVariant}
-                  custom={6}
-                >
-                  <h2 className="text-kairo-white/70 text-sm font-medium">
-                    Due Date
-                  </h2>
-                  <p className="text-kairo-white text-lg font-medium">
-                    {new Date(invoice.dueDate).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+          {/* Grid layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left column */}
+            <div className={cardClasses}>
+              {/* Amount Display */}
+              <div className="flex items-center gap-3 sm:gap-4">
+                <Image
+                  src={`/tokens/${
+                    getTokenInfo(invoice.tokenAddress).symbol
+                  }.png`}
+                  alt={getTokenInfo(invoice.tokenAddress).symbol}
+                  width={32}
+                  height={32}
+                  className="rounded-full sm:w-10 sm:h-10"
+                />
+                <div>
+                  <p className="text-xl sm:text-3xl font-bold text-white">
+                    {formatAmount(invoice.amount)}{" "}
+                    <span className="text-lg sm:text-2xl">
+                      {getTokenInfo(invoice.tokenAddress).symbol}
+                    </span>
                   </p>
-                </motion.div>
+                </div>
+              </div>
 
-                <motion.div
-                  className="pt-6 border-t border-kairo-black-a40/50"
-                  variants={fadeInVariant}
-                  custom={7}
-                >
-                  <h2 className="text-kairo-white/70 text-sm font-medium mb-2">
-                    Invoice Document
-                  </h2>
-                  <button
-                    onClick={handleDownloadPDF}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-kairo-black-a20/40 hover:bg-kairo-black-a20/60 text-kairo-white/90 hover:text-kairo-white transition-all duration-200 group"
-                  >
-                    <span className="text-sm">Download PDF</span>
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                  </button>
-                </motion.div>
+              <motion.div className="pt-6" variants={fadeInVariant} custom={4}>
+                <InvoiceAddressDisplay
+                  address={invoice.issuerAddress}
+                  label="From"
+                />
               </motion.div>
-            </motion.div>
 
-            {/* Right Column */}
-            <motion.div
-              className="space-y-4 sm:space-y-6"
-              variants={fadeInVariant}
-              custom={7}
-            >
-              {/* Amount Breakdown Card */}
-              <motion.div className="rounded-xl bg-kairo-black-a20/40 p-4 sm:p-6 space-y-3 sm:space-y-4 backdrop-blur-sm">
+              <motion.div className="pt-6" variants={fadeInVariant} custom={5}>
+                <InvoiceAddressDisplay
+                  address={invoice.clientAddress}
+                  label="To"
+                />
+              </motion.div>
+
+              <motion.div className="pt-6" variants={fadeInVariant} custom={6}>
+                <h2 className="text-white/70 text-sm font-medium">Due Date</h2>
+                <p className="text-white text-lg font-medium">
+                  {new Date(invoice.dueDate).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </motion.div>
+
+              <motion.div className="pt-6" variants={fadeInVariant} custom={7}>
+                <h2 className="text-white/70 text-sm font-medium mb-2">
+                  Invoice Document
+                </h2>
+                <button
+                  onClick={handleDownloadPDF}
+                  className={buttonClasses.secondary}
+                >
+                  <span className="text-sm">Download PDF</span>
+                  <svg
+                    className="w-4 h-4 ml-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                </button>
+              </motion.div>
+            </div>
+
+            {/* Right column */}
+            <div className="space-y-8">
+              {/* Amount breakdown card */}
+              <div className={cardClasses}>
                 <h2 className="text-lg sm:text-xl font-bold text-kairo-white mb-2 sm:mb-4">
                   Amount Breakdown
                 </h2>
@@ -786,10 +755,10 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
-              {/* Status Card */}
-              <motion.div className="rounded-xl bg-kairo-black-a20/40 p-4 sm:p-6 space-y-4 sm:space-y-6 backdrop-blur-sm">
+              {/* Status card */}
+              <div className={cardClasses}>
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-kairo-white">Status</h2>
                   <span
@@ -855,29 +824,18 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                 {!invoice.paid &&
                   address?.toLowerCase() ===
                     invoice.clientAddress?.toLowerCase() && (
-                    <motion.div
-                      className="space-y-3"
-                      variants={fadeInVariant}
-                      custom={10}
+                    <button
+                      onClick={handlePayInvoice}
+                      disabled={paymentStep !== "idle"}
+                      className="w-full inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <button
-                        onClick={handlePayInvoice}
-                        disabled={paymentStep !== "idle"}
-                        className="w-full mt-4 text-center place-items-center flex items-center justify-center gap-x-1 rounded-md text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-3 text-sm font-medium shadow-lg hover:bg-kairo-green/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kairo-green disabled:opacity-50 disabled:cursor-not-allowed h-12"
-                      >
-                        {getPaymentButtonText()}
-                      </button>
-                      {error && (
-                        <div className="text-red-400 text-sm text-center bg-red-500/10 rounded-md p-2">
-                          {error}
-                        </div>
-                      )}
-                    </motion.div>
+                      {getPaymentButtonText()}
+                    </button>
                   )}
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -251,7 +251,7 @@ function ContactCard({
           },
         }}
         layout
-        className="bg-kairo-black-a20/40 rounded-lg p-6 backdrop-blur-sm hover:bg-kairo-black-a20/60 transition-colors duration-200"
+        className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 transition-all duration-200"
       >
         <motion.div
           className="flex flex-col space-y-4"
@@ -270,12 +270,12 @@ function ContactCard({
         >
           {/* Contact Info */}
           <div className="flex items-center gap-4">
-            <UserCircleIcon className="h-10 w-10 flex-shrink-0 text-kairo-white/20" />
+            <UserCircleIcon className="h-10 w-10 flex-shrink-0 text-white/20" />
             <div className="min-w-0 flex-1">
-              <h3 className="text-lg font-medium text-kairo-white truncate">
+              <h3 className="text-lg font-medium text-white truncate">
                 {contact.name}
               </h3>
-              <p className="text-sm text-kairo-white/60 truncate">
+              <p className="text-sm text-white/60 truncate">
                 {ensName ||
                   `${contact.address.slice(0, 6)}...${contact.address.slice(
                     -4
@@ -288,16 +288,16 @@ function ContactCard({
           <div className="flex items-center gap-2 pt-2">
             <button
               onClick={() => setIsEditModalOpen(true)}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-lg hover:bg-kairo-green/20 transition-colors duration-200"
+              className="flex-1 inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
             >
-              <PencilIcon className="h-4 w-4" />
+              <PencilIcon className="h-4 w-4 mr-2" />
               Edit
             </button>
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-red-400 bg-red-500/10 rounded-lg hover:bg-red-500/20 transition-colors duration-200"
+              className="flex-1 inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
             >
-              <TrashIcon className="h-4 w-4" />
+              <TrashIcon className="h-4 w-4 mr-2" />
               Delete
             </button>
           </div>

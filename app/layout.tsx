@@ -73,7 +73,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="bg-kairo-black">
+      <body className="bg-zinc-950">
         <Providers cookies={cookieHeader || ""}>
           <div className="min-h-screen flex flex-col">
             <Navbar />

@@ -1,5 +1,9 @@
-import React from "react";
-import { CheckCircleIcon, DocumentIcon } from "@heroicons/react/20/solid";
+import React, { useState } from "react";
+import {
+  CheckCircleIcon,
+  DocumentIcon,
+  UserCircleIcon,
+} from "@heroicons/react/20/solid";
 import DOMPurify from "dompurify";
 import Image from "next/image";
 import { formatUnits } from "viem";
@@ -12,6 +16,7 @@ import {
 } from "@/utils/date-format";
 import AddressDisplay from "@/components/shared/AddressDisplay";
 import Link from "next/link";
+import Pagination from "@/components/shared/Pagination";
 
 interface Invoice {
   id: string;
@@ -64,25 +69,58 @@ const RecentActivity: React.FC<{
   filter: string;
 }> = React.memo(
   ({ invoices, isLoading, userAddress, userProfiles, filter }) => {
-    const safeInvoices = Array.isArray(invoices) ? invoices : [];
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
 
-    const filteredInvoices = safeInvoices
-      .map((day) => ({
-        ...day,
-        invoices: day.invoices.filter((invoice) => {
-          if (filter === "paid") return invoice.paid;
-          if (filter === "sent")
-            return (
-              invoice.issuerAddress.toLowerCase() === userAddress.toLowerCase()
-            );
-          if (filter === "received")
-            return (
-              invoice.clientAddress.toLowerCase() === userAddress.toLowerCase()
-            );
-          return true; // "all"
-        }),
+    // First, flatten and filter all invoices
+    const allInvoices = invoices
+      .flatMap((day) => day.invoices)
+      .filter((invoice) => {
+        if (filter === "paid") return invoice.paid;
+        if (filter === "sent")
+          return (
+            invoice.issuerAddress.toLowerCase() === userAddress.toLowerCase()
+          );
+        if (filter === "received")
+          return (
+            invoice.clientAddress.toLowerCase() === userAddress.toLowerCase()
+          );
+        return true; // "all"
+      });
+
+    // Calculate pagination
+    const totalPages = Math.ceil(allInvoices.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentPageInvoices = allInvoices.slice(startIndex, endIndex);
+
+    // Group current page invoices by date
+    const groupedInvoices = currentPageInvoices.reduce(
+      (groups: { [key: string]: any[] }, invoice) => {
+        const date = new Date(invoice.issuedDate).toISOString().split("T")[0];
+        if (!groups[date]) {
+          groups[date] = [];
+        }
+        groups[date].push(invoice);
+        return groups;
+      },
+      {}
+    );
+
+    // Convert grouped invoices back to DayInvoices format and sort by date
+    const paginatedInvoices: DayInvoices[] = Object.entries(groupedInvoices)
+      .map(([date, invoices]) => ({
+        date,
+        dateTime: date,
+        invoices: invoices.sort(
+          (a, b) =>
+            new Date(b.issuedDate).getTime() - new Date(a.issuedDate).getTime()
+        ),
       }))
-      .filter((day) => day.invoices.length > 0);
+      .sort(
+        (a, b) =>
+          new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+      );
 
     function formatAmount(amount: string, tokenAddress: string): string {
       const token = getTokenSymbol(tokenAddress);
@@ -100,16 +138,14 @@ const RecentActivity: React.FC<{
     }
 
     function renderUserInfo(address: string, isIssuer: boolean) {
-      const prefix = isIssuer ? "From: " : "To: ";
-
       return (
-        <div className="flex items-center flex-wrap sm:flex-nowrap">
-          <span className="mr-1 text-kairo-white/60 whitespace-nowrap">
-            {prefix}
+        <div className="flex items-center">
+          <span className="w-8 text-white/60">
+            {isIssuer ? "From:" : "To:"}
           </span>
           <AddressDisplay
             address={address}
-            className="text-kairo-white/90 hover:text-kairo-white transition-colors duration-200"
+            className="text-white hover:text-white/90 transition-colors duration-200"
           />
         </div>
       );
@@ -145,13 +181,13 @@ const RecentActivity: React.FC<{
                 </div>
               ))}
             </div>
-          ) : filteredInvoices.length === 0 ? (
-            <div className="text-center text-kairo-white/90 py-12">
+          ) : paginatedInvoices.length === 0 ? (
+            <div className="text-center text-white/90 py-12">
               No recent activity available
             </div>
           ) : (
             <div className="space-y-8">
-              {filteredInvoices.map((day) => (
+              {paginatedInvoices.map((day) => (
                 <div key={day.dateTime} className="space-y-4">
                   <div className="relative py-4">
                     <time
@@ -177,7 +213,7 @@ const RecentActivity: React.FC<{
                         return (
                           <div
                             key={invoice.id}
-                            className="bg-kairo-black-a20/40 rounded-lg p-4 space-y-4 backdrop-blur-sm"
+                            className="bg-white/5 backdrop-blur-sm rounded-xl p-6 space-y-4"
                           >
                             {/* Amount and Status */}
                             <div className="flex items-center justify-between">
@@ -187,7 +223,7 @@ const RecentActivity: React.FC<{
                                 ) : (
                                   <DocumentIcon className="h-5 w-5 text-blue-400" />
                                 )}
-                                <div className="flex items-center text-sm font-bold text-kairo-white">
+                                <div className="flex items-center text-sm font-bold text-white">
                                   {invoice.tokenAddress && (
                                     <Image
                                       src={`/tokens/${getTokenSymbol(
@@ -210,41 +246,41 @@ const RecentActivity: React.FC<{
                               <div
                                 className={classNames(
                                   statuses[invoiceStatus],
-                                  "rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset"
+                                  "rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
                                 )}
                               >
                                 {invoiceStatus}
                               </div>
                             </div>
 
-                            {/* Invoice ID */}
-                            <div className="text-sm text-kairo-white/60">
-                              Invoice #{DOMPurify.sanitize(invoice.invoiceId)}
-                            </div>
-
-                            {/* Address Info */}
-                            <div className="space-y-1">
-                              <div className="text-sm text-kairo-white/90">
-                                {isUserIssuer
-                                  ? renderUserInfo(invoice.clientAddress, false)
-                                  : renderUserInfo(invoice.issuerAddress, true)}
+                            {/* Invoice Details */}
+                            <div className="space-y-4">
+                              <div className="text-sm text-white/60">
+                                Invoice #{DOMPurify.sanitize(invoice.invoiceId)}
                               </div>
-                              <div className="text-sm text-kairo-white/60">
-                                {invoice.status === "Paid"
-                                  ? `Paid ${formatRelativeTime(
-                                      invoice.paidDate || "N/A"
-                                    )}`
-                                  : `Created ${formatRelativeTime(
-                                      invoice.issuedDate
-                                    )}`}
-                              </div>
-                            </div>
 
-                            {/* View Invoice Button */}
-                            <div className="pt-2">
+                              <div className="space-y-2">
+                                {renderUserInfo(
+                                  isUserIssuer
+                                    ? invoice.clientAddress
+                                    : invoice.issuerAddress,
+                                  !isUserIssuer
+                                )}
+                                <div className="text-sm text-white/60">
+                                  {invoice.status === "Paid"
+                                    ? `Paid ${formatRelativeTime(
+                                        invoice.paidDate || "N/A"
+                                      )}`
+                                    : `Created ${formatRelativeTime(
+                                        invoice.issuedDate
+                                      )}`}
+                                </div>
+                              </div>
+
+                              {/* View Invoice Button */}
                               <Link
                                 href={`/invoice/${invoice.invoiceId}`}
-                                className="flex items-center justify-center font-semibold gap-x-2 px-3 py-1.5 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full transition-colors duration-200"
+                                className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10 w-full justify-center"
                               >
                                 View Invoice
                               </Link>
@@ -267,38 +303,29 @@ const RecentActivity: React.FC<{
                           const isUserIssuer =
                             invoice.issuerAddress.toLowerCase() ===
                             userAddress.toLowerCase();
+
                           return (
-                            <tr
-                              key={invoice.id}
-                              className="group transition-colors duration-200"
-                            >
-                              <td className="relative py-6">
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                  <div className="flex items-start gap-3 min-w-[200px]">
-                                    <div className="hidden sm:block">
-                                      {invoiceStatus === "Paid" ? (
-                                        <CheckCircleIcon
-                                          className="h-6 w-5 flex-none text-green-400"
-                                          aria-hidden="true"
-                                        />
-                                      ) : (
-                                        <DocumentIcon
-                                          className="h-6 w-5 flex-none text-blue-400"
-                                          aria-hidden="true"
-                                        />
-                                      )}
-                                    </div>
+                            <tr key={invoice.id} className="group relative">
+                              <td className="py-6">
+                                <div className="flex items-center justify-between gap-4">
+                                  {/* Amount and Invoice Info */}
+                                  <div className="flex items-center gap-4 min-w-[250px]">
+                                    {invoiceStatus === "Paid" ? (
+                                      <CheckCircleIcon className="h-5 w-5 text-green-400 flex-shrink-0" />
+                                    ) : (
+                                      <DocumentIcon className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                                    )}
                                     <div>
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <div className="flex items-center text-sm font-bold leading-6 text-kairo-white">
+                                      <div className="flex items-center gap-2">
+                                        <div className="flex items-center text-sm font-bold text-white">
                                           {invoice.tokenAddress && (
                                             <Image
                                               src={`/tokens/${getTokenSymbol(
                                                 invoice.tokenAddress
                                               )}.png`}
-                                              alt={`${getTokenSymbol(
+                                              alt={getTokenSymbol(
                                                 invoice.tokenAddress
-                                              )} logo`}
+                                              )}
                                               width={24}
                                               height={24}
                                               className="mr-2"
@@ -312,33 +339,29 @@ const RecentActivity: React.FC<{
                                         <div
                                           className={classNames(
                                             statuses[invoiceStatus],
-                                            "rounded-md px-2.5 py-1.5 text-xs font-medium ring-1 ring-inset whitespace-nowrap"
+                                            "rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
                                           )}
                                         >
                                           {invoiceStatus}
                                         </div>
                                       </div>
-                                      <div className="mt-1 text-sm leading-5 text-kairo-white/60">
+                                      <div className="mt-1 text-sm text-white/60">
                                         Invoice #
                                         {DOMPurify.sanitize(invoice.invoiceId)}
                                       </div>
                                     </div>
                                   </div>
 
-                                  <div className="flex-1 flex justify-center min-w-0">
-                                    <div className="flex flex-col justify-center max-w-[300px]">
-                                      <div className="text-sm leading-6 text-kairo-white/90">
-                                        {isUserIssuer
-                                          ? renderUserInfo(
-                                              invoice.clientAddress,
-                                              false
-                                            )
-                                          : renderUserInfo(
-                                              invoice.issuerAddress,
-                                              true
-                                            )}
-                                      </div>
-                                      <div className="mt-1 text-sm leading-5 text-kairo-white/60">
+                                  {/* User Info */}
+                                  <div className="flex-1 flex justify-center">
+                                    <div className="space-y-1">
+                                      {renderUserInfo(
+                                        isUserIssuer
+                                          ? invoice.clientAddress
+                                          : invoice.issuerAddress,
+                                        !isUserIssuer
+                                      )}
+                                      <div className="text-sm text-white/60">
                                         {invoice.status === "Paid"
                                           ? `Paid ${formatRelativeTime(
                                               invoice.paidDate || "N/A"
@@ -350,21 +373,17 @@ const RecentActivity: React.FC<{
                                     </div>
                                   </div>
 
+                                  {/* View Invoice Button */}
                                   <div className="flex justify-end min-w-[140px]">
                                     <Link
                                       href={`/invoice/${invoice.invoiceId}`}
-                                      className="relative flex items-center font-semibold gap-x-2 px-3 py-1.5 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full transition-colors duration-200 whitespace-nowrap"
+                                      className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
                                     >
                                       View Invoice
-                                      <span className="sr-only">
-                                        , invoice #
-                                        {DOMPurify.sanitize(invoice.invoiceId)}
-                                      </span>
                                     </Link>
                                   </div>
                                 </div>
-                                <div className="absolute bottom-0 right-full h-px w-screen bg-kairo-black-a40/50" />
-                                <div className="absolute bottom-0 left-0 h-px w-screen bg-kairo-black-a40/50" />
+                                <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
                               </td>
                             </tr>
                           );
@@ -377,6 +396,14 @@ const RecentActivity: React.FC<{
             </div>
           )}
         </div>
+
+        {!isLoading && allInvoices.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     );
   }

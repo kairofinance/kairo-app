@@ -36,6 +36,38 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Hagrid";
+  src: url("/fonts/Hagrid-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Hagrid";
+  src: url("/fonts/Hagrid-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Hagrid Text";
+  src: url("/fonts/Hagrid-Text-Extrabold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Hagrid Text";
+  src: url("/fonts/Hagrid-Text-Extrabold-Italic.ttf") format("truetype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 245, 245, 245;
@@ -47,7 +79,7 @@
   transition-duration: 0.15s;
   ::selection {
     color: white;
-    background: rgb(84, 141, 62);
+    background: rgb(154, 93, 46);
   }
 }
 
@@ -96,15 +128,15 @@ input[type="date"]::-moz-calendar-picker-indicator {
 }
 
 .react-datepicker__day:hover {
-  @apply bg-kairo-green text-kairo-black rounded-md !important;
+  @apply bg-orange-600 text-kairo-black rounded-md !important;
 }
 
 .react-datepicker__day--selected {
-  @apply bg-kairo-green text-kairo-black rounded-md !important;
+  @apply bg-orange-600 text-kairo-black rounded-md !important;
 }
 
 .react-datepicker__day--keyboard-selected {
-  @apply bg-kairo-green/20 text-kairo-green rounded-md !important;
+  @apply bg-orange-600/20 text-orange-600 rounded-md !important;
 }
 
 .react-datepicker__day--disabled {
@@ -116,7 +148,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 }
 
 .react-datepicker__navigation:hover *::before {
-  @apply border-kairo-green !important;
+  @apply border-orange-600 !important;
 }
 
 .react-datepicker-popper[data-placement^="bottom"]

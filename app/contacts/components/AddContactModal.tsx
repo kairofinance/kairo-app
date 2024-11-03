@@ -93,14 +93,14 @@ export default function AddContactModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="relative mx-auto max-w-sm w-full overflow-hidden rounded-xl bg-kairo-black-a20/95 backdrop-blur-sm p-6 shadow-xl border border-kairo-black-a40/50">
-                <Dialog.Title className="text-xl font-semibold text-kairo-white mb-6">
+              <Dialog.Panel className="relative mx-auto max-w-sm w-full overflow-hidden rounded-xl bg-white/5 backdrop-blur-sm p-6 shadow-xl border border-white/10">
+                <Dialog.Title className="text-xl font-semibold text-white mb-6">
                   Add New Contact
                 </Dialog.Title>
 
                 {error && (
-                  <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <div className="flex items-center gap-2 text-red-400">
+                  <div className="mb-4 p-3 rounded-lg bg-black/20 border border-white/5">
+                    <div className="flex items-center gap-2 text-orange-600">
                       <XCircleIcon className="h-5 w-5 flex-shrink-0" />
                       <p className="text-sm">{error}</p>
                     </div>
@@ -109,28 +109,28 @@ export default function AddContactModal({
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-kairo-white/90 text-sm font-medium">
+                    <label className="text-white/60 font-medium text-sm uppercase tracking-wider">
                       Name
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full text-base bg-kairo-black-a20/40 border border-kairo-black-a40/50 rounded-lg px-3 py-2 text-kairo-white placeholder-kairo-white/40 focus:outline-none focus:ring-2 focus:ring-kairo-green"
+                      className="w-full text-white text-2xl font-light bg-transparent outline-none placeholder-white/20 focus:placeholder-white/40 transition-all duration-200"
                       placeholder="Contact name"
                       required
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-kairo-white/90 text-sm font-medium">
+                    <label className="text-white/60 font-medium text-sm uppercase tracking-wider">
                       Address or ENS
                     </label>
                     <input
                       type="text"
                       value={addressOrEns}
                       onChange={(e) => setAddressOrEns(e.target.value)}
-                      className="w-full text-base bg-kairo-black-a20/40 border border-kairo-black-a40/50 rounded-lg px-3 py-2 text-kairo-white placeholder-kairo-white/40 focus:outline-none focus:ring-2 focus:ring-kairo-green"
+                      className="w-full text-white text-2xl font-light bg-transparent outline-none placeholder-white/20 focus:placeholder-white/40 transition-all duration-200"
                       placeholder="0x... or ENS"
                       required
                     />
@@ -140,19 +140,19 @@ export default function AddContactModal({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="px-4 py-2 text-sm font-medium text-kairo-white/70 hover:text-kairo-white transition-colors duration-200"
+                      className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading || isEnsLoading}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-lg hover:bg-kairo-green/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
                     >
                       {isLoading || isEnsLoading ? (
                         <>
                           <Spinner inline size={12} />
-                          <span>Adding...</span>
+                          <span className="ml-2">Adding...</span>
                         </>
                       ) : (
                         "Add Contact"

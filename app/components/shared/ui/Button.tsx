@@ -32,10 +32,9 @@ export default function Button({
     "rounded-full font-semibold transition-colors duration-200 flex items-center justify-center";
 
   const variants = {
-    primary: "bg-kairo-green-a20 text-kairo-green hover:bg-kairo-green/50",
+    primary: "bg-orange-600-a20 text-orange-600 hover:bg-orange-600/50",
     secondary: "bg-kairo-black-a20 text-kairo-white hover:bg-kairo-black-a40",
-    outline:
-      "border border-kairo-green text-kairo-green hover:bg-kairo-green/10",
+    outline: "border border-orange-600 text-orange-600 hover:bg-orange-600/10",
     ghost: "text-kairo-white hover:bg-kairo-white/10",
   };
 

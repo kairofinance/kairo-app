@@ -25,7 +25,7 @@ export default function Stats({ statNames, stats, isLoading }: StatsProps) {
               .map((_, index) => (
                 <div
                   key={index}
-                  className="bg-kairo-black-a20/30 px-3 py-4 sm:px-4 sm:py-6 lg:px-6 xl:px-8 rounded-lg"
+                  className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10"
                 >
                   <Skeleton width={120} />
                   <Skeleton width={80} height={30} className="mt-2" />
@@ -34,21 +34,21 @@ export default function Stats({ statNames, stats, isLoading }: StatsProps) {
           : stats.map((stat, index) => (
               <div
                 key={index}
-                className="relative overflow-hidden bg-kairo-black-a20/30 px-3 py-4 sm:px-4 sm:py-5 lg:px-6 rounded-lg transition-all duration-300 hover:bg-kairo-black-a20/50"
+                className="relative overflow-hidden bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10"
               >
-                <dt className="truncate text-xs sm:text-sm font-medium text-kairo-white/70">
+                <dt className="truncate text-xs sm:text-sm font-medium text-white/60 uppercase tracking-wider">
                   {statNames[index]}
                 </dt>
                 <dd className="mt-2 flex items-baseline gap-x-2">
-                  <div className="text-lg sm:text-xl lg:text-2xl font-semibold text-kairo-white">
+                  <div className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">
                     {stat.value}
                   </div>
                   {stat.change && (
                     <div
-                      className={`inline-flex items-baseline rounded-full px-2 py-0.5 text-xs sm:text-sm font-medium ${
+                      className={`inline-flex items-baseline rounded-full px-2.5 py-1.5 text-xs sm:text-sm font-medium ${
                         stat.changeType === "increase"
-                          ? "bg-green-500/10 text-green-400"
-                          : "bg-red-500/10 text-red-400"
+                          ? "text-orange-600"
+                          : "text-orange-600/60"
                       }`}
                     >
                       {stat.change}

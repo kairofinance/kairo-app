@@ -13,7 +13,7 @@ function Invoice() {
               <div className="mt-2">
                 <input
                   required
-                  className="block w-full border-0 py-1.5 text-kairo-white bg-kairo-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-kairo-green sm:text-sm sm:leading-6 rounded-lg"
+                  className="block w-full border-0 py-1.5 text-kairo-white bg-kairo-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6 rounded-lg"
                 />
               </div>
             </div>
@@ -32,7 +32,7 @@ function Invoice() {
                   type="password"
                   required
                   autoComplete="current-password"
-                  className="block w-full rounded-lg border-0 py-1.5 text-kairo-white bg-kairo-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-kairo-green sm:text-sm sm:leading-6"
+                  className="block w-full rounded-lg border-0 py-1.5 text-kairo-white bg-kairo-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6"
                 />
               </div>
             </div>
@@ -40,7 +40,7 @@ function Invoice() {
             <div>
               <button
                 type="submit"
-                className="flex w-full justify-center text-kairo-green bg-kairo-green-a20 bg-opacity-30 px-3 py-3 text-sm font-semibold shadow-lg hover:bg-kairo-green/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kairo-green rounded-lg"
+                className="flex w-full justify-center text-orange-600 bg-orange-600-a20 bg-opacity-30 px-3 py-3 text-sm font-semibold shadow-lg hover:bg-orange-600/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 rounded-lg"
               >
                 Connect Wallet
               </button>

@@ -28,7 +28,7 @@ export default async function NotFound() {
           </p>
           <Link
             href="/"
-            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-kairo-green-a20/50 text-kairo-green bg-kairo-green-a20 bg-opacity-30 rounded-full"
+            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-orange-600-a20/50 text-orange-600 bg-orange-600-a20 bg-opacity-30 rounded-full"
           >
             {dictionary?.notFound?.goHome || "Go Back Home"}
           </Link>

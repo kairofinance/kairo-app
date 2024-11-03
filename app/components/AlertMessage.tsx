@@ -37,7 +37,7 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
       <div
         className={`rounded-lg shadow-lg backdrop-blur-sm ${
           type === "success"
-            ? "bg-kairo-green/10 text-kairo-green"
+            ? "bg-orange-600/10 text-orange-600"
             : "bg-red-500/10 text-red-400"
         } p-4 flex items-center gap-3 min-w-[320px]`}
       >
@@ -53,7 +53,7 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
           type="button"
           className={`flex-shrink-0 rounded-md p-1.5 transition-colors duration-200 ${
             type === "success"
-              ? "hover:bg-kairo-green/20"
+              ? "hover:bg-orange-600/20"
               : "hover:bg-red-500/20"
           }`}
           onClick={() => setIsVisible(false)}

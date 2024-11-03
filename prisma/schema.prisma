@@ -71,6 +71,7 @@ model Invoice {
   issuer                User     @relation("IssuedInvoices", fields: [issuerAddress], references: [address])
   client                User     @relation("ReceivedInvoices", fields: [clientAddress], references: [address])
   payments              Payment[]
+  isPending    Boolean  @default(false)
 }
 
 model Payment {

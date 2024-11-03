@@ -41,7 +41,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               "block w-full rounded-lg border-0 bg-kairo-black-a20 bg-opacity-60",
               "text-kairo-white shadow-sm placeholder:text-zinc-400",
-              "focus:ring-2 focus:ring-inset focus:ring-kairo-green",
+              "focus:ring-2 focus:ring-inset focus:ring-orange-600",
               "sm:text-sm sm:leading-6",
               leftIcon && "pl-10",
               rightIcon && "pr-10",
