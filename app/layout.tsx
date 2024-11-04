@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { headers } from "next/headers";
 import RouteTransition from "@/components/shared/ui/RouteTransition";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: "Kairo - Web3 Billing Platform",
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     siteName: "Kairo",
     images: [
       {
-        url: "/preview.png",
+        url: "https://kairo.finance/preview.png",
         width: 1200,
         height: 630,
         alt: "Kairo Web3 Billing Platform Preview",
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     title: "Kairo - Web3 Billing Platform",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions. Streamline your crypto payments and invoicing.",
-    images: ["/preview.png"],
+    images: ["https://kairo.finance/preview.png"],
     creator: "@KairoFinance", // Replace with your Twitter handle
   },
   robots: {
@@ -85,6 +86,7 @@ export default async function RootLayout({
           </div>
         </Providers>
       </body>
+      <Analytics />
     </html>
   );
 }
