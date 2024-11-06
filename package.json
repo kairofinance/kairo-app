@@ -16,7 +16,7 @@
     "@heroicons/react": "^2.1.5",
     "@playwright/browser-chromium": "^1.42.1",
     "@playwright/test": "^1.48.2",
-    "@prisma/client": "5.21.1",
+    "@prisma/client": "^5.22.0",
     "@react-pdf/renderer": "^3.4.0",
     "@reown/appkit": "^1.2.0",
     "@reown/appkit-adapter-wagmi": "^1.2.0",

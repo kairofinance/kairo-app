@@ -5,15 +5,16 @@ import path from "path";
 
 const prisma = new PrismaClient();
 
-// Add this configuration for Playwright in production
+// Update the Playwright configuration
 const isDev = process.env.NODE_ENV === "development";
 const chromiumPath = isDev
   ? undefined
   : path.join(
       process.cwd(),
       "node_modules",
-      "playwright-core",
-      ".local-chromium"
+      ".cache",
+      "ms-playwright",
+      "chromium-1048"
     );
 
 async function getBase64File(filePath: string): Promise<string> {
@@ -76,9 +77,11 @@ export async function GET(
 ) {
   let browser;
   try {
-    // Update browser launch configuration
+    // Update browser launch configuration with proper type handling
     browser = await chromium.launch({
-      executablePath: isDev ? undefined : path.join(chromiumPath, "chrome"),
+      executablePath: chromiumPath
+        ? path.join(chromiumPath, "chrome.exe")
+        : undefined,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
