@@ -835,7 +835,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                     <button
                       onClick={handlePayInvoice}
                       disabled={paymentStep !== "idle"}
-                      className="w-full inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full inline-flex mt-5 items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {getPaymentButtonText()}
                     </button>

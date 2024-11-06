@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import { chromium } from "playwright-core";
+import puppeteer from "puppeteer-core";
+import chrome from "@sparticuz/chromium";
 import path from "path";
 
 const prisma = new PrismaClient();
-
-// Update the Playwright configuration
-const isDev = process.env.NODE_ENV === "development";
-const chromiumPath = isDev
-  ? undefined
-  : path.join(
-      process.cwd(),
-      "node_modules",
-      ".cache",
-      "ms-playwright",
-      "chromium-1048"
-    );
 
 async function getBase64File(filePath: string): Promise<string> {
   const fs = require("fs");
@@ -50,46 +39,17 @@ async function getTokenImageBase64(tokenAddress: string): Promise<string> {
   }
 }
 
-// Add font loading functions
-async function getBase64Font(fontPath: string): Promise<string> {
-  const fs = require("fs");
-  const fontBuffer = fs.readFileSync(fontPath);
-  return fontBuffer.toString("base64");
-}
-
-async function loadFonts() {
-  const garetBook = await getBase64Font("public/fonts/Garet-Book.woff2");
-  const garetHeavy = await getBase64Font("public/fonts/Garet-Heavy.woff2");
-  const montserrat = await getBase64Font(
-    "public/fonts/Montserrat-VariableFont_wght.ttf"
-  );
-
-  return {
-    garetBook,
-    garetHeavy,
-    montserrat,
-  };
-}
-
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   let browser;
   try {
-    // Update browser launch configuration with proper type handling
-    browser = await chromium.launch({
-      executablePath: chromiumPath
-        ? path.join(chromiumPath, "chrome.exe")
-        : undefined,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-        "--disable-extensions",
-      ],
+    browser = await puppeteer.launch({
+      args: chrome.args,
+      defaultViewport: chrome.defaultViewport,
+      executablePath: await chrome.executablePath(),
+      headless: true,
     });
 
     const resolvedParams = await context.params;
@@ -122,7 +82,6 @@ export async function GET(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Check authorization - user must be either issuer or client
     const isAuthorized =
       userAddress.toLowerCase() === invoice.issuerAddress.toLowerCase() ||
       userAddress.toLowerCase() === invoice.clientAddress.toLowerCase();
@@ -138,7 +97,6 @@ export async function GET(
       );
     }
 
-    // Helper function to format amounts with proper decimals
     const formatAmount = (amount: string, tokenAddress: string) => {
       const tokenMap: { [key: string]: { symbol: string; decimals: number } } =
         {
@@ -160,7 +118,6 @@ export async function GET(
       return `${formattedAmount.toLocaleString()} ${tokenInfo.symbol}`;
     };
 
-    // Calculate amounts
     const amount = formatAmount(invoice.amount, invoice.tokenAddress);
     const fee = formatAmount(
       ((BigInt(invoice.amount) * BigInt(1)) / BigInt(100)).toString(),
@@ -174,12 +131,9 @@ export async function GET(
       invoice.tokenAddress
     );
 
-    // Create a browser instance
     const page = await browser.newPage();
-
     const assets = await loadAssets();
 
-    // Set the content with updated styling
     await page.setContent(`
       <!DOCTYPE html>
       <html>
@@ -545,7 +499,6 @@ export async function GET(
       </html>
     `);
 
-    // Generate PDF with updated settings
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -555,10 +508,8 @@ export async function GET(
         bottom: "0",
         left: "0",
       },
-      preferCSSPageSize: true,
     });
 
-    // Close browser
     await browser.close();
 
     return new NextResponse(pdf, {
