@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { chromium } from "playwright-core";
+import path from "path";
 
 const prisma = new PrismaClient();
+
+// Add this configuration for Playwright in production
+const isDev = process.env.NODE_ENV === "development";
+const chromiumPath = isDev
+  ? undefined
+  : path.join(
+      process.cwd(),
+      "node_modules",
+      "playwright-core",
+      ".local-chromium"
+    );
 
 async function getBase64File(filePath: string): Promise<string> {
   const fs = require("fs");
@@ -62,7 +74,21 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  let browser;
   try {
+    // Update browser launch configuration
+    browser = await chromium.launch({
+      executablePath: isDev ? undefined : path.join(chromiumPath, "chrome"),
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--disable-extensions",
+      ],
+    });
+
     const resolvedParams = await context.params;
     const { id } = resolvedParams;
     const userAddress = request.headers.get("x-user-address");
@@ -146,7 +172,6 @@ export async function GET(
     );
 
     // Create a browser instance
-    const browser = await chromium.launch();
     const page = await browser.newPage();
 
     const assets = await loadAssets();
@@ -549,6 +574,9 @@ export async function GET(
       { status: 500 }
     );
   } finally {
+    if (browser) {
+      await browser.close();
+    }
     await prisma.$disconnect();
   }
 }
