@@ -7,62 +7,120 @@ import path from "path";
 const prisma = new PrismaClient();
 
 async function getBase64File(filePath: string): Promise<string> {
-  const fs = require("fs");
-  const buffer = fs.readFileSync(filePath);
-  return buffer.toString("base64");
+  try {
+    const fs = require("fs");
+    console.log(`[getBase64File] Reading file: ${filePath}`);
+    const buffer = fs.readFileSync(filePath);
+    return buffer.toString("base64");
+  } catch (error) {
+    console.error(`[getBase64File] Failed to read file ${filePath}:`, error);
+    throw error;
+  }
 }
 
 async function loadAssets() {
-  const montserrat = await getBase64File(
-    "public/fonts/Montserrat-VariableFont_wght.ttf"
-  );
-  const kairoLogo = await getBase64File("public/kairo-dark.svg");
-  return { montserrat, kairoLogo };
+  try {
+    console.log("[loadAssets] Starting to load assets...");
+    const montserrat = await getBase64File(
+      "public/fonts/Montserrat-VariableFont_wght.ttf"
+    );
+    console.log("[loadAssets] Successfully loaded Montserrat font");
+
+    const kairoLogo = await getBase64File("public/kairo-dark.svg");
+    console.log("[loadAssets] Successfully loaded Kairo logo");
+
+    return { montserrat, kairoLogo };
+  } catch (error) {
+    console.error("[loadAssets] Failed to load assets:", error);
+    throw error;
+  }
 }
 
 async function getTokenImageBase64(tokenAddress: string): Promise<string> {
+  console.log(
+    `[getTokenImageBase64] Processing token address: ${tokenAddress}`
+  );
+
   const tokenMap: { [key: string]: string } = {
     "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": "USDC",
     "0x552ceaDf3B47609897279F42D3B3309B604896f3": "DAI",
   };
 
   const tokenSymbol = tokenMap[tokenAddress] || "Unknown";
+  console.log(`[getTokenImageBase64] Resolved token symbol: ${tokenSymbol}`);
+
   const imagePath = `public/tokens/${tokenSymbol}.png`;
+  console.log(
+    `[getTokenImageBase64] Attempting to read image from: ${imagePath}`
+  );
 
   try {
     const fs = require("fs");
     const imageBuffer = fs.readFileSync(imagePath);
+    console.log(
+      `[getTokenImageBase64] Successfully loaded token image for ${tokenSymbol}`
+    );
     return imageBuffer.toString("base64");
   } catch (error) {
-    console.error("Error reading token image:", error);
+    console.error(
+      `[getTokenImageBase64] Error reading token image for ${tokenSymbol}:`,
+      error
+    );
     return ""; // Return empty string if image can't be loaded
   }
+}
+
+function formatAmount(amount: string, tokenAddress: string) {
+  const tokenMap: { [key: string]: { symbol: string; decimals: number } } = {
+    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": {
+      symbol: "USDC",
+      decimals: 6,
+    },
+    "0x552ceaDf3B47609897279F42D3B3309B604896f3": {
+      symbol: "DAI",
+      decimals: 18,
+    },
+  };
+
+  const tokenInfo = tokenMap[tokenAddress] || {
+    symbol: "Unknown",
+    decimals: 18,
+  };
+  const formattedAmount = Number(amount) / Math.pow(10, tokenInfo.decimals);
+  return `${formattedAmount.toLocaleString()} ${tokenInfo.symbol}`;
 }
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  console.log("[GET] Starting PDF generation process");
   let browser;
+
   try {
+    console.log("[GET] Attempting to launch browser");
     browser = await puppeteer.launch({
-      args: chrome.args,
+      args: [...chrome.args, "--no-sandbox", "--disable-setuid-sandbox"],
       defaultViewport: chrome.defaultViewport,
       executablePath: await chrome.executablePath(),
       headless: true,
     });
+    console.log("[GET] Browser launched successfully");
 
     const resolvedParams = await context.params;
     const { id } = resolvedParams;
-    const userAddress = request.headers.get("x-user-address");
+    console.log(`[GET] Processing invoice ID: ${id}`);
 
+    const userAddress = request.headers.get("x-user-address");
     if (!userAddress) {
+      console.log("[GET] Request rejected: No wallet address provided");
       return NextResponse.json(
         { error: "Wallet not connected" },
         { status: 401 }
       );
     }
 
+    console.log("[GET] Fetching invoice from database");
     const invoice = await prisma.invoice.findUnique({
       where: { invoiceId: id },
       include: {
@@ -79,14 +137,19 @@ export async function GET(
     });
 
     if (!invoice) {
+      console.log(`[GET] Invoice not found for ID: ${id}`);
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
+    console.log("[GET] Invoice found successfully");
 
     const isAuthorized =
       userAddress.toLowerCase() === invoice.issuerAddress.toLowerCase() ||
       userAddress.toLowerCase() === invoice.clientAddress.toLowerCase();
 
     if (!isAuthorized) {
+      console.log(
+        `[GET] Unauthorized access attempt from address: ${userAddress}`
+      );
       return NextResponse.json(
         {
           error: "Unauthorized",
@@ -96,27 +159,6 @@ export async function GET(
         { status: 403 }
       );
     }
-
-    const formatAmount = (amount: string, tokenAddress: string) => {
-      const tokenMap: { [key: string]: { symbol: string; decimals: number } } =
-        {
-          "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": {
-            symbol: "USDC",
-            decimals: 6,
-          },
-          "0x552ceaDf3B47609897279F42D3B3309B604896f3": {
-            symbol: "DAI",
-            decimals: 18,
-          },
-        };
-
-      const tokenInfo = tokenMap[tokenAddress] || {
-        symbol: "Unknown",
-        decimals: 18,
-      };
-      const formattedAmount = Number(amount) / Math.pow(10, tokenInfo.decimals);
-      return `${formattedAmount.toLocaleString()} ${tokenInfo.symbol}`;
-    };
 
     const amount = formatAmount(invoice.amount, invoice.tokenAddress);
     const fee = formatAmount(
@@ -131,9 +173,16 @@ export async function GET(
       invoice.tokenAddress
     );
 
-    const page = await browser.newPage();
-    const assets = await loadAssets();
+    console.log("[GET] Calculated amounts:", { amount, fee, total });
 
+    console.log("[GET] Creating new browser page");
+    const page = await browser.newPage();
+
+    console.log("[GET] Loading assets");
+    const assets = await loadAssets();
+    console.log("[GET] Assets loaded successfully");
+
+    console.log("[GET] Setting page content");
     await page.setContent(`
       <!DOCTYPE html>
       <html>
@@ -498,7 +547,9 @@ export async function GET(
         </body>
       </html>
     `);
+    console.log("[GET] Page content set successfully");
 
+    console.log("[GET] Generating PDF");
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -509,9 +560,12 @@ export async function GET(
         left: "0",
       },
     });
+    console.log("[GET] PDF generated successfully");
 
     await browser.close();
+    console.log("[GET] Browser closed successfully");
 
+    console.log("[GET] Sending PDF response");
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",
@@ -519,18 +573,42 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error(
-      "Error generating PDF:",
-      error instanceof Error ? error.message : "Unknown error"
-    );
+    console.error("[GET] Critical error in PDF generation:", {
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            }
+          : "Unknown error type",
+      browserStatus: browser ? "Initialized" : "Not initialized",
+    });
+
     return NextResponse.json(
-      { error: "Failed to generate PDF" },
+      {
+        error: "Failed to generate PDF",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   } finally {
     if (browser) {
-      await browser.close();
+      try {
+        console.log("[GET] Attempting to close browser in finally block");
+        await browser.close();
+        console.log("[GET] Browser closed successfully in finally block");
+      } catch (error) {
+        console.error("[GET] Error closing browser in finally block:", error);
+      }
     }
-    await prisma.$disconnect();
+
+    try {
+      console.log("[GET] Disconnecting from Prisma");
+      await prisma.$disconnect();
+      console.log("[GET] Prisma disconnected successfully");
+    } catch (error) {
+      console.error("[GET] Error disconnecting from Prisma:", error);
+    }
   }
 }
