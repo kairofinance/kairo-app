@@ -98,13 +98,32 @@ export async function GET(
   let browser;
 
   try {
-    console.log("[GET] Attempting to launch browser");
-    browser = await puppeteer.launch({
-      args: [...chrome.args, "--no-sandbox", "--disable-setuid-sandbox"],
-      defaultViewport: chrome.defaultViewport,
-      executablePath: await chrome.executablePath(),
-      headless: true,
-    });
+    console.log("[GET] Chrome args:", chrome.args);
+    console.log("[GET] Chrome executable path:", await chrome.executablePath());
+
+    browser = await puppeteer
+      .launch({
+        args: [
+          ...chrome.args,
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+        ],
+        defaultViewport: chrome.defaultViewport,
+        executablePath: await chrome.executablePath(),
+        headless: true,
+      })
+      .catch((error) => {
+        console.error("[GET] Browser launch error details:", {
+          message: error.message,
+          stack: error.stack,
+          args: chrome.args,
+          execPath: chrome.executablePath(),
+        });
+        throw error;
+      });
+
     console.log("[GET] Browser launched successfully");
 
     const resolvedParams = await context.params;
@@ -580,9 +599,12 @@ export async function GET(
               message: error.message,
               stack: error.stack,
               name: error.name,
+              browserStatus: browser ? "Initialized" : "Not initialized",
+              environment: process.env.NODE_ENV,
+              platform: process.platform,
+              nodeVersion: process.version,
             }
           : "Unknown error type",
-      browserStatus: browser ? "Initialized" : "Not initialized",
     });
 
     return NextResponse.json(
