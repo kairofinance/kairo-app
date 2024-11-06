@@ -14,7 +14,7 @@ async function loadAssets() {
   const montserrat = await getBase64File(
     "public/fonts/Montserrat-VariableFont_wght.ttf"
   );
-  const kairoLogo = await getBase64File("public/kairo-light.svg");
+  const kairoLogo = await getBase64File("public/kairo-dark.svg");
   return { montserrat, kairoLogo };
 }
 
@@ -58,9 +58,13 @@ async function loadFonts() {
   };
 }
 
-export async function GET(request: NextRequest, context: any) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = context.params;
+    const resolvedParams = await context.params;
+    const { id } = resolvedParams;
     const userAddress = request.headers.get("x-user-address");
 
     if (!userAddress) {
@@ -166,8 +170,8 @@ export async function GET(request: NextRequest, context: any) {
               font-family: 'Montserrat', sans-serif;
               margin: 0;
               padding: 0;
-              color: #1F2937;
-              background-color: white;
+              color: #111827;
+              background-color: #09090b;
               line-height: 1.5;
             }
             
@@ -175,6 +179,8 @@ export async function GET(request: NextRequest, context: any) {
               max-width: 800px;
               margin: 0 auto;
               padding: 60px;
+              background-color: #09090b;
+              color: #ffffff;
             }
 
             .invoice-header {
@@ -200,19 +206,20 @@ export async function GET(request: NextRequest, context: any) {
             .invoice-title {
               font-size: 32px;
               font-weight: 800;
-              color: #111827;
+              color: #ffffff;
               margin-bottom: 16px;
+              font-family: 'Montserrat', sans-serif;
             }
 
             .invoice-number {
               font-size: 14px;
-              color: #6B7280;
+              color: rgba(255, 255, 255, 0.6);
               margin-bottom: 8px;
             }
 
             .invoice-date {
               font-size: 14px;
-              color: #6B7280;
+              color: rgba(255, 255, 255, 0.6);
             }
 
             .parties-section {
@@ -220,7 +227,7 @@ export async function GET(request: NextRequest, context: any) {
               justify-content: space-between;
               margin-bottom: 48px;
               padding-bottom: 48px;
-              border-bottom: 1px solid #E5E7EB;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .party-box {
@@ -232,14 +239,14 @@ export async function GET(request: NextRequest, context: any) {
               font-size: 12px;
               text-transform: uppercase;
               letter-spacing: 0.1em;
-              color: #6B7280;
+              color: rgba(255, 255, 255, 0.6);
               margin-bottom: 8px;
               font-weight: 600;
             }
 
             .party-value {
               font-size: 14px;
-              color: #111827;
+              color: #ffffff;
               word-break: break-all;
               line-height: 1.6;
             }
@@ -255,21 +262,22 @@ export async function GET(request: NextRequest, context: any) {
             }
 
             .details-table th {
-              background-color: #F9FAFB;
+              background-color: rgba(255, 255, 255, 0.05);
               padding: 12px 16px;
               text-align: left;
               font-size: 12px;
               font-weight: 600;
-              color: #6B7280;
+              color: rgba(255, 255, 255, 0.6);
               text-transform: uppercase;
               letter-spacing: 0.05em;
-              border-bottom: 1px solid #E5E7EB;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .details-table td {
               padding: 16px;
               font-size: 14px;
-              border-bottom: 1px solid #E5E7EB;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+              color: #ffffff;
             }
 
             .amount-cell {
@@ -299,10 +307,11 @@ export async function GET(request: NextRequest, context: any) {
               justify-content: space-between;
               padding: 8px 0;
               font-size: 14px;
+              color: #ffffff;
             }
 
             .total-row.final {
-              border-top: 2px solid #E5E7EB;
+              border-top: 2px solid rgba(255, 255, 255, 0.1);
               margin-top: 8px;
               padding-top: 16px;
               font-weight: 700;
@@ -318,41 +327,44 @@ export async function GET(request: NextRequest, context: any) {
             }
             
             .status-paid {
-              background-color: #DCFCE7;
-              color: #15803D;
+              background-color: rgba(234, 88, 12, 0.1);
+              color: #ea580c;
+              border: 1px solid rgba(234, 88, 12, 0.2);
             }
             
             .status-pending {
-              background-color: #DBEAFE;
-              color: #1D4ED8;
+              background-color: rgba(255, 255, 255, 0.1);
+              color: #ffffff;
+              border: 1px solid rgba(255, 255, 255, 0.2);
             }
 
             .footer {
               margin-top: 64px;
               padding-top: 24px;
-              border-top: 1px solid #E5E7EB;
+              border-top: 1px solid rgba(255, 255, 255, 0.1);
               text-align: center;
-              color: #9CA3AF;
+              color: rgba(255, 255, 255, 0.4);
               font-size: 12px;
             }
 
             .payment-info {
               margin-top: 32px;
               padding: 24px;
-              background-color: #F9FAFB;
+              background-color: rgba(255, 255, 255, 0.05);
               border-radius: 8px;
+              border: 1px solid rgba(255, 255, 255, 0.1);
             }
 
             .payment-info-title {
               font-size: 14px;
               font-weight: 600;
               margin-bottom: 16px;
-              color: #111827;
+              color: #ffffff;
             }
 
             .payment-detail {
               font-size: 12px;
-              color: #6B7280;
+              color: rgba(255, 255, 255, 0.6);
               margin-bottom: 8px;
             }
 

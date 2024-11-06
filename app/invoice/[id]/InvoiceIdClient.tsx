@@ -360,14 +360,20 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   const handleDownloadPDF = async () => {
     try {
+      if (!address) {
+        setError("Please connect your wallet to download the PDF");
+        return;
+      }
+
       const response = await fetch(`/api/invoices/${invoice.invoiceId}/pdf`, {
         headers: {
-          "x-user-address": address || "",
+          "x-user-address": address,
         },
       });
 
       if (!response.ok) {
-        throw new Error("Failed to download PDF");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to download PDF");
       }
 
       // Create blob from response
@@ -388,7 +394,9 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
       document.body.removeChild(a);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      setError("Failed to download PDF");
+      setError(
+        error instanceof Error ? error.message : "Failed to download PDF"
+      );
     }
   };
 
@@ -776,7 +784,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                   <motion.div
                     variants={fadeInVariant}
                     custom={10}
-                    className="space-y-4 pt-4 border-t border-kairo-black-a40/50"
+                    className="space-y-4 pt-5 border-t mt-5 border-kairo-black-a40/50"
                   >
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium text-kairo-white/70">
