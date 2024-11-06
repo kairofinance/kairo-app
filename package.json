@@ -7,8 +7,7 @@
     "build": "yarn prisma && next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma": "npx prisma generate && npx prisma db push",
-    "postinstall": "npx playwright install chromium --with-deps"
+    "prisma": "npx prisma generate && npx prisma db push"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.3.1",
