@@ -9,6 +9,7 @@ import { useAlert } from "@/hooks/useAlert";
 import AlertMessage from "@/components/AlertMessage";
 import ContactList from "./components/ContactList";
 import AddContactModal from "./components/AddContactModal";
+import SectionHeader from "@/components/shared/ui/SectionHeader";
 
 const fadeInVariant = {
   hidden: { opacity: 0, y: 20 },
@@ -109,15 +110,19 @@ export default function ContactsClient() {
   if (!address) {
     return (
       <div className="min-h-screen">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 border border-white/10">
-            <XCircleIcon className="mx-auto h-12 w-12 text-orange-600" />
-            <h3 className="mt-2 text-lg font-medium text-white">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-8 text-center">
+            <XCircleIcon className="mx-auto h-12 w-12 text-orange-600/90" />
+            <h3 className="mt-2 text-lg font-medium text-white/90">
               Wallet Not Connected
             </h3>
             <p className="mt-2 text-sm text-white/60">
               Please connect your wallet to view your contacts
             </p>
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 rounded-lg overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+            </div>
           </div>
         </div>
       </div>
@@ -126,7 +131,7 @@ export default function ContactsClient() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
         <motion.div
           className="space-y-8"
           initial="hidden"
@@ -134,15 +139,10 @@ export default function ContactsClient() {
           variants={fadeInVariant}
           custom={0}
         >
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Address Book</h1>
-              <p className="mt-2 text-sm text-white/60">
-                Manage your saved addresses and contacts
-              </p>
-            </div>
-
+          <SectionHeader
+            title="Address Book"
+            description="Manage your saved addresses and contacts"
+          >
             <button
               onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
@@ -150,15 +150,23 @@ export default function ContactsClient() {
               <UserPlusIcon className="h-5 w-5 mr-2" />
               Add Contact
             </button>
-          </div>
+          </SectionHeader>
 
           {/* Contact List */}
-          <ContactList
-            contacts={localContacts}
-            onRefetch={refetchContacts}
-            onDelete={handleContactDelete}
-            onEdit={handleContactEdit}
-          />
+          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 group">
+            <ContactList
+              contacts={localContacts}
+              onRefetch={refetchContacts}
+              onDelete={handleContactDelete}
+              onEdit={handleContactEdit}
+            />
+
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+            </div>
+          </div>
 
           {/* Add Contact Modal */}
           <AddContactModal

@@ -29,7 +29,7 @@ const navigation = [
 export default function Footer() {
   return (
     <footer className="">
-      <div className="mx-auto max-w-7xl px-6 py-12 md:flex md:items-center md:justify-between lg:px-8">
+      <div className="mx-auto max-w-6xl px-6 py-12 md:flex md:items-center md:justify-between lg:px-8">
         <div className="flex justify-center space-x-2 md:order-2">
           {navigation.map((item) => (
             <Link

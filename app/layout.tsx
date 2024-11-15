@@ -78,7 +78,7 @@ export default async function RootLayout({
         <Providers cookies={cookieHeader || ""}>
           <div className="min-h-screen flex flex-col">
             <Navbar />
-            <main className="flex-grow">
+            <main className="flex-grow mt-4">
               <RouteTransition />
               {children}
             </main>

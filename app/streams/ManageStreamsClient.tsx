@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useQuery } from "@tanstack/react-query";
 import { XCircleIcon } from "@heroicons/react/24/solid";
-import { motion } from "framer-motion";
-import PendingInvoicesList from "./components/PendingInvoicesList";
+import StreamsList from "./components/StreamsList";
 import ToggleView from "@/components/shared/ToggleView";
 import SectionHeader from "@/components/shared/ui/SectionHeader";
 
@@ -22,18 +22,18 @@ const fadeInVariant = {
   }),
 };
 
-export default function InvoicesClient() {
+export default function ManageStreamsClient() {
   const { address } = useAppKitAccount();
   const [view, setView] = useState<"incoming" | "outgoing">("incoming");
 
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ["pending-invoices", address, view],
+  const { data: streams, isLoading } = useQuery({
+    queryKey: ["active-streams", address, view],
     queryFn: async () => {
-      if (!address) return [];
+      if (!address) return { streams: [] };
       const response = await fetch(
-        `/api/invoices/pending?address=${address}&type=${view}`
+        `/api/streams/active?address=${address}&type=${view}`
       );
-      if (!response.ok) throw new Error("Failed to fetch invoices");
+      if (!response.ok) throw new Error("Failed to fetch streams");
       return response.json();
     },
     enabled: !!address,
@@ -49,7 +49,7 @@ export default function InvoicesClient() {
               Wallet Not Connected
             </h3>
             <p className="mt-2 text-sm text-white/60">
-              Please connect your wallet to view your invoices
+              Please connect your wallet to view your streams
             </p>
             {/* Gradient overlay */}
             <div className="absolute inset-0 rounded-lg overflow-hidden">
@@ -72,16 +72,16 @@ export default function InvoicesClient() {
           custom={0}
         >
           <SectionHeader
-            title="Pending Invoices"
-            description="Manage your unpaid incoming and outgoing invoices"
+            title="Active Streams"
+            description="Manage your active token streams"
           >
             <ToggleView view={view} onChange={setView} />
           </SectionHeader>
 
-          {/* Invoices List */}
+          {/* Streams List */}
           <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 group">
-            <PendingInvoicesList
-              invoices={invoices?.invoices || []}
+            <StreamsList
+              streams={streams?.streams || []}
               isLoading={isLoading}
               view={view}
             />

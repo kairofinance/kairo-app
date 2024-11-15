@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { formatUnits } from "viem";
 import Image from "next/image";
 import Link from "next/link";
-import { DocumentIcon } from "@heroicons/react/20/solid";
 import AddressDisplay from "@/components/shared/AddressDisplay";
 import { formatRelativeTime } from "@/utils/date-format";
 
@@ -47,19 +46,10 @@ function formatAmount(amount: string, tokenAddress: string): string {
   return `${wholeNumber} ${token || "Unknown"}`;
 }
 
-function renderUserInfo(address: string, isIssuer: boolean) {
-  return (
-    <div className="flex items-center space-x-2">
-      <span className="text-white/60 flex-shrink-0">
-        {isIssuer ? "From:" : "To:"}
-      </span>
-      <AddressDisplay
-        address={address}
-        className="text-white hover:text-white/90 transition-colors duration-200"
-      />
-    </div>
-  );
-}
+const statusStyles = {
+  incoming: "text-orange-600/90 bg-orange-600/[0.07]",
+  outgoing: "text-white/80 bg-white/[0.05]",
+};
 
 export default function PendingInvoicesList({
   invoices,
@@ -68,24 +58,11 @@ export default function PendingInvoicesList({
 }: PendingInvoicesListProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div
-            key={index}
-            className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10"
-          >
-            <div className="animate-pulse space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-white/10 rounded-full" />
-                <div className="h-6 bg-white/10 rounded-full w-24" />
-              </div>
-              <div className="h-4 bg-white/10 rounded-full w-32" />
-              <div className="space-y-2">
-                <div className="h-4 bg-white/10 rounded-full w-48" />
-                <div className="h-4 bg-white/10 rounded-full w-36" />
-              </div>
-              <div className="h-8 bg-white/10 rounded-full" />
-            </div>
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div key={index} className="flex gap-4 animate-pulse">
+            <div className="w-20 h-4 bg-white/5 rounded" />
+            <div className="flex-1 h-12 bg-white/5 rounded-lg" />
           </div>
         ))}
       </div>
@@ -94,70 +71,124 @@ export default function PendingInvoicesList({
 
   if (!invoices.length) {
     return (
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-8 text-center border border-white/10">
-        <p className="text-white/60">No {view} invoices pending</p>
+      <div className="text-center py-12">
+        <p className="text-white/40">No {view} invoices pending</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {invoices.map((invoice, index) => (
-        <motion.div
+    <div className="space-y-2">
+      {invoices.map((invoice) => (
+        <Link
           key={invoice.id}
-          className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
+          href={`/invoice/${invoice.invoiceId}`}
+          className="block group relative cursor-pointer"
         >
-          <div className="space-y-4">
-            {/* Amount and Invoice ID */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <DocumentIcon className="h-5 w-5 text-blue-400" />
-                <div className="flex items-center text-sm font-bold text-white">
-                  <Image
-                    src={`/tokens/${getTokenSymbol(invoice.tokenAddress)}.png`}
-                    alt={getTokenSymbol(invoice.tokenAddress)}
-                    width={20}
-                    height={20}
-                    className="mr-2"
+          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300">
+            {/* Content - Move to top of stack */}
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-4 px-4 sm:py-5 sm:px-6">
+              {/* Mobile header */}
+              <div className="flex items-center justify-between sm:hidden">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`
+                      w-2 h-2 rounded-full shrink-0
+                      ${view === "incoming" ? "bg-orange-600" : "bg-white/60"}
+                    `}
                   />
-                  {formatAmount(invoice.amount, invoice.tokenAddress)}
+                  <div className="text-sm tabular-nums text-white/40">
+                    {new Date(invoice.issuedDate).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+                <div
+                  className={`
+                    px-2.5 py-1 text-xs font-medium rounded-full
+                    backdrop-blur-sm transition-colors duration-200
+                    ${statusStyles[view]}
+                  `}
+                >
+                  {view === "incoming" ? "Incoming" : "Created"}
                 </div>
               </div>
-              <div className="text-sm text-white/60">
-                Invoice #{invoice.invoiceId}
+
+              {/* Desktop status and time */}
+              <div className="hidden sm:flex items-center gap-4">
+                <div className="flex items-center">
+                  <div
+                    className={`
+                      w-2 h-2 rounded-full shrink-0
+                      ${view === "incoming" ? "bg-orange-600" : "bg-white/60"}
+                    `}
+                  />
+                </div>
+                <div className="w-[75px] shrink-0 flex items-center">
+                  <div className="text-sm tabular-nums text-white/40">
+                    {new Date(invoice.issuedDate).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Content */}
+              <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
+                  {/* Token Amount */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center opacity-80 group-hover:opacity-100 transition-opacity">
+                      <Image
+                        src={`/tokens/${getTokenSymbol(
+                          invoice.tokenAddress
+                        )}.png`}
+                        alt={getTokenSymbol(invoice.tokenAddress)}
+                        width={18}
+                        height={18}
+                        className="rounded-full"
+                      />
+                    </div>
+                    <span className="text-base font-medium text-white/90 group-hover:text-white transition-colors">
+                      {formatAmount(invoice.amount, invoice.tokenAddress)}
+                    </span>
+                  </div>
+
+                  <span className="text-sm text-white/30">
+                    {view === "incoming" ? "requested by" : "requested from"}
+                  </span>
+
+                  {/* Address */}
+                  <div className="min-w-0 truncate flex items-center">
+                    <AddressDisplay
+                      address={
+                        view === "incoming"
+                          ? invoice.issuerAddress
+                          : invoice.clientAddress
+                      }
+                      className="text-sm text-white/70 group-hover:text-white/90 transition-colors duration-200"
+                    />
+                  </div>
+                </div>
+
+                {/* Status Badge - desktop only */}
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                  <div
+                    className={`
+                      px-3 py-1 text-sm font-medium rounded-full
+                      backdrop-blur-sm transition-colors duration-200
+                      ${statusStyles[view]}
+                    `}
+                  >
+                    {view === "incoming" ? "Incoming" : "Created"}
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Address and Date Info */}
-            <div className="space-y-2">
-              {renderUserInfo(
-                view === "incoming"
-                  ? invoice.issuerAddress
-                  : invoice.clientAddress,
-                view === "incoming"
-              )}
-              <div className="text-sm text-white/60">
-                Created {formatRelativeTime(invoice.issuedDate)}
-              </div>
-            </div>
-
-            {/* Due Date */}
-            <div className="text-sm text-white/60">
-              Due {formatRelativeTime(invoice.dueDate)}
-            </div>
-
-            {/* View Invoice Button */}
-            <Link
-              href={`/invoice/${invoice.invoiceId}`}
-              className="inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10 w-full"
-            >
-              View Invoice
-            </Link>
           </div>
-        </motion.div>
+        </Link>
       ))}
     </div>
   );

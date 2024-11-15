@@ -11,11 +11,10 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        "garet-heavy": ["Garet-Heavy", "sans-serif"],
-        garet: ["Garet-Book", "sans-serif"],
-        montserrat: ["Montserrat", "sans-serif"],
-        hagrid: ["Hagrid", "sans-serif"],
-        "hagrid-text": ["Hagrid Text", "sans-serif"],
+        helvetica: ["Helvetica", "sans-serif"],
+        "helvetica-bold": ["Helvetica-Bold", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+        jetbrains: ["JetBrains Mono", "monospace"],
       },
       colors: {
         kairo: {

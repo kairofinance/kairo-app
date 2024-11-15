@@ -93,13 +93,13 @@ export default function AddContactModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="relative mx-auto max-w-sm w-full overflow-hidden rounded-xl bg-white/5 backdrop-blur-sm p-6 shadow-xl border border-white/10">
-                <Dialog.Title className="text-xl font-semibold text-white mb-6">
+              <Dialog.Panel className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 shadow-xl w-full max-w-sm">
+                <Dialog.Title className="text-lg font-semibold leading-7 text-white">
                   Add New Contact
                 </Dialog.Title>
 
                 {error && (
-                  <div className="mb-4 p-3 rounded-lg bg-black/20 border border-white/5">
+                  <div className="mt-4 p-3 rounded-lg bg-white/[0.02] border border-white/[0.08]">
                     <div className="flex items-center gap-2 text-orange-600">
                       <XCircleIcon className="h-5 w-5 flex-shrink-0" />
                       <p className="text-sm">{error}</p>
@@ -107,30 +107,30 @@ export default function AddContactModal({
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-white/60 font-medium text-sm uppercase tracking-wider">
+                <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-white/60 text-sm font-medium">
                       Name
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full text-white text-2xl font-light bg-transparent outline-none placeholder-white/20 focus:placeholder-white/40 transition-all duration-200"
+                      className="w-full px-4 py-2.5 rounded-lg border border-white/[0.08] bg-white/[0.02] text-white/90 focus:border-orange-600/20 focus:ring-1 focus:ring-orange-600/20 transition-all duration-200"
                       placeholder="Contact name"
                       required
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-white/60 font-medium text-sm uppercase tracking-wider">
+                  <div className="space-y-2">
+                    <label className="text-white/60 text-sm font-medium">
                       Address or ENS
                     </label>
                     <input
                       type="text"
                       value={addressOrEns}
                       onChange={(e) => setAddressOrEns(e.target.value)}
-                      className="w-full text-white text-2xl font-light bg-transparent outline-none placeholder-white/20 focus:placeholder-white/40 transition-all duration-200"
+                      className="w-full px-4 py-2.5 rounded-lg border border-white/[0.08] bg-white/[0.02] text-white/90 focus:border-orange-600/20 focus:ring-1 focus:ring-orange-600/20 transition-all duration-200"
                       placeholder="0x... or ENS"
                       required
                     />
@@ -160,6 +160,12 @@ export default function AddContactModal({
                     </button>
                   </div>
                 </form>
+
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>

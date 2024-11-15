@@ -129,72 +129,6 @@ function DeleteConfirmationDialog({
   );
 }
 
-function ContactList({
-  contacts,
-  onRefetch,
-  onDelete,
-  onEdit,
-}: ContactListProps) {
-  const [localContacts, setLocalContacts] = useState(contacts);
-
-  useEffect(() => {
-    setLocalContacts(contacts);
-  }, [contacts]);
-
-  if (!localContacts?.length) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-kairo-white/70">No contacts yet</p>
-      </div>
-    );
-  }
-
-  const handleContactDelete = async (contactId: string) => {
-    setLocalContacts((prev) => prev.filter((c) => c.id !== contactId));
-
-    try {
-      const response = await fetch(`/api/contacts/${contactId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        setLocalContacts(contacts);
-        throw new Error("Failed to delete contact");
-      }
-
-      onDelete(contactId);
-      onRefetch();
-    } catch (error) {
-      console.error("Error deleting contact:", error);
-      setLocalContacts(contacts);
-    }
-  };
-
-  return (
-    <motion.div
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      initial="hidden"
-      animate="visible"
-    >
-      <AnimatePresence mode="popLayout">
-        {localContacts.map((contact, index) => (
-          <ContactCard
-            key={contact.id}
-            contact={contact}
-            onDelete={() => handleContactDelete(contact.id)}
-            onRefetch={onRefetch}
-            onEdit={onEdit}
-            custom={index}
-          />
-        ))}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
 function ContactCard({
   contact,
   onDelete,
@@ -220,9 +154,7 @@ function ContactCard({
     setIsDeleting(true);
     try {
       setIsDeleted(true);
-
-      await onDelete();
-
+      onDelete();
       setTimeout(() => {
         setIsDeleteModalOpen(false);
       }, 300);
@@ -251,10 +183,10 @@ function ContactCard({
           },
         }}
         layout
-        className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 transition-all duration-200"
+        className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] group"
       >
         <motion.div
-          className="flex flex-col space-y-4"
+          className="flex items-center"
           animate={
             isDeleted
               ? {
@@ -269,8 +201,16 @@ function ContactCard({
           }}
         >
           {/* Contact Info */}
-          <div className="flex items-center gap-4">
-            <UserCircleIcon className="h-10 w-10 flex-shrink-0 text-white/20" />
+          <div className="flex-1 flex items-center gap-4 px-4 py-3">
+            <div className="relative">
+              <UserCircleIcon className="h-10 w-10 text-white/20" />
+              <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white/[0.02] border border-white/[0.08] flex items-center justify-center">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-600/60 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-600"></span>
+                </span>
+              </div>
+            </div>
             <div className="min-w-0 flex-1">
               <h3 className="text-lg font-medium text-white truncate">
                 {contact.name}
@@ -285,23 +225,29 @@ function ContactCard({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 pt-2">
+          <div className="flex items-center border-l border-white/[0.08] px-2">
             <button
               onClick={() => setIsEditModalOpen(true)}
-              className="flex-1 inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
+              className="p-2 text-white/40 hover:text-white transition-colors"
+              title="Edit Contact"
             >
-              <PencilIcon className="h-4 w-4 mr-2" />
-              Edit
+              <PencilIcon className="h-4 w-4" />
             </button>
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex-1 inline-flex items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10"
+              className="p-2 text-white/40 hover:text-red-400 transition-colors"
+              title="Delete Contact"
             >
-              <TrashIcon className="h-4 w-4 mr-2" />
-              Delete
+              <TrashIcon className="h-4 w-4" />
             </button>
           </div>
         </motion.div>
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+        </div>
       </motion.div>
 
       <EditContactModal
@@ -323,6 +269,68 @@ function ContactCard({
         isDeleting={isDeleting}
       />
     </>
+  );
+}
+
+function ContactList({
+  contacts,
+  onRefetch,
+  onDelete,
+  onEdit,
+}: ContactListProps) {
+  const [localContacts, setLocalContacts] = useState(contacts);
+
+  useEffect(() => {
+    setLocalContacts(contacts);
+  }, [contacts]);
+
+  const handleContactDelete = async (contactId: string) => {
+    try {
+      const response = await fetch(`/api/contacts/${contactId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete contact");
+      }
+
+      // Update local state
+      setLocalContacts((prev) => prev.filter((c) => c.id !== contactId));
+
+      // Call the parent handlers
+      onDelete(contactId);
+      onRefetch();
+    } catch (error) {
+      console.error("Error deleting contact:", error);
+    }
+  };
+
+  if (!localContacts?.length) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-white/40">No contacts yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div className="space-y-2" initial="hidden" animate="visible">
+      <AnimatePresence mode="popLayout">
+        {localContacts.map((contact, index) => (
+          <ContactCard
+            key={contact.id}
+            contact={contact}
+            onDelete={() => handleContactDelete(contact.id)}
+            onRefetch={onRefetch}
+            onEdit={onEdit}
+            custom={index}
+          />
+        ))}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

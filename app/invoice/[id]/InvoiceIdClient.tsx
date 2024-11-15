@@ -202,7 +202,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
   if (!address) {
     return (
       <div className="min-h-screen bg-kairo-black">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
           <div className="rounded-xl bg-kairo-black-a20/40 p-8 backdrop-blur-sm text-center">
             <XCircleIcon className="mx-auto h-12 w-12 text-red-400" />
             <h3 className="mt-2 text-lg font-medium text-kairo-white">
@@ -403,7 +403,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
   if (isLoading) {
     return (
       <div className="min-h-screen">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
           <div className="space-y-8">
             {/* Header Skeleton */}
             <div className="space-y-2">
@@ -486,7 +486,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
   if (error) {
     return (
       <div className="min-h-screen ">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
           <div className="rounded-xl bg-kairo-black-a20/40 p-8 backdrop-blur-sm text-center">
             <XCircleIcon className="mx-auto h-12 w-12 text-red-400" />
             <h3 className="mt-2 text-lg font-medium text-kairo-white">
@@ -507,7 +507,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     );
   }
 
-  // Update the button styles
+  // Update the button styles to match the global theme
   const buttonClasses = {
     primary:
       "inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10",
@@ -515,14 +515,14 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
       "inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10",
   };
 
-  // Update the card styles
+  // Update the card styles to match other pages
   const cardClasses =
-    "bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6";
+    "relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 group";
 
   // Update the status badges
   const statusClasses = {
-    paid: "bg-white/5 text-green-400 border border-green-400/20",
-    pending: "bg-white/5 text-orange-600 border border-orange-600/20",
+    paid: "bg-white/[0.02] text-green-400 border border-green-400/20",
+    pending: "bg-white/[0.02] text-orange-600 border border-orange-600/20",
   };
 
   // Update the payment button text styles
@@ -558,10 +558,10 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     }
   };
 
-  // Update the main container styles
+  // Update the return statement styling
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
         {/* Breadcrumb navigation */}
         <motion.nav
           aria-label="Breadcrumb"
@@ -599,10 +599,10 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
         <div className="space-y-8">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-lg font-semibold leading-7 text-white">
               Invoice #{invoiceId}
             </h1>
-            <p className="mt-2 text-white/60">
+            <p className="mt-1 text-sm leading-6 text-white/40">
               Created on {new Date(invoice.issuedDate).toLocaleDateString()}
             </p>
           </div>
@@ -658,7 +658,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
               </motion.div>
 
               <motion.div className="pt-6" variants={fadeInVariant} custom={7}>
-                <h2 className="text-white/70 text-sm font-medium mb-2">
+                <h2 className="text-white/60 text-sm font-medium mb-2">
                   Invoice Document
                 </h2>
                 <button
@@ -681,13 +681,19 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                   </svg>
                 </button>
               </motion.div>
+
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+              </div>
             </div>
 
             {/* Right column */}
             <div className="space-y-8">
               {/* Amount breakdown card */}
               <div className={cardClasses}>
-                <h2 className="text-lg sm:text-xl font-bold text-kairo-white mb-2 sm:mb-4">
+                <h2 className="text-lg font-semibold text-white mb-4">
                   Amount Breakdown
                 </h2>
                 <div className="space-y-3">
@@ -763,6 +769,12 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                     </div>
                   </div>
                 </div>
+
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+                </div>
               </div>
 
               {/* Status card */}
@@ -835,11 +847,17 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
                     <button
                       onClick={handlePayInvoice}
                       disabled={paymentStep !== "idle"}
-                      className="w-full inline-flex mt-5 items-center justify-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`w-full mt-5 ${buttonClasses.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {getPaymentButtonText()}
                     </button>
                   )}
+
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+                </div>
               </div>
             </div>
           </div>

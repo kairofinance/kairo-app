@@ -1,309 +1,232 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { useQuery, useQueries } from "@tanstack/react-query";
+import React, { useState } from "react";
+import TimeFrameSelector from "./components/TimeFrameSelector";
+import CashFlowOverview from "./components/CashFlowOverview";
+import ExpensesChart from "./components/ExpensesChart";
+import { motion } from "framer-motion";
+import {
+  BanknotesIcon,
+  ClockIcon,
+  ArrowTrendingUpIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
+  CheckCircleIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
+import TokenActivityTimeline from "./components/TokenActivityTimeline";
+import { formatEther } from "viem";
 import { useAccount } from "wagmi";
-import { useInView } from "react-intersection-observer";
-import { debounce } from "lodash";
-import DashboardHeader from "./components/DashboardHeader";
-import { Locale } from "@/utils/i18n-config";
-import dynamic from "next/dynamic";
-import Spinner from "@/components/Spinner";
-import type { Stat } from "./components/Stats";
+import { useAccountStats } from "@/hooks/useAccountStats";
+import TokenBalanceGraph from "./components/TokenBalanceGraph";
+import { subDays } from "date-fns";
 
-const secondaryNavigation = [
-  { name: "Last 7 days", period: "last7days" },
-  { name: "Last 30 days", period: "last30days" },
-  { name: "All-time", period: "alltime" },
-];
-
+// Add props interface at the top
 interface DashboardClientProps {
-  initialDictionary: any;
-  initialLang: Locale;
+  initialDictionary: any; // Replace 'any' with proper dictionary type if available
+  initialLang: string;
 }
 
-const StatsSection = dynamic(() => import("./components/StatsSection"), {
-  loading: () => <Spinner />,
-  ssr: false,
-});
+const AccountStats = () => {
+  const { address } = useAccount();
+  const stats = useAccountStats(address);
 
-const ActivitySection = dynamic(() => import("./components/ActivitySection"), {
-  loading: () => <Spinner />,
-  ssr: false,
-});
+  if (stats.isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className="animate-pulse flex items-center justify-between p-3 rounded-lg bg-white/[0.03]"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.05]" />
+              <div className="h-4 w-24 bg-white/[0.05] rounded" />
+            </div>
+            <div className="h-4 w-16 bg-white/[0.05] rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-function groupInvoicesByDate(invoices: any[]) {
-  const grouped = invoices.reduce((acc: any, invoice: any) => {
-    const date = new Date(invoice.issuedDate).toLocaleDateString();
-    if (!acc[date]) {
-      acc[date] = { date, dateTime: invoice.issuedDate, invoices: [] };
-    }
-    acc[date].invoices.push(invoice);
-    return acc;
-  }, {});
-
-  return Object.values(grouped);
-}
-
-const calculatePercentageChange = (
-  current: number,
-  previous: number
-): string => {
-  if (previous === 0 || isNaN(current) || isNaN(previous)) return "";
-  const change = ((current - previous) / previous) * 100;
-  return isNaN(change) ? "" : `${Math.abs(change).toFixed(1)}%`;
-};
-
-const formatStats = (data: any): Stat[] => {
-  return [
+  const statItems = [
     {
-      name: "Total Revenue",
-      value: `$${data.totalRevenue.toLocaleString()}`,
-      changeType:
-        data.totalRevenue > data.previousTotalRevenue ? "increase" : "decrease",
-      change: calculatePercentageChange(
-        data.totalRevenue,
-        data.previousTotalRevenue
-      ),
+      icon: DocumentTextIcon,
+      label: "Invoices Created",
+      value: stats.totalInvoices || 0,
     },
     {
-      name: "Active Projects",
-      value: data.activeProjects,
-      changeType:
-        data.activeProjects > data.previousActiveProjects
-          ? "increase"
-          : "decrease",
-      change: calculatePercentageChange(
-        data.activeProjects,
-        data.previousActiveProjects
-      ),
+      icon: CheckCircleIcon,
+      label: "Invoices Paid",
+      value: stats.totalPaidInvoices || 0,
     },
     {
-      name: "Clients",
-      value: data.clientCount,
-      changeType:
-        data.clientCount > data.previousClientCount ? "increase" : "decrease",
-      change: calculatePercentageChange(
-        data.clientCount,
-        data.previousClientCount
-      ),
+      icon: ArrowPathIcon,
+      label: "Completed Streams",
+      value: stats.completedStreams || 0,
     },
     {
-      name: "Contractors",
-      value: data.contractorCount,
-      changeType:
-        data.contractorCount > data.previousContractorCount
-          ? "increase"
-          : "decrease",
-      change: calculatePercentageChange(
-        data.contractorCount,
-        data.previousContractorCount
-      ),
+      icon: BanknotesIcon,
+      label: "Vests Unlocked",
+      value: stats.unlockedVests || 0,
     },
     {
-      name: "Total Invoices",
-      value: data.totalInvoices,
-      changeType:
-        data.totalInvoices > data.previousTotalInvoices
-          ? "increase"
-          : "decrease",
-      change: calculatePercentageChange(
-        data.totalInvoices,
-        data.previousTotalInvoices
-      ),
-    },
-    {
-      name: "Paid Invoices",
-      value: data.paidInvoices,
-      changeType:
-        data.paidInvoices > data.previousPaidInvoices ? "increase" : "decrease",
-      change: calculatePercentageChange(
-        data.paidInvoices,
-        data.previousPaidInvoices
-      ),
-    },
-    {
-      name: "Unpaid Invoices",
-      value: data.unpaidInvoices,
-      changeType:
-        data.unpaidInvoices > data.previousUnpaidInvoices
-          ? "increase"
-          : "decrease",
-      change: calculatePercentageChange(
-        data.unpaidInvoices,
-        data.previousUnpaidInvoices
-      ),
+      icon: BanknotesIcon,
+      label: "Gross Income",
+      value: stats.unlockedVests || "$" + 0,
     },
   ];
+
+  return (
+    <div className="relative">
+      <div className="space-y-4 pr-6 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+        {statItems.map((item, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] transition-colors duration-200"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <item.icon className="w-4 h-4 text-white/60" />
+              </div>
+              <span className="text-sm text-white/60">{item.label}</span>
+            </div>
+            <span className="text-sm font-medium text-white">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default function DashboardClient({
   initialDictionary,
   initialLang,
 }: DashboardClientProps) {
-  const [period, setPeriod] = useState<string>("last7days");
-  const [error, setError] = useState<string | null>(null);
-  const { address } = useAccount();
-  const { ref: statsRef, inView: statsInView } = useInView({
-    triggerOnce: true,
-  });
-  const { ref: activityRef, inView: activityInView } = useInView({
-    triggerOnce: true,
-  });
+  const [timeFrame, setTimeFrame] = useState("7d");
 
-  const { data: statsData, isLoading: isLoadingStats } = useQuery({
-    queryKey: ["stats", address, period],
-    queryFn: async () => {
-      if (!address) return null;
-      const response = await fetch(
-        `/api/stats?address=${address}&period=${period}`
-      );
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
+  const cashFlowData = {
+    incoming: {
+      total: "$12,450.00",
+      change: 12.5,
     },
-    enabled: !!address && statsInView,
-  });
-
-  const { data: invoicesData, isLoading: isLoadingInvoices } = useQuery({
-    queryKey: ["invoices", address],
-    queryFn: async () => {
-      if (!address) return { invoices: [] };
-      const response = await fetch(`/api/invoices?address=${address}`);
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      return response.json();
+    outgoing: {
+      total: "$8,230.00",
+      change: -5.2,
     },
-    enabled: !!address,
-  });
+  };
 
-  useEffect(() => {
-    if (invoicesData) {
-      console.log("Fetched invoices data:", invoicesData);
-    }
-  }, [invoicesData]);
+  const expensesData = {
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    incoming: [4000, 3000, 5000, 4500, 6000, 5500],
+    outgoing: [3000, 2500, 4000, 3500, 4500, 4000],
+  };
 
-  const uniqueAddresses = useMemo(() => {
-    if (!invoicesData?.invoices) return [];
-    const addresses = new Set<string>();
-    invoicesData.invoices.forEach((invoice: any) => {
-      addresses.add(invoice.issuerAddress.toLowerCase());
-      addresses.add(invoice.clientAddress.toLowerCase());
-    });
-    return Array.from(addresses);
-  }, [invoicesData]);
+  const activityData = Array.from({ length: 10 }, (_, i) => ({
+    date: subDays(new Date(), Math.floor(Math.random() * 7)),
+    type: ["payment", "stream", "invoice"][Math.floor(Math.random() * 3)] as
+      | "payment"
+      | "stream"
+      | "invoice",
+    amount: `$${(Math.random() * 1000).toFixed(2)}`,
+    description: [
+      "Payment received from Alice",
+      "Stream started to Bob",
+      "Invoice created for Charlie",
+      "Payment sent to Dave",
+      "Stream ended with Eve",
+      "Invoice paid by Frank",
+    ][Math.floor(Math.random() * 6)],
+  }));
 
-  const userProfileQueries = useQueries({
-    queries: uniqueAddresses.map((address) => ({
-      queryKey: ["userProfile", address],
-      queryFn: async () => {
-        const response = await fetch(`/api/users?address=${address}`);
-        if (!response.ok && response.status !== 404) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.status === 404 ? null : response.json();
-      },
-      retry: false,
-    })),
-  });
-
-  const userProfiles = useMemo(() => {
-    const profiles: { [key: string]: any } = {};
-    userProfileQueries.forEach((query) => {
-      if (query.data) {
-        profiles[query.data.address.toLowerCase()] = query.data;
-      }
-    });
-    return profiles;
-  }, [userProfileQueries]);
-
-  const handlePeriodChange = useCallback((newPeriod: string) => {
-    setPeriod(newPeriod);
-  }, []);
-
-  const debouncedHandlePeriodChange = useMemo(
-    () => debounce(handlePeriodChange, 300),
-    [handlePeriodChange]
-  );
-
-  useEffect(() => {
-    return () => {
-      debouncedHandlePeriodChange.cancel();
-    };
-  }, [debouncedHandlePeriodChange]);
-
-  const { statNames, dashboardStats, groupedInvoices } = useMemo(
-    () => ({
-      statNames: [
-        "Total Revenue",
-        "Total Invoices",
-        "Paid Invoices",
-        "Unpaid Invoices",
-        "Clients",
-        "Contractors",
-        "Active Projects",
-        "On-Time Payment Rate",
-      ],
-      dashboardStats: statsData ? formatStats(statsData) : [],
-      groupedInvoices: invoicesData?.invoices
-        ? groupInvoicesByDate(invoicesData.invoices)
-        : [],
-    }),
-    [statsData, invoicesData]
-  );
-
-  const firstStatsGroup = statNames.slice(0, 4);
-  const secondStatsGroup = statNames.slice(4);
-
-  useEffect(() => {
-    if (statsData) {
-      console.log("Fetched stats data:", statsData);
-    }
-  }, [statsData]);
-
-  if (error) {
-    return (
-      <div className="bg-red-900 border-red-700 text-orange-600-a80 px-4 py-3 rounded relative mb-4">
-        <strong className="font-bold">Error: </strong>
-        <span className="block sm:inline">{error}</span>
+  const StatBox = ({ icon: Icon, title, value, change }: any) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-3"
+    >
+      <div className="flex items-center gap-2">
+        <div className="p-2 rounded-lg bg-white/[0.05]">
+          <Icon className="w-5 h-5 text-white/60" />
+        </div>
+        <h3 className="text-sm font-medium text-white/60">{title}</h3>
       </div>
-    );
-  }
+      <p className="text-2xl font-semibold text-white">{value}</p>
+      {change && (
+        <div className="flex items-center gap-1 text-sm">
+          <span className={change >= 0 ? "text-green-500" : "text-red-500"}>
+            {change > 0 ? "+" : " "}
+            {change}%
+          </span>
+          <span className="text-white/40 ml-1">vs last period</span>
+        </div>
+      )}
+    </motion.div>
+  );
 
   return (
-    <main className="mt-5 mx-auto max-w-7xl px-5">
-      <div className="relative isolate overflow-hidden">
-        <DashboardHeader
-          title={initialDictionary.dashboard.overview}
-          periods={secondaryNavigation}
-          currentPeriod={period}
-          onPeriodChange={debouncedHandlePeriodChange}
-          dictionary={initialDictionary}
-        />
-
-        <div ref={statsRef}>
-          {statsInView && (
-            <StatsSection
-              firstStatsGroup={firstStatsGroup}
-              secondStatsGroup={secondStatsGroup}
-              dashboardStats={dashboardStats}
-              isLoading={isLoadingStats}
-            />
-          )}
+    <div className="min-h-screen p-6 space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* First Row - CashFlow and Expenses */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <CashFlowOverview {...cashFlowData} />
+            <TokenBalanceGraph data={activityData} days={7} />
+          </div>
+          <ExpensesChart data={expensesData} />
         </div>
 
-        <div ref={activityRef}>
-          {activityInView && (
-            <ActivitySection
-              dictionary={initialDictionary}
-              groupedInvoices={groupedInvoices}
-              isLoading={isLoadingInvoices}
-              userAddress={address || ""}
-              userProfiles={userProfiles}
-            />
-          )}
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatBox
+            icon={DocumentTextIcon}
+            title="Pending Invoices"
+            value="12"
+            change={3.2}
+          />
+          <StatBox
+            icon={ArrowPathIcon}
+            title="Active Streams"
+            value="5"
+            change={1.5}
+          />
+          <StatBox
+            icon={ClockIcon}
+            title="Active Vests"
+            value="3"
+            change={-2.0}
+          />
+          <StatBox
+            icon={BanknotesIcon}
+            title="Pending Claims"
+            value="8"
+            change={4.7}
+          />
+        </div>
+
+        {/* Activity and Stats Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:col-span-2 p-6 rounded-xl bg-white/[0.02] border border-white/[0.08]"
+          >
+            <TokenActivityTimeline />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-6 rounded-xl bg-white/[0.02] border border-white/[0.08]"
+          >
+            <h3 className="text-sm font-medium text-white/60 mb-4">
+              All Time Stats
+            </h3>
+            <AccountStats />
+          </motion.div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
