@@ -3,8 +3,8 @@ import AuthWrapper from "@/auth/AuthWrapper";
 import { getDictionary } from "@/utils/get-dictionary";
 import { cookies } from "next/headers";
 import { i18n, Locale } from "@/utils/i18n-config";
-import Spinner from "@/components/Spinner";
-import DashboardClient from "./DashboardClient";
+import SpinningLogo from "@/components/SpinningLogo";
+import OverviewClient from "./OverviewClient";
 import { getCacheHeaders } from "@/utils/cache-headers";
 
 export default async function DashboardPage() {
@@ -19,11 +19,11 @@ export default async function DashboardPage() {
         <Suspense
           fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
-              <Spinner />
+              <SpinningLogo />
             </div>
           }
         >
-          <DashboardClient initialDictionary={dictionary} initialLang={lang} />
+          <OverviewClient initialDictionary={dictionary} initialLang={lang} />
         </Suspense>
       </div>
     </AuthWrapper>

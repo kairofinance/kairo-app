@@ -32,7 +32,7 @@ export default function TimeFrameSelector({
   return (
     <div className="w-full max-w-6xl mx-auto flex justify-end">
       <Menu as="div" className="relative inline-block text-left">
-        <Menu.Button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/80 hover:text-white rounded-lg border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200">
+        <Menu.Button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/80 hover:text-white rounded-lg border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200">
           <CalendarIcon className="w-4 h-4" />
           {selectedOption?.label}
           <ChevronDownIcon className="w-4 h-4" />

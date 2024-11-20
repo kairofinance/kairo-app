@@ -46,62 +46,44 @@ export default function CreateClient() {
   return (
     <div className="min-h-screen p-6 space-y-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0"
-        >
-          <div>
-            <h2 className="text-lg font-garet font-extrabold text-white">
-              Create Payment
-            </h2>
-            <p className="mt-1 text-sm text-white/60">
-              Create instant invoices, token streams, or vesting schedules with
-              flexible parameters.
-            </p>
+        {/* Main Container */}
+        <div className="relative outline-2 outline outline-white/[0.2] p-7">
+          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+            create
+          </h2>
+
+          {/* Type Selection */}
+          <div className="flex gap-2">
+            {creationOptions.map((option) => (
+              <motion.button
+                key={option.id}
+                onClick={() => setSelectedType(option.id as CreationType)}
+                className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                  ${
+                    selectedType === option.id
+                      ? "bg-white/[0.08]"
+                      : "bg-white/[0.02]"
+                  }
+                  hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+              >
+                <span className="text-white/40 font-jetbrains text-sm">$</span>
+                <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
+                  {option.name.toLowerCase().replace(/ /g, "_")}
+                </span>
+                {selectedType === option.id && (
+                  <span className="ml-1 animate-pulse">▋</span>
+                )}
+              </motion.button>
+            ))}
           </div>
-        </motion.div>
 
-        {/* Type Selection - More minimal version */}
-        <div className="flex gap-2 p-1 rounded-lg bg-white/[0.02] border border-white/[0.08] w-fit">
-          {creationOptions.map((option) => (
-            <motion.button
-              key={option.id}
-              onClick={() => setSelectedType(option.id as CreationType)}
-              className={`
-                flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium
-                transition-all duration-200
-                ${
-                  selectedType === option.id
-                    ? "bg-white/[0.08] text-white"
-                    : "text-white/60 hover:text-white hover:bg-white/[0.04]"
-                }
-              `}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <option.icon
-                className={`w-4 h-4 ${
-                  selectedType === option.id ? option.color : "text-current"
-                }`}
-              />
-              {option.name}
-            </motion.button>
-          ))}
+          {/* Creation Forms Container */}
+          <div className="mt-6">
+            {selectedType === "invoice" && <CreateInvoice />}
+            {selectedType === "stream" && <CreateStream />}
+            {selectedType === "vesting" && <CreateVesting />}
+          </div>
         </div>
-
-        {/* Creation Forms Container */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6"
-        >
-          {selectedType === "invoice" && <CreateInvoice />}
-          {selectedType === "stream" && <CreateStream />}
-          {selectedType === "vesting" && <CreateVesting />}
-        </motion.div>
       </div>
     </div>
   );

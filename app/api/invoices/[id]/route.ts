@@ -27,19 +27,6 @@ export async function GET(
       );
     }
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Invoice ID is required" },
-        { status: 400 }
-      );
-    }
-
-    const headers = getCacheHeaders({
-      maxAge: 300,
-      staleWhileRevalidate: 60,
-      mustRevalidate: true,
-    });
-
     const invoice = await prisma.invoice.findUnique({
       where: {
         invoiceId: id,
@@ -58,22 +45,24 @@ export async function GET(
     });
 
     if (!invoice) {
-      return NextResponse.json(
-        { error: "Invoice not found" },
-        {
-          status: 404,
-          headers: {
-            ...headers,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Strict address comparison after converting to lowercase
+    // Convert all addresses to lowercase for comparison
+    const userAddressLower = userAddress.toLowerCase();
+    const issuerAddressLower = invoice.issuerAddress.toLowerCase();
+    const clientAddressLower = invoice.clientAddress.toLowerCase();
+
+    // Log the addresses for debugging
+    console.log("Comparing addresses:", {
+      user: userAddressLower,
+      issuer: issuerAddressLower,
+      client: clientAddressLower,
+    });
+
     const isAuthorized =
-      userAddress.toLowerCase() === invoice.issuerAddress.toLowerCase() ||
-      userAddress.toLowerCase() === invoice.clientAddress.toLowerCase();
+      userAddressLower === issuerAddressLower ||
+      userAddressLower === clientAddressLower;
 
     if (!isAuthorized) {
       return NextResponse.json(
@@ -81,6 +70,11 @@ export async function GET(
           error: "Unauthorized",
           message:
             "You must be either the invoice issuer or recipient to view this invoice",
+          debug: {
+            userAddress: userAddressLower,
+            issuerAddress: issuerAddressLower,
+            clientAddress: clientAddressLower,
+          },
         },
         { status: 403 }
       );
@@ -95,12 +89,7 @@ export async function GET(
           : null,
     };
 
-    return NextResponse.json(formattedInvoice, {
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
-      },
-    });
+    return NextResponse.json(formattedInvoice);
   } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json(

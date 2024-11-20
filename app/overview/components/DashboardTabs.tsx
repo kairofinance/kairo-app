@@ -29,7 +29,7 @@ export default function DashboardTabs({
                   "ring-white/60 ring-offset-2 ring-offset-transparent focus:outline-none focus:ring-2",
                   selected
                     ? "bg-white/[0.08] text-white shadow"
-                    : "text-white/60 hover:bg-white/[0.04] hover:text-white"
+                    : "text-white/60 hover:bg-white/[0.02] hover:bg-white/[0.04] hover:text-white"
                 )
               }
             >

@@ -74,6 +74,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Helvetica";
+  src: url("/fonts/Helvetica.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 245, 245, 245;
@@ -81,7 +89,7 @@
 }
 
 * {
-  font-family: "JetBrains Mono", sans-serif;
+  font-family: "Helvetica", sans-serif;
   ::selection {
     color: black;
     background: white;
@@ -177,5 +185,12 @@ input[type="date"]::-moz-calendar-picker-indicator {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    @apply bg-zinc-950;
+  }
+}
+
+@layer components {
+  .page-transition {
+    @apply transition-opacity duration-500;
   }
 }

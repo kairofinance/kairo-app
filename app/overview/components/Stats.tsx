@@ -71,7 +71,7 @@ export default function Stats({ statNames, stats, isLoading }: StatsProps) {
               <motion.div
                 key={index}
                 variants={itemVariants}
-                className="group relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] p-6 transition-all duration-300"
+                className="group relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.02] hover:bg-white/[0.04] p-6 transition-all duration-300"
               >
                 <dt className="truncate text-xs sm:text-sm font-medium text-white/30 uppercase tracking-wider">
                   {statNames[index]}

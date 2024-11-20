@@ -11,6 +11,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract } from "wagmi";
@@ -225,372 +226,441 @@ export default function CreateStream() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Form Section */}
-      <div className="space-y-6">
-        {/* Token Selection */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-white/60">Select Token</h3>
-          <div className="flex gap-2">
-            {tokens.map((token) => (
-              <motion.button
-                key={token.name}
-                onClick={() => setSelectedToken(token)}
-                className={`
-                  inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-medium
-                  transition-all duration-200 border
-                  ${
-                    selectedToken.name === token.name
-                      ? "bg-white/[0.08] text-white border-white/[0.12]"
-                      : "bg-white/[0.02] text-white/70 border-white/[0.08] hover:bg-white/[0.04] hover:text-white hover:border-white/[0.12]"
-                  }
-                `}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Image
-                  src={token.image}
-                  width={20}
-                  height={20}
-                  alt={token.name}
-                  className="mr-2"
-                />
-                {token.name}
-              </motion.button>
-            ))}
-          </div>
-        </div>
-
-        {/* Recipients */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-white/60">Recipients</h3>
-          <div className="space-y-3">
-            {recipients.map((recipient, index) => (
-              <div key={index} className="flex gap-3 items-center">
-                <input
-                  type="text"
-                  value={recipient.address}
-                  onChange={(e) =>
-                    handleRecipientChange(index, "address", e.target.value)
-                  }
-                  placeholder="0x.../ENS"
-                  className="flex-1 bg-white/[0.02] rounded-lg px-4 py-3 text-white placeholder-white/40 
-                           border border-white/[0.08] focus:border-white/[0.12] focus:bg-white/[0.04]
-                           transition-all duration-200"
-                />
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={recipient.amount}
-                    onChange={(e) =>
-                      handleRecipientChange(index, "amount", e.target.value)
-                    }
-                    className="w-32 bg-white/[0.02] rounded-lg pl-4 pr-16 py-3 text-white placeholder-white/40 
-                             border border-white/[0.08] focus:border-white/[0.12] focus:bg-white/[0.04]
-                             transition-all duration-200"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">
-                    {selectedToken.name}
-                  </span>
-                </div>
-                {index > 0 && (
-                  <motion.button
-                    onClick={() => removeRecipient(index)}
-                    className="p-2 rounded-lg bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.04] 
-                             hover:border-white/[0.12] text-white/40 hover:text-white transition-all duration-200"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </motion.button>
-                )}
-              </div>
-            ))}
-            <motion.button
-              onClick={addRecipient}
-              className="text-sm font-medium text-white/50 hover:text-orange-500/80 transition-colors duration-200"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              + Add recipient
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Duration */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-white/60">Duration</h3>
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={durationValue}
-                onChange={(e) => setDurationValue(e.target.value)}
-                className="w-full bg-white/[0.02] rounded-lg pl-4 pr-20 py-3 text-white placeholder-white/40 
-                         border border-white/[0.08] focus:border-white/[0.12] focus:bg-white/[0.04]
-                         transition-all duration-200"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">
-                {durationUnit.label}
-              </span>
-            </div>
-            <select
-              value={durationUnit.value}
-              onChange={(e) => {
-                const newUnit = timeUnits.find(
-                  (unit) => unit.value === e.target.value
-                );
-                if (newUnit) setDurationUnit(newUnit);
-              }}
-              className="w-32 bg-white/[0.02] rounded-lg px-4 py-3 text-white border border-white/[0.08]
-                       focus:border-white/[0.12] focus:bg-white/[0.04] transition-all duration-200"
-            >
-              {timeUnits.map((unit) => (
-                <option
-                  key={unit.value}
-                  value={unit.value}
-                  className="bg-zinc-900 text-white"
-                >
-                  {unit.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Create Button */}
-        <motion.button
-          onClick={handleSubmit}
-          disabled={isLoading || isPending}
-          className="w-full py-4 px-6 rounded-lg text-sm font-medium text-white 
-                   bg-orange-600/90 hover:bg-orange-500/90 disabled:opacity-50 
-                   disabled:cursor-not-allowed transition-all duration-200
-                   focus:outline-none focus:ring-2 focus:ring-orange-500/10
-                   shadow-lg shadow-orange-600/10"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          {isLoading || isPending ? (
-            <span className="flex items-center justify-center gap-2">
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Creating Stream...
-            </span>
-          ) : (
-            "Create Stream"
-          )}
-        </motion.button>
-      </div>
-
-      {/* Visualization Section */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6"
-      >
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500/20 via-orange-500/40 to-orange-500/20" />
+      <div className="relative outline-2 outline outline-white/[0.2] p-7">
+        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+          details
+        </h2>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-white/60">
-              Stream Preview
-            </h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#22c55e]" />
-                <span className="text-[10px] text-white/60">Total Stream</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#f97316]" />
-                <span className="text-[10px] text-white/60">Individual</span>
-              </div>
+          {/* Token Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <h3 className="text-sm font-jetbrains text-white/60">
+                select_token
+              </h3>
+            </div>
+            <div className="flex gap-2">
+              {tokens.map((token) => (
+                <motion.button
+                  key={token.name}
+                  onClick={() => setSelectedToken(token)}
+                  className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                    ${
+                      selectedToken.name === token.name
+                        ? "bg-white/[0.08]"
+                        : "bg-white/[0.02]"
+                    }
+                    hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+                >
+                  <Image
+                    src={token.image}
+                    width={16}
+                    height={16}
+                    alt={token.name}
+                    className="opacity-80"
+                  />
+                  <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
+                    {token.name.toLowerCase()}
+                  </span>
+                </motion.button>
+              ))}
             </div>
           </div>
 
-          {/* Graph */}
-          {totalAmount > 0 && durationInHours > 0 ? (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={Array.from({ length: 10 }, (_, i) => ({
-                    name: `${((i * durationInHours) / 10).toFixed(1)}h`,
-                    total: (i * totalAmount) / 10,
-                    ...recipients.reduce(
-                      (acc, recipient, index) => ({
-                        ...acc,
-                        [`recipient${index + 1}`]:
-                          (i * parseFloat(recipient.amount || "0")) / 10,
-                      }),
-                      {}
-                    ),
-                  }))}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient
-                      id="totalGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient
-                      id="recipientGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "rgba(255, 255, 255, 0.4)", fontSize: 10 }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "rgba(255, 255, 255, 0.4)", fontSize: 10 }}
-                    dx={-10}
-                    tickFormatter={(value) =>
-                      `${value.toLocaleString()} ${selectedToken.name}`
+          {/* Recipients */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <h3 className="text-sm font-jetbrains text-white/60">
+                recipients
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {recipients.map((recipient, index) => (
+                <div key={index} className="flex gap-3 items-center">
+                  <input
+                    type="text"
+                    value={recipient.address}
+                    onChange={(e) =>
+                      handleRecipientChange(index, "address", e.target.value)
                     }
+                    placeholder="0x.../ENS"
+                    className="flex-1 bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 
+                             text-white placeholder-white/40 border border-white/[0.08] 
+                             focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
+                             transition-all duration-200"
                   />
-                  <Tooltip
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="rounded-lg bg-black/90 border border-white/10 px-3 py-2">
-                            <p className="text-[10px] font-medium text-white/60 mb-1">
-                              {label}
-                            </p>
-                            {payload.map((entry: any, index: number) => (
-                              <div
-                                key={`tooltip-${index}`}
-                                className="flex items-center gap-2"
-                              >
-                                <div
-                                  className="w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: entry.color }}
-                                />
-                                <p className="text-[11px] font-medium text-white">
-                                  {entry.name}: {entry.value.toLocaleString()}{" "}
-                                  {selectedToken.name}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        );
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={recipient.amount}
+                      onChange={(e) =>
+                        handleRecipientChange(index, "amount", e.target.value)
                       }
-                      return null;
-                    }}
-                    cursor={{
-                      stroke: "rgba(255, 255, 255, 0.1)",
-                      strokeWidth: 1,
-                      strokeDasharray: "4 4",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    fill="url(#totalGradient)"
-                    dot={false}
-                  />
-                  {recipients.map((_, index) => (
-                    <Area
-                      key={`recipient-${index}`}
-                      type="monotone"
-                      dataKey={`recipient${index + 1}`}
-                      stroke="#f97316"
-                      strokeWidth={2}
-                      fill="url(#recipientGradient)"
-                      dot={false}
+                      className="w-32 bg-white/[0.02] font-jetbrains rounded-none px-4 pr-16 py-3 
+                               text-white placeholder-white/40 border border-white/[0.08] 
+                               focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
+                               transition-all duration-200"
                     />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
+                      {selectedToken.name}
+                    </span>
+                  </div>
+                  {index > 0 && (
+                    <motion.button
+                      onClick={() => removeRecipient(index)}
+                      className="p-2 bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.02] hover:bg-white/[0.04] 
+                               hover:border-white/[0.12] text-white/40 hover:text-white transition-all duration-200"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <span className="font-jetbrains">x</span>
+                    </motion.button>
+                  )}
+                </div>
+              ))}
+              <motion.button
+                onClick={addRecipient}
+                className="flex items-center gap-2 text-sm font-jetbrains text-white/40 hover:text-white/60"
+              >
+                <span>$</span>
+                <span>add_recipient</span>
+              </motion.button>
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-[400px] text-white/40">
-              Enter stream details to see visualization
-            </div>
-          )}
+          </div>
 
-          {/* Stream Details */}
-          <div className="space-y-4 mt-6">
-            <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.08]">
-              <div className="text-sm text-white/40 mb-1">Total Amount</div>
-              <div className="flex items-center gap-2">
-                <Image
-                  src={selectedToken.image}
-                  width={24}
-                  height={24}
-                  alt={selectedToken.name}
-                  className="opacity-80"
+          {/* Duration */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <h3 className="text-sm font-jetbrains text-white/60">duration</h3>
+            </div>
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={durationValue}
+                  onChange={(e) => setDurationValue(e.target.value)}
+                  className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 pr-20 py-3 
+                           text-white placeholder-white/40 border border-white/[0.08] 
+                           focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
+                           transition-all duration-200"
                 />
-                <span className="text-xl font-light text-white">
-                  {totalAmount.toLocaleString()} {selectedToken.name}
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
+                  {durationUnit.label}
                 </span>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.08]">
-                <div className="text-sm text-white/40 mb-1">Stream Rate</div>
-                <div className="text-white">
-                  {streamRate.toFixed(6)} {selectedToken.name}/hr
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.08]">
-                <div className="text-sm text-white/40 mb-1">Duration</div>
-                <div className="text-white">
-                  {durationValue} {durationUnit.label}
-                </div>
-              </div>
+              <select
+                value={durationUnit.value}
+                onChange={(e) => {
+                  const newUnit = timeUnits.find(
+                    (unit) => unit.value === e.target.value
+                  );
+                  if (newUnit) setDurationUnit(newUnit);
+                }}
+                className="w-32 bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 text-white 
+                         border border-white/[0.08] focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04] 
+                         transition-all duration-200"
+              >
+                {timeUnits.map((unit) => (
+                  <option
+                    key={unit.value}
+                    value={unit.value}
+                    className="bg-zinc-900 text-white font-jetbrains"
+                  >
+                    {unit.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Status Indicator */}
-          <div className="flex items-center gap-2 text-sm text-white/40">
-            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            <span>Draft Stream</span>
+          {/* Create Button */}
+          <motion.button
+            onClick={handleSubmit}
+            disabled={isLoading || isPending}
+            className="w-full py-3 px-6 font-jetbrains text-sm text-white 
+                     bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
+                     disabled:cursor-not-allowed transition-all duration-200
+                     border border-white/[0.08] hover:border-white/[0.12]"
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-white/40">$</span>
+              {isLoading || isPending ? "processing..." : "create_stream"}
+            </span>
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Preview Section */}
+      <div className="relative outline-2 outline outline-white/[0.2] p-7">
+        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+          preview
+        </h2>
+
+        <div className="space-y-6">
+          {/* Command Line Header */}
+          <div className="flex items-center gap-2">
+            <span className="text-white/40 font-jetbrains text-sm">$</span>
+            <span className="text-sm font-jetbrains text-white/60">
+              cat stream.json
+            </span>
+          </div>
+
+          {/* Stream Details */}
+          <div className="font-jetbrains text-sm space-y-2">
+            <div className="text-white/40">{`{`}</div>
+            <div className="pl-4 space-y-1">
+              {/* Total Amount */}
+              <div className="flex items-start">
+                <span className="text-emerald-500">
+                  &quot;total_amount&quot;
+                </span>
+                <span className="text-white/40 mx-2">:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/80">
+                    {totalAmount.toLocaleString()}
+                  </span>
+                  <Image
+                    src={selectedToken.image}
+                    width={14}
+                    height={14}
+                    alt={selectedToken.name}
+                    className="opacity-60"
+                  />
+                  <span className="text-white/40">{selectedToken.name}</span>
+                </div>
+              </div>
+
+              {/* Stream Rate */}
+              <div className="flex items-start">
+                <span className="text-emerald-500">
+                  &quot;stream_rate&quot;
+                </span>
+                <span className="text-white/40 mx-2">:</span>
+                <span className="text-white/80">
+                  {`${streamRate.toFixed(6)} ${selectedToken.name}/hr`}
+                </span>
+              </div>
+
+              {/* Duration */}
+              <div className="flex items-start">
+                <span className="text-emerald-500">&quot;duration&quot;</span>
+                <span className="text-white/40 mx-2">:</span>
+                <span className="text-white/80">
+                  {`${durationValue} ${durationUnit.label}`}
+                </span>
+              </div>
+
+              {/* Recipients */}
+              <div className="flex items-start">
+                <span className="text-emerald-500">&quot;recipients&quot;</span>
+                <span className="text-white/40 mx-2">:</span>
+                <span className="text-white/40">[</span>
+              </div>
+              <div className="pl-4">
+                {recipients.map((recipient, index) => (
+                  <div key={index} className="text-white/80">
+                    {`{ "address": "${
+                      recipient.address || "null"
+                    }", "amount": "${recipient.amount || "0"} ${
+                      selectedToken.name
+                    }" }${index < recipients.length - 1 ? "," : ""}`}
+                  </div>
+                ))}
+              </div>
+              <div className="text-white/40">]</div>
+            </div>
+            <div className="text-white/40">{`}`}</div>
+          </div>
+
+          {/* Graph Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <span className="text-sm font-jetbrains text-white/60">
+                plot stream_data --format=chart
+              </span>
+            </div>
+
+            <div className="relative h-[300px] border border-white/[0.08] bg-white/[0.02] p-4">
+              {totalAmount > 0 && durationInHours > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={Array.from({ length: 10 }, (_, i) => ({
+                      name: `${((i * durationInHours) / 10).toFixed(1)}h`,
+                      total: (i * totalAmount) / 10,
+                      ...recipients.reduce(
+                        (acc, recipient, index) => ({
+                          ...acc,
+                          [`recipient${index + 1}`]:
+                            (i * parseFloat(recipient.amount || "0")) / 10,
+                        }),
+                        {}
+                      ),
+                    }))}
+                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient
+                        id="totalGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#22c55e"
+                          stopOpacity={0.15}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#22c55e"
+                          stopOpacity={0.05}
+                        />
+                      </linearGradient>
+                      <linearGradient
+                        id="recipientGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#f97316"
+                          stopOpacity={0.15}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#f97316"
+                          stopOpacity={0.05}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(255, 255, 255, 0.05)"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{
+                        fill: "rgba(255, 255, 255, 0.4)",
+                        fontSize: 11,
+                        fontFamily: "JetBrains Mono",
+                      }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{
+                        fill: "rgba(255, 255, 255, 0.4)",
+                        fontSize: 11,
+                        fontFamily: "JetBrains Mono",
+                      }}
+                      dx={-10}
+                      tickFormatter={(value) =>
+                        `${value.toLocaleString()} ${selectedToken.name}`
+                      }
+                    />
+                    <Tooltip
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="font-jetbrains rounded-none bg-black/90 border border-white/10 px-4 py-3">
+                              <p className="text-[10px] font-medium text-white/60 mb-2">
+                                $ time {label}
+                              </p>
+                              {payload.map((entry: any, index: number) => (
+                                <div
+                                  key={`tooltip-${index}`}
+                                  className="flex items-center gap-2 py-1"
+                                >
+                                  <div
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ backgroundColor: entry.color }}
+                                  />
+                                  <p className="text-[11px] font-medium text-white/80">
+                                    {entry.name === "total"
+                                      ? "$ total_stream"
+                                      : `$ recipient_${entry.name.replace(
+                                          "recipient",
+                                          ""
+                                        )}`}
+                                    <span className="ml-2 text-white/40">
+                                      =
+                                    </span>
+                                    <span className="ml-2">
+                                      {entry.value.toLocaleString()}{" "}
+                                      {selectedToken.name}
+                                    </span>
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                      cursor={{
+                        stroke: "rgba(255, 255, 255, 0.1)",
+                        strokeWidth: 1,
+                        strokeDasharray: "4 4",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      stroke="#22c55e"
+                      strokeWidth={1.5}
+                      fill="url(#totalGradient)"
+                      dot={false}
+                    />
+                    {recipients.map((_, index) => (
+                      <Area
+                        key={`recipient-${index}`}
+                        type="monotone"
+                        dataKey={`recipient${index + 1}`}
+                        stroke="#f97316"
+                        strokeWidth={1.5}
+                        fill="url(#recipientGradient)"
+                        dot={false}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-white/40 font-jetbrains text-sm space-y-2">
+                  <span>$ No data available for plotting</span>
+                  <span className="text-white/20">
+                    Enter stream details to visualize...
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Terminal Status Line */}
+          <div className="flex items-center gap-2 pt-4 border-t border-white/[0.08]">
+            <span className="text-white/40 font-jetbrains text-sm">$</span>
+            <span className="text-sm font-jetbrains text-white/60">
+              status:
+            </span>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+              <span className="text-sm font-jetbrains text-white/40">
+                ready_to_deploy
+              </span>
+            </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {alertState && (
         <AlertMessage

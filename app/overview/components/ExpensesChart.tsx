@@ -18,7 +18,6 @@ interface ExpensesChartProps {
 }
 
 export default function ExpensesChart({ data }: ExpensesChartProps) {
-  // Transform data into the format Recharts expects
   const chartData = data.labels.map((label, index) => ({
     name: label,
     incoming: data.incoming[index],
@@ -28,16 +27,15 @@ export default function ExpensesChart({ data }: ExpensesChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="rounded-lg bg-black/90 border border-white/10 px-3 py-2 backdrop-blur-sm">
-          <p className="text-[10px] font-medium text-white/60 mb-1">{label}</p>
+        <div className="bg-black/90 border border-white/10 px-3 py-2 backdrop-blur-sm">
+          <p className="text-xs font-jetbrains text-white/40 mb-1">
+            <span className="text-white/40">&gt;</span> {label}
+          </p>
           {payload.map((entry: any, index: number) => (
             <div key={`tooltip-${index}`} className="flex items-center gap-2">
-              <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: entry.color }}
-              />
-              <p className="text-[11px] font-medium text-white">
-                {entry.name}: ${entry.value.toLocaleString()}
+              <span className="text-xs font-jetbrains text-white/40">#</span>
+              <p className="text-sm font-jetbrains text-white">
+                {entry.name}: {entry.value.toLocaleString()}
               </p>
             </div>
           ))}
@@ -51,18 +49,23 @@ export default function ExpensesChart({ data }: ExpensesChartProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] h-[480px]"
+      className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7 h-[390px]"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xs font-medium text-white/60">Monthly Cashflow</h3>
-        <div className="flex items-center gap-4">
+      <div className="flex items-center gap-8 mb-6">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500/30" />
-            <span className="text-[10px] text-white/60">Incoming</span>
+            <div className="w-2 h-2 bg-green-500" />
+            <span className="text-sm font-jetbrains text-white/60">
+              incoming
+            </span>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-orange-500/30" />
-            <span className="text-[10px] text-white/60">Outgoing</span>
+            <div className="w-2 h-2 bg-red-500" />
+            <span className="text-sm font-jetbrains text-white/60">
+              outgoing
+            </span>
           </div>
         </div>
       </div>
@@ -83,40 +86,45 @@ export default function ExpensesChart({ data }: ExpensesChartProps) {
               dataKey="name"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "rgba(255, 255, 255, 0.4)", fontSize: 10 }}
+              tick={{
+                fill: "rgba(255, 255, 255, 0.4)",
+                fontSize: 12,
+                fontFamily: "JetBrains Mono",
+              }}
               dy={10}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "rgba(255, 255, 255, 0.4)", fontSize: 10 }}
+              tick={{
+                fill: "rgba(255, 255, 255, 0.4)",
+                fontSize: 12,
+                fontFamily: "JetBrains Mono",
+              }}
               dx={-10}
-              tickFormatter={(value) => `$${value.toLocaleString()}`}
+              tickFormatter={(value) => `${value.toLocaleString()}`}
             />
             <Tooltip
               content={CustomTooltip}
               cursor={{
                 fill: "rgba(255, 255, 255, 0.02)",
-                radius: 4,
               }}
             />
             <Bar
               dataKey="incoming"
-              fill="#10b981" // emerald-500
-              stroke="#10b981" // matching stroke
+              fill="#22c55e"
+              stroke="#22c55e"
               strokeWidth={0.5}
-              radius={[4, 4, 0, 0]}
               maxBarSize={32}
-              fillOpacity={0.15}
+              fillOpacity={0.2}
             />
             <Bar
               dataKey="outgoing"
-              fill="#f97316" // orange-500
-              stroke="#f97316" // matching stroke
+              fill="#ef4444"
+              stroke="#ef4444"
               strokeWidth={0.5}
-              radius={[4, 4, 0, 0]}
               maxBarSize={32}
-              fillOpacity={0.15}
+              fillOpacity={0.2}
             />
           </BarChart>
         </ResponsiveContainer>

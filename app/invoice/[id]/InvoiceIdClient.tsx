@@ -1,7 +1,5 @@
 "use client";
 
-import "@/lib/pdfjs";
-
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useAppKitAccount, useAppKit } from "@reown/appkit/react";
@@ -12,10 +10,9 @@ import { sepolia } from "viem/chains";
 import { formatUnits } from "viem";
 import Image from "next/image";
 import { useEnsName } from "wagmi";
-import Spinner from "@/components/Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 import { ERC20ABI } from "contracts/ERC20.sol/ERC20";
 import { client } from "../../../wagmi.config";
-import { PDFViewer } from "@/components/PDFViewer";
 import ContentSkeleton from "@/components/shared/ui/ContentSkeleton";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 import { HomeIcon } from "@heroicons/react/20/solid";
@@ -37,100 +34,52 @@ const fadeInVariant = {
   }),
 };
 
-interface InvoiceAddressDisplayProps {
-  address: string | undefined;
-  label: string;
-}
-
-interface Contact {
+interface Invoice {
   id: string;
-  name: string;
-  address: string;
+  invoiceId: string;
+  amount: string;
+  tokenAddress: string;
+  issuerAddress: string;
+  clientAddress: string;
+  dueDate: string;
+  issuedDate: string;
+  paid: boolean;
+  paidDate?: string | null;
+  paymentTransactionHash?: string | null;
 }
 
-const InvoiceAddressDisplay = ({
-  address,
-  label,
-}: InvoiceAddressDisplayProps) => {
-  const { address: currentAddress } = useAppKitAccount();
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [contactName, setContactName] = useState<string | null>(null);
-  const isCurrentUser =
-    currentAddress?.toLowerCase() === address?.toLowerCase();
-
-  useEffect(() => {
-    const fetchContacts = async () => {
-      if (!currentAddress || !address) return;
-
-      try {
-        const response = await fetch(`/api/contacts?address=${currentAddress}`);
-        if (!response.ok) throw new Error("Failed to fetch contacts");
-        const data = await response.json();
-        setContacts(data.contacts);
-
-        // Find matching contact
-        const matchingContact = data.contacts.find(
-          (contact: Contact) =>
-            contact.address.toLowerCase() === address.toLowerCase()
-        );
-        setContactName(matchingContact?.name || null);
-      } catch (error) {
-        console.error("Error fetching contacts:", error);
-      }
-    };
-
-    fetchContacts();
-  }, [currentAddress, address]);
-
-  return (
-    <div className="space-y-1.5">
-      <h2 className="text-kairo-white/70 text-xs sm:text-sm font-medium">
-        {label}
-      </h2>
-      <div className="text-kairo-white text-base sm:text-lg font-medium">
-        {!address ? (
-          "No Address"
-        ) : (
-          <div className="space-y-1">
-            {contactName ? (
-              <>
-                <div className="text-kairo-white font-medium">
-                  {contactName}
-                  {isCurrentUser && (
-                    <span className="text-kairo-white/60 text-sm ml-2">
-                      (You)
-                    </span>
-                  )}
-                </div>
-                <div className="text-kairo-white/60 text-sm">
-                  <AddressDisplay address={address} showFull />
-                </div>
-              </>
-            ) : (
-              <span className="flex flex-wrap items-center gap-2">
-                <AddressDisplay address={address} showFull />
-                {isCurrentUser && (
-                  <span className="text-kairo-white/60 text-sm">(You)</span>
-                )}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+const getTokenInfo = (tokenAddress: string | undefined) => {
+  const tokenMap: { [key: string]: { symbol: string; decimals: number } } = {
+    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": {
+      symbol: "USDC",
+      decimals: 6,
+    },
+    "0x552ceaDf3B47609897279F42D3B3309B604896f3": {
+      symbol: "DAI",
+      decimals: 18,
+    },
+  };
+  if (!tokenAddress) return { symbol: "Unknown", decimals: 18 };
+  return tokenMap[tokenAddress] || { symbol: "Unknown", decimals: 18 };
 };
 
-// Add this type definition
-type TokenSymbol = "USDC" | "DAI" | "ETH";
-
-interface TokenInfo {
-  decimals: number;
-  symbol: TokenSymbol;
-}
+const formatAmount = (
+  amount: string | undefined,
+  tokenAddress: string | undefined
+): string => {
+  if (!amount || !tokenAddress) return "0";
+  try {
+    const tokenInfo = getTokenInfo(tokenAddress);
+    const formattedAmount = formatUnits(BigInt(amount), tokenInfo.decimals);
+    return parseFloat(formattedAmount).toLocaleString();
+  } catch (error) {
+    console.error("Error formatting amount:", error);
+    return "0";
+  }
+};
 
 export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
-  const [invoice, setInvoice] = useState<any>(null);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
   const { address } = useAppKitAccount();
@@ -168,25 +117,32 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
       }
 
       try {
+        console.log("Sending request with address:", address.toLowerCase());
         const response = await fetch(`/api/invoices/${invoiceId}`, {
           headers: {
-            "x-user-address": address,
+            "x-user-address": address.toLowerCase(),
+            "Content-Type": "application/json",
           },
         });
 
         if (!response.ok) {
           const data = await response.json();
+          console.log("Error response:", data);
           if (response.status === 403) {
             setError(
-              "You must be either the invoice issuer or recipient to view this invoice"
+              data.message ||
+                "You must be either the invoice issuer or recipient to view this invoice"
             );
           } else {
             setError(data.error || "Failed to fetch invoice details");
           }
+          setIsLoading(false);
           return;
         }
 
         const data = await response.json();
+        console.log("Invoice data:", data);
+
         setInvoice(data);
       } catch (error) {
         console.error("Error fetching invoice:", error);
@@ -199,72 +155,22 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     fetchInvoice();
   }, [invoiceId, address]);
 
-  if (!address) {
-    return (
-      <div className="min-h-screen bg-kairo-black">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="rounded-xl bg-kairo-black-a20/40 p-8 backdrop-blur-sm text-center">
-            <XCircleIcon className="mx-auto h-12 w-12 text-red-400" />
-            <h3 className="mt-2 text-lg font-medium text-kairo-white">
-              Wallet Not Connected
-            </h3>
-            <p className="mt-2 text-sm text-kairo-white/70">
-              Please connect your wallet to view this invoice
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Helper function to get token info
-  const getTokenInfo = (tokenAddress: string) => {
-    const tokenMap: { [key: string]: { symbol: string; decimals: number } } = {
-      "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": {
-        symbol: "USDC",
-        decimals: 6,
-      },
-      "0x552ceaDf3B47609897279F42D3B3309B604896f3": {
-        symbol: "DAI",
-        decimals: 18,
-      },
-    };
-    return tokenMap[tokenAddress] || { symbol: "Unknown", decimals: 18 };
-  };
-
-  const formatAmount = (amount: string | undefined): string => {
-    if (!amount) return "0";
-    try {
-      const tokenInfo = getTokenInfo(invoice.tokenAddress);
-      const formattedAmount = formatUnits(BigInt(amount), tokenInfo.decimals);
-      return parseFloat(formattedAmount).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: tokenInfo.decimals,
-      });
-    } catch (error) {
-      console.error("Error formatting amount:", error);
-      return "0";
-    }
-  };
-
   const handlePayInvoice = async () => {
     try {
       setError(null);
       setPaymentStep("approving");
 
-      const tokenDecimals: Record<TokenSymbol, number> = {
-        USDC: 6,
-        DAI: 18,
-        ETH: 18,
-      };
+      if (!invoice || !address) return;
 
-      const tokenSymbol = (invoice.token || "USDC") as TokenSymbol;
-      const decimals = tokenDecimals[tokenSymbol] || 18;
       const invoiceAmount = BigInt(invoice.amount);
-      const fee = (invoiceAmount * BigInt(1)) / BigInt(100);
+      // Calculate fee with 200 token cap
+      const maxFee =
+        BigInt(200) * BigInt(10 ** getTokenInfo(invoice.tokenAddress).decimals);
+      const calculatedFee = (invoiceAmount * BigInt(15)) / BigInt(1000);
+      const fee = calculatedFee > maxFee ? maxFee : calculatedFee;
       const totalAmount = invoiceAmount + fee;
 
-      // Check if we need to approve with proper typing
+      // Check if we need to approve
       const needsApproval = currentAllowance < totalAmount;
 
       if (needsApproval) {
@@ -294,7 +200,6 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
         }
       } else {
         setPaymentStep("approved");
-        console.log("Token already approved");
       }
 
       // Proceed with paying the invoice
@@ -315,9 +220,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
         throw new Error("Payment transaction failed");
       }
 
-      console.log("Payment transaction confirmed:", payTx);
-
-      // Only update database after both transactions are confirmed
+      // Update database after transaction is confirmed
       const response = await fetch("/api/invoices/pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -358,124 +261,88 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     }
   };
 
-  const handleDownloadPDF = async () => {
-    try {
-      if (!address) {
-        setError("Please connect your wallet to download the PDF");
-        return;
-      }
-
-      const response = await fetch(`/api/invoices/${invoice.invoiceId}/pdf`, {
-        headers: {
-          "x-user-address": address,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to download PDF");
-      }
-
-      // Create blob from response
-      const blob = await response.blob();
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${invoice.invoiceId}.pdf`;
-
-      // Trigger download
-      document.body.appendChild(a);
-      a.click();
-
-      // Cleanup
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      setError(
-        error instanceof Error ? error.message : "Failed to download PDF"
-      );
+  const getPaymentButtonText = () => {
+    switch (paymentStep) {
+      case "approving":
+        return "approving_token_transfer...";
+      case "approved":
+        return "preparing_payment...";
+      case "paying":
+        return "confirming_payment...";
+      default:
+        const totalAmount = invoice
+          ? BigInt(invoice.amount) +
+            (BigInt(invoice.amount) * BigInt(1)) / BigInt(100)
+          : BigInt(0);
+        const needsApproval = currentAllowance < totalAmount;
+        return needsApproval ? "approve_and_pay" : "pay_invoice";
     }
   };
 
+  // Add safe access to invoice data
+  const getInvoiceData = () => {
+    if (!invoice) return null;
+
+    // Calculate fee with 200 token cap
+    const maxFee =
+      BigInt(200) * BigInt(10 ** getTokenInfo(invoice.tokenAddress).decimals);
+    const calculatedFee = (BigInt(invoice.amount) * BigInt(15)) / BigInt(1000);
+    const feeAmount = calculatedFee > maxFee ? maxFee : calculatedFee;
+    const totalAmount = BigInt(invoice.amount) + feeAmount;
+
+    return {
+      amount: formatAmount(invoice.amount, invoice.tokenAddress),
+      symbol: getTokenInfo(invoice.tokenAddress).symbol,
+      status: invoice.paid ? "paid" : "pending",
+      dueDate: new Date(invoice.dueDate).toLocaleDateString(),
+      issuedDate: new Date(invoice.issuedDate).toLocaleDateString(),
+      paidDate: invoice.paidDate
+        ? new Date(invoice.paidDate).toLocaleString()
+        : null,
+      txHash: invoice.paymentTransactionHash,
+      fee: formatAmount(feeAmount.toString(), invoice.tokenAddress),
+      total: formatAmount(totalAmount.toString(), invoice.tokenAddress),
+    };
+  };
+
+  if (!address) {
+    return (
+      <div className="min-h-screen p-6">
+        <div className="mx-auto max-w-2xl">
+          <div className="relative outline-2 outline outline-white/[0.2] p-7">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              error
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-white/40 font-jetbrains text-sm">$</span>
+                <span className="text-sm font-jetbrains text-red-500">
+                  wallet_not_connected
+                </span>
+              </div>
+              <p className="text-sm font-jetbrains text-white/60 pl-4">
+                Please connect your wallet to view invoice details
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="space-y-8">
-            {/* Header Skeleton */}
-            <div className="space-y-2">
-              <ContentSkeleton className="h-8 w-48" />
-              <ContentSkeleton className="h-4 w-64" />
-            </div>
-
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Left Column */}
-              <div className="space-y-6">
-                <div className="rounded-xl bg-kairo-black-a20/40 p-6 space-y-6">
-                  {/* Amount Skeleton */}
-                  <div className="flex items-center gap-4">
-                    <ContentSkeleton className="w-10 h-10 rounded-full" />
-                    <ContentSkeleton className="h-8 w-48" />
-                  </div>
-
-                  {/* Address Sections */}
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="pt-6 border-t border-kairo-black-a40/50"
-                    >
-                      <div className="space-y-2">
-                        <ContentSkeleton className="h-4 w-24" />
-                        <ContentSkeleton className="h-6 w-full" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* Amount Breakdown Card */}
-                <div className="rounded-xl bg-kairo-black-a20/40 p-6 space-y-4">
-                  <ContentSkeleton className="h-6 w-48 mb-4" />
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between items-center"
-                      >
-                        <ContentSkeleton className="h-4 w-24" />
-                        <div className="flex items-center gap-2">
-                          <ContentSkeleton className="w-4 h-4 rounded-full" />
-                          <ContentSkeleton className="h-4 w-32" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Status Card */}
-                <div className="rounded-xl bg-kairo-black-a20/40 p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <ContentSkeleton className="h-6 w-24" />
-                    <ContentSkeleton className="h-6 w-20" />
-                  </div>
-                  <div className="pt-4 border-t border-kairo-black-a40/50 space-y-4">
-                    <div className="space-y-2">
-                      <ContentSkeleton className="h-4 w-32" />
-                      <ContentSkeleton className="h-6 w-full" />
-                    </div>
-                    <div className="space-y-2">
-                      <ContentSkeleton className="h-4 w-36" />
-                      <ContentSkeleton className="h-10 w-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <div className="min-h-screen p-6">
+        <div className="mx-auto max-w-2xl">
+          <div className="relative outline-2 outline outline-white/[0.2] p-7">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              loading
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <span className="text-sm font-jetbrains text-white/60 animate-pulse">
+                fetching_invoice_data...
+              </span>
             </div>
           </div>
         </div>
@@ -485,382 +352,246 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   if (error) {
     return (
-      <div className="min-h-screen ">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="rounded-xl bg-kairo-black-a20/40 p-8 backdrop-blur-sm text-center">
-            <XCircleIcon className="mx-auto h-12 w-12 text-red-400" />
-            <h3 className="mt-2 text-lg font-medium text-kairo-white">
-              Access Denied
-            </h3>
-            <p className="mt-2 text-sm text-kairo-white/70">{error}</p>
+      <div className="min-h-screen p-6">
+        <div className="mx-auto max-w-2xl">
+          <div className="relative outline-2 outline outline-white/[0.2] p-7">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              error
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-white/40 font-jetbrains text-sm">$</span>
+                <span className="text-sm font-jetbrains text-red-500">
+                  access_denied
+                </span>
+              </div>
+              <p className="text-sm font-jetbrains text-white/60 pl-4">
+                {error}
+              </p>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!invoice) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-kairo-white">Invoice not found</p>
-      </div>
-    );
-  }
+  const invoiceData = getInvoiceData();
 
-  // Update the button styles to match the global theme
-  const buttonClasses = {
-    primary:
-      "inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10",
-    secondary:
-      "inline-flex items-center text-sm px-3 py-[5px] rounded-full font-semibold text-white hover:bg-white/10 transition-all duration-200 border border-white/10",
-  };
-
-  // Update the card styles to match other pages
-  const cardClasses =
-    "relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 group";
-
-  // Update the status badges
-  const statusClasses = {
-    paid: "bg-white/[0.02] text-green-400 border border-green-400/20",
-    pending: "bg-white/[0.02] text-orange-600 border border-orange-600/20",
-  };
-
-  // Update the payment button text styles
-  const getPaymentButtonText = () => {
-    switch (paymentStep) {
-      case "approving":
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Spinner inline size={15} />
-            <span>Requesting Token Approval...</span>
-          </div>
-        );
-      case "approved":
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Spinner inline size={15} />
-            <span>Preparing Payment...</span>
-          </div>
-        );
-      case "paying":
-        return (
-          <div className="flex items-center justify-center gap-2">
-            <Spinner inline size={15} />
-            <span>Confirming Payment...</span>
-          </div>
-        );
-      default:
-        const totalAmount =
-          BigInt(invoice.amount) +
-          (BigInt(invoice.amount) * BigInt(1)) / BigInt(100);
-        const needsApproval = currentAllowance < totalAmount;
-        return needsApproval ? "Approve & Pay Invoice" : "Pay Invoice";
-    }
-  };
-
-  // Update the return statement styling
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-        {/* Breadcrumb navigation */}
-        <motion.nav
-          aria-label="Breadcrumb"
-          className="mb-8"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <ol className="flex items-center space-x-4">
-            <li>
-              <Link
-                href="/dashboard"
-                className="text-white/60 hover:text-white transition-colors duration-200"
-              >
-                <HomeIcon className="h-5 w-5" aria-hidden="true" />
-                <span className="sr-only">Dashboard</span>
-              </Link>
-            </li>
-            <li className="flex items-center">
-              <svg
-                className="h-5 w-5 flex-shrink-0 text-white/30"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
-              </svg>
-              <span className="ml-4 text-sm font-medium text-white">
-                Invoice #{invoiceId}
-              </span>
-            </li>
-          </ol>
-        </motion.nav>
+    <div className="min-h-screen p-6">
+      <div className="mx-auto max-w-2xl space-y-6">
+        {/* Navigation */}
+        <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+          <Link
+            href="/invoices"
+            className="flex items-center gap-2 text-sm font-jetbrains text-white/40 hover:text-white/60"
+          >
+            <span>$</span>
+            <span>cd ..</span>
+          </Link>
+          <span className="text-white/20">/</span>
+          <span className="text-sm font-jetbrains text-white/60">
+            invoice_{invoiceId}
+          </span>
+        </div>
 
-        {/* Main content */}
-        <div className="space-y-8">
-          {/* Header */}
-          <div>
-            <h1 className="text-lg font-semibold leading-7 text-white">
-              Invoice #{invoiceId}
-            </h1>
-            <p className="mt-1 text-sm leading-6 text-white/40">
-              Created on {new Date(invoice.issuedDate).toLocaleDateString()}
-            </p>
-          </div>
+        {/* Main Content */}
+        <div className="relative outline-2 outline outline-white/[0.2] p-7">
+          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+            details
+          </h2>
 
-          {/* Grid layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left column */}
-            <div className={cardClasses}>
-              {/* Amount Display */}
-              <div className="flex items-center gap-3 sm:gap-4">
-                <Image
-                  src={`/tokens/${
-                    getTokenInfo(invoice.tokenAddress).symbol
-                  }.png`}
-                  alt={getTokenInfo(invoice.tokenAddress).symbol}
-                  width={32}
-                  height={32}
-                  className="rounded-full sm:w-10 sm:h-10"
-                />
-                <div>
-                  <p className="text-xl sm:text-3xl font-bold text-white">
-                    {formatAmount(invoice.amount)}{" "}
-                    <span className="text-lg sm:text-2xl">
-                      {getTokenInfo(invoice.tokenAddress).symbol}
-                    </span>
-                  </p>
+          {invoiceData && (
+            <div className="space-y-6">
+              {/* Status and Amount Row */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/40 font-jetbrains text-sm">
+                    $
+                  </span>
+                  <span className="text-sm font-jetbrains text-emerald-500">
+                    {invoiceData.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={`/tokens/${invoiceData.symbol}.png`}
+                    alt={invoiceData.symbol}
+                    width={16}
+                    height={16}
+                    className="opacity-80"
+                  />
+                  <span className="text-lg font-jetbrains text-white">
+                    {invoiceData.amount} {invoiceData.symbol}
+                  </span>
                 </div>
               </div>
 
-              <motion.div className="pt-6" variants={fadeInVariant} custom={4}>
-                <InvoiceAddressDisplay
-                  address={invoice.issuerAddress}
-                  label="From"
-                />
-              </motion.div>
-
-              <motion.div className="pt-6" variants={fadeInVariant} custom={5}>
-                <InvoiceAddressDisplay
-                  address={invoice.clientAddress}
-                  label="To"
-                />
-              </motion.div>
-
-              <motion.div className="pt-6" variants={fadeInVariant} custom={6}>
-                <h2 className="text-white/70 text-sm font-medium">Due Date</h2>
-                <p className="text-white text-lg font-medium">
-                  {new Date(invoice.dueDate).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </motion.div>
-
-              <motion.div className="pt-6" variants={fadeInVariant} custom={7}>
-                <h2 className="text-white/60 text-sm font-medium mb-2">
-                  Invoice Document
-                </h2>
-                <button
-                  onClick={handleDownloadPDF}
-                  className={buttonClasses.secondary}
-                >
-                  <span className="text-sm">Download PDF</span>
-                  <svg
-                    className="w-4 h-4 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    />
-                  </svg>
-                </button>
-              </motion.div>
-
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
-              </div>
-            </div>
-
-            {/* Right column */}
-            <div className="space-y-8">
-              {/* Amount breakdown card */}
-              <div className={cardClasses}>
-                <h2 className="text-lg font-semibold text-white mb-4">
-                  Amount Breakdown
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-kairo-white/70">Invoice Amount</span>
-                    <div className="flex items-center gap-1.5">
-                      <Image
-                        src={`/tokens/${
-                          getTokenInfo(invoice.tokenAddress).symbol
-                        }.png`}
-                        alt={getTokenInfo(invoice.tokenAddress).symbol}
-                        width={16}
-                        height={16}
-                        className="rounded-full"
-                        style={{ width: "auto", height: "auto" }}
-                      />
-                      <span className="text-kairo-white font-medium">
-                        {formatAmount(invoice.amount)}{" "}
-                        {getTokenInfo(invoice.tokenAddress).symbol}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-kairo-white/70">Fee (1%)</span>
-                    <div className="flex items-center gap-1.5">
-                      <Image
-                        src={`/tokens/${
-                          getTokenInfo(invoice.tokenAddress).symbol
-                        }.png`}
-                        alt={getTokenInfo(invoice.tokenAddress).symbol}
-                        width={16}
-                        height={16}
-                        className="rounded-full"
-                        style={{ width: "auto", height: "auto" }}
-                      />
-                      <span className="text-kairo-white font-medium">
-                        {formatAmount(
-                          (
-                            (BigInt(invoice.amount) * BigInt(1)) /
-                            BigInt(100)
-                          ).toString()
-                        )}{" "}
-                        {getTokenInfo(invoice.tokenAddress).symbol}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="pt-3 border-t border-kairo-black-a40/50">
-                    <div className="flex justify-between items-center">
-                      <span className="text-kairo-white font-medium">
-                        Total Amount
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <Image
-                          src={`/tokens/${
-                            getTokenInfo(invoice.tokenAddress).symbol
-                          }.png`}
-                          alt={getTokenInfo(invoice.tokenAddress).symbol}
-                          width={16}
-                          height={16}
-                          className="rounded-full"
-                          style={{ width: "auto", height: "auto" }}
-                        />
-                        <span className="text-kairo-white font-bold">
-                          {formatAmount(
-                            (
-                              BigInt(invoice.amount) +
-                              (BigInt(invoice.amount) * BigInt(1)) / BigInt(100)
-                            ).toString()
-                          )}{" "}
-                          {getTokenInfo(invoice.tokenAddress).symbol}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
-                </div>
-              </div>
-
-              {/* Status card */}
-              <div className={cardClasses}>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-kairo-white">Status</h2>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      invoice.paid
-                        ? "bg-green-500/10 text-green-400"
-                        : "bg-blue-500/10 text-blue-400"
-                    }`}
-                  >
-                    {invoice.paid ? "Paid" : "Pending"}
+              {/* Amount Breakdown */}
+              <div className="pl-4 space-y-3 pt-4 border-t border-white/[0.08]">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/40 font-jetbrains text-sm">
+                    $
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/60">
+                    amount_breakdown
                   </span>
                 </div>
 
-                {invoice.paid && (
-                  <motion.div
-                    variants={fadeInVariant}
-                    custom={10}
-                    className="space-y-4 pt-5 border-t mt-5 border-kairo-black-a40/50"
-                  >
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-kairo-white/70">
-                        Payment Date
-                      </h3>
-                      <p className="text-kairo-white">
-                        {new Date(invoice.paidDate).toLocaleString("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "UTC",
-                          hour12: true,
-                        })}{" "}
-                        UTC
-                      </p>
+                <div className="pl-4 space-y-2 overflow-x-auto">
+                  {/* Base Amount */}
+                  <div className="flex items-center justify-between min-w-[300px]">
+                    <span className="text-sm font-jetbrains text-white/40">
+                      base_amount
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={`/tokens/${invoiceData.symbol}.png`}
+                        alt={invoiceData.symbol}
+                        width={14}
+                        height={14}
+                        className="opacity-60"
+                      />
+                      <span className="text-sm font-jetbrains text-white/80">
+                        {invoiceData.amount}
+                      </span>
                     </div>
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-kairo-white/70">
-                        Transaction Details
-                      </h3>
-                      <a
-                        href={`https://sepolia.etherscan.io/tx/${invoice.paymentTransactionHash}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-kairo-black-a20/40 hover:bg-kairo-black-a20/60 text-kairo-white/90 hover:text-kairo-white transition-all duration-200 group"
-                      >
-                        <span className="text-sm">View on Etherscan</span>
-                        <svg
-                          className="w-4 h-4 transform transition-transform group-hover:translate-x-0.5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          />
-                        </svg>
-                      </a>
-                    </div>
-                  </motion.div>
-                )}
+                  </div>
 
-                {!invoice.paid &&
-                  address?.toLowerCase() ===
-                    invoice.clientAddress?.toLowerCase() && (
+                  {/* Platform Fee */}
+                  <div className="flex items-center justify-between min-w-[300px]">
+                    <span className="text-sm font-jetbrains text-white/40">
+                      platform_fee (1.5%)
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={`/tokens/${invoiceData.symbol}.png`}
+                        alt={invoiceData.symbol}
+                        width={14}
+                        height={14}
+                        className="opacity-60"
+                      />
+                      <span className="text-sm font-jetbrains text-white/80">
+                        {invoiceData.fee}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Total Amount */}
+                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.08] min-w-[300px]">
+                    <span className="text-sm font-jetbrains text-white/60">
+                      total_amount
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={`/tokens/${invoiceData.symbol}.png`}
+                        alt={invoiceData.symbol}
+                        width={14}
+                        height={14}
+                        className="opacity-80"
+                      />
+                      <span className="text-sm font-jetbrains text-white font-medium">
+                        {invoiceData.total}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Addresses */}
+              <div className="pl-4 space-y-4 pt-4 border-t border-white/[0.08] overflow-x-auto">
+                <div className="flex items-center gap-2 min-w-[300px]">
+                  <span className="text-white/40 font-jetbrains text-sm w-16">
+                    from:
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/80 break-all">
+                    {invoice?.issuerAddress}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 min-w-[300px]">
+                  <span className="text-white/40 font-jetbrains text-sm w-16">
+                    to:
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/80 break-all">
+                    {invoice?.clientAddress}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 min-w-[300px]">
+                  <span className="text-white/40 font-jetbrains text-sm w-16">
+                    issued:
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/80 break-all">
+                    {invoiceData.issuedDate}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 min-w-[300px]">
+                  <span className="text-white/40 font-jetbrains text-sm w-16">
+                    due:
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/80 break-all">
+                    {invoiceData.dueDate}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Details if paid */}
+              {invoice?.paid && (
+                <div className="pl-4 space-y-4 pt-4 border-t border-white/[0.08] overflow-x-auto">
+                  <div className="flex items-center gap-2 min-w-[300px]">
+                    <span className="text-white/40 font-jetbrains text-sm w-16">
+                      paid:
+                    </span>
+                    <span className="text-sm font-jetbrains text-white/80 break-all">
+                      {invoiceData.paidDate}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-[300px]">
+                    <span className="text-white/40 font-jetbrains text-sm w-16">
+                      tx:
+                    </span>
+                    <a
+                      href={`https://sepolia.etherscan.io/tx/${invoiceData.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-jetbrains text-white/60 hover:text-white/80 break-all"
+                    >
+                      {invoiceData.txHash}
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Pay Button */}
+              {!invoice?.paid &&
+                address?.toLowerCase() ===
+                  invoice?.clientAddress?.toLowerCase() && (
+                  <div className="pt-4 border-t border-white/[0.08] flex justify-end">
                     <button
                       onClick={handlePayInvoice}
                       disabled={paymentStep !== "idle"}
-                      className={`w-full mt-5 ${buttonClasses.primary} disabled:opacity-50 disabled:cursor-not-allowed`}
+                      className="group flex items-center gap-3 px-4 py-3 backdrop-blur-sm 
+                               bg-emerald-500/10 hover:bg-emerald-500/20 
+                               border border-emerald-500/20 hover:border-emerald-500/30
+                               transition-all duration-200 
+                               disabled:opacity-50 disabled:cursor-not-allowed 
+                               w-full sm:w-auto justify-center sm:justify-start"
                     >
-                      {getPaymentButtonText()}
+                      <span className="text-emerald-500 font-jetbrains text-sm animate-pulse">
+                        $
+                      </span>
+                      <span className="text-sm font-jetbrains text-emerald-500 group-hover:text-emerald-400 transition-colors">
+                        {getPaymentButtonText()}
+                      </span>
+                      {paymentStep === "idle" && (
+                        <span className="ml-1 text-emerald-500 animate-pulse">
+                          ▋
+                        </span>
+                      )}
                     </button>
-                  )}
-
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
-                </div>
-              </div>
+                  </div>
+                )}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

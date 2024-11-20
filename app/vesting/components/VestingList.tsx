@@ -5,14 +5,7 @@ import { motion } from "framer-motion";
 import { formatUnits } from "viem";
 import Image from "next/image";
 import Link from "next/link";
-import AddressDisplay from "@/components/shared/AddressDisplay";
 import { formatRelativeTime } from "@/utils/date-format";
-import {
-  LockClosedIcon,
-  LockOpenIcon,
-  ArrowDownTrayIcon,
-  ChevronRightIcon,
-} from "@heroicons/react/24/solid";
 
 interface VestingSchedule {
   id: string;
@@ -36,76 +29,22 @@ interface VestingListProps {
   view: "incoming" | "outgoing";
 }
 
-const tokenDecimals: { [key: string]: number } = {
-  USDC: 6,
-  DAI: 18,
-  ETH: 18,
-};
-
-function getTokenSymbol(tokenAddress: string): string {
+const getTokenSymbol = (tokenAddress: string): string => {
   const tokenMap: { [key: string]: string } = {
     "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": "USDC",
     "0x552ceaDf3B47609897279F42D3B3309B604896f3": "DAI",
   };
   return tokenMap[tokenAddress] || "Unknown";
-}
+};
 
-function formatAmount(amount: string, tokenAddress: string): string {
+const formatAmount = (amount: string, tokenAddress: string): string => {
   const token = getTokenSymbol(tokenAddress);
-  const decimals = tokenDecimals[token] || 18;
+  const decimals = token === "USDC" ? 6 : 18;
   const formattedAmount = formatUnits(BigInt(amount), decimals);
-  const wholeNumber = parseInt(formattedAmount).toLocaleString();
-  return `${wholeNumber} ${token || "Unknown"}`;
-}
+  return parseFloat(formattedAmount).toLocaleString();
+};
 
-function calculateProgress(vestedAmount: string, totalAmount: string): number {
-  const vested = parseFloat(vestedAmount);
-  const total = parseFloat(totalAmount);
-  return (vested / total) * 100;
-}
-
-function getVestingStatus(schedule: VestingSchedule): {
-  status: "locked" | "vesting" | "completed";
-  label: string;
-} {
-  const now = Date.now();
-  const cliffEnd = new Date(schedule.cliffEnd).getTime();
-  const endTime = new Date(schedule.endTime).getTime();
-
-  if (now < cliffEnd) {
-    return { status: "locked", label: "Locked" };
-  } else if (now >= endTime) {
-    return { status: "completed", label: "Completed" };
-  } else {
-    return { status: "vesting", label: "Vesting" };
-  }
-}
-
-function VestingStatus({ status, label }: { status: string; label: string }) {
-  const getStatusIcon = () => {
-    switch (status) {
-      case "locked":
-        return <LockClosedIcon className="w-3 h-3" />;
-      case "vesting":
-        return (
-          <div className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse" />
-        );
-      case "completed":
-        return <LockOpenIcon className="w-3 h-3" />;
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-1.5 text-white/60 text-[13px]">
-      {getStatusIcon()}
-      <span>{label}</span>
-    </div>
-  );
-}
-
-// Mock data for development
+// Add mock data
 const mockSchedules: VestingSchedule[] = [
   {
     id: "1",
@@ -114,173 +53,227 @@ const mockSchedules: VestingSchedule[] = [
     tokenAddress: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
     issuerAddress: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
     beneficiaryAddress: "0x123d35Cc6634C0532925a3b844Bc454e4438f123",
-    startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    cliffEnd: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-    endTime: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+    cliffEnd: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days from now
+    endTime: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
     initialRelease: 10,
     vestedAmount: "2000000000",
     claimableAmount: "1000000000",
     remainingAmount: "8000000000",
   },
-  // Add more mock schedules as needed
+  {
+    id: "2",
+    scheduleId: "2",
+    amount: "50000000000", // 50,000 USDC
+    tokenAddress: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    issuerAddress: "0x892d35Cc6634C0532925a3b844Bc454e4438f892",
+    beneficiaryAddress: "0x123d35Cc6634C0532925a3b844Bc454e4438f123",
+    startTime: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+    cliffEnd: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days from now
+    endTime: new Date(Date.now() + 730 * 24 * 60 * 60 * 1000).toISOString(), // 2 years from now
+    initialRelease: 5,
+    vestedAmount: "5000000000",
+    claimableAmount: "2500000000",
+    remainingAmount: "45000000000",
+  },
 ];
+
+const calculateVestingProgress = (schedule: VestingSchedule) => {
+  const now = Date.now();
+  const start = new Date(schedule.startTime).getTime();
+  const cliff = new Date(schedule.cliffEnd).getTime();
+  const end = new Date(schedule.endTime).getTime();
+  const totalDuration = end - start;
+
+  // Before cliff
+  if (now < cliff) {
+    return {
+      status: "locked",
+      progress: (schedule.initialRelease / 100) * 100, // Only show initial release
+      cliffPosition: ((cliff - start) / totalDuration) * 100,
+    };
+  }
+
+  // After end
+  if (now >= end) {
+    return {
+      status: "completed",
+      progress: 100,
+      cliffPosition: ((cliff - start) / totalDuration) * 100,
+    };
+  }
+
+  // During vesting
+  const vestedPercentage = ((now - start) / totalDuration) * 100;
+  return {
+    status: "vesting",
+    progress: Math.min(
+      vestedPercentage + (schedule.initialRelease / 100) * 100,
+      100
+    ),
+    cliffPosition: ((cliff - start) / totalDuration) * 100,
+  };
+};
 
 export default function VestingList({
   schedules: providedSchedules,
   isLoading,
   view,
 }: VestingListProps) {
+  // Use mock data if no schedules provided
   const schedules = providedSchedules?.length
     ? providedSchedules
     : mockSchedules;
 
-  const handleClaim = async (scheduleId: string) => {
-    console.log(`Claiming from schedule ${scheduleId}`);
-  };
-
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="relative overflow-hidden rounded-lg border border-white/[0.08] p-4"
-          >
-            <div className="animate-pulse space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white/5 rounded-full" />
-                <div className="h-5 w-32 bg-white/5 rounded" />
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="font-jetbrains">
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-sm">$</span>
+          <span className="text-white/40 text-sm animate-pulse">
+            loading_schedules...
+          </span>
+        </div>
       </div>
     );
   }
 
   if (!schedules?.length) {
     return (
-      <div className="text-center py-8">
-        <p className="text-white/40">No {view} vesting schedules found</p>
+      <div className="font-jetbrains">
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-sm">$</span>
+          <span className="text-white/40 text-sm">
+            no_{view}_schedules_found
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {schedules.map((schedule) => {
-        const vestingStatus = getVestingStatus(schedule);
+        const vestingProgress = calculateVestingProgress(schedule);
 
         return (
-          <motion.div
+          <Link
             key={schedule.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
+            href={`/vesting/${schedule.scheduleId}`}
+            className="block group"
           >
-            <Link
-              href={`/vesting/${schedule.scheduleId}`}
-              className="block group"
-            >
-              <div className="relative overflow-hidden rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200">
-                <div className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Left side */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Image
-                        src={`/tokens/${getTokenSymbol(
-                          schedule.tokenAddress
-                        )}.png`}
-                        alt={getTokenSymbol(schedule.tokenAddress)}
-                        width={26}
-                        height={26}
-                        className="rounded-full"
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[15px] font-medium text-white/90 truncate">
-                            {formatAmount(
-                              schedule.amount,
-                              schedule.tokenAddress
-                            )}
-                          </span>
-                          <VestingStatus
-                            status={vestingStatus.status}
-                            label={vestingStatus.label}
-                          />
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[13px] text-white/40 mt-0.5">
-                          <span>{view === "incoming" ? "from" : "to"}</span>
-                          <AddressDisplay
-                            address={
-                              view === "incoming"
-                                ? schedule.issuerAddress
-                                : schedule.beneficiaryAddress
-                            }
-                            className="text-white/60 hover:text-white/80 transition-colors"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right side */}
-                    <div className="flex items-center gap-3">
-                      {view === "incoming" &&
-                        parseFloat(schedule.claimableAmount) > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleClaim(schedule.scheduleId);
-                            }}
-                            className="flex items-center gap-2 px-4 py-1.5 rounded-full 
-                            text-[13px] font-medium
-                            bg-orange-600/10 hover:bg-orange-600/20
-                            text-orange-600/90 hover:text-orange-500
-                            border border-orange-600/20 hover:border-orange-600/30
-                            transition-all duration-200"
-                          >
-                            <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-                            <span>Claim</span>
-                          </button>
-                        )}
-                      <ChevronRightIcon className="w-4 h-4 text-white/20 group-hover:text-white/40 transition-colors" />
-                    </div>
+            <div className="flex flex-col px-6 py-4 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200 font-jetbrains">
+              {/* Top Section */}
+              <div className="flex items-center justify-between">
+                {/* Left Section */}
+                <div className="flex items-center gap-6">
+                  {/* Command and ID */}
+                  <div className="flex items-center gap-2 min-w-[140px]">
+                    <span className="text-white/40 text-sm">$</span>
+                    <span className="text-emerald-500 text-sm">vest</span>
+                    <span className="text-white/40 text-sm">
+                      #{schedule.scheduleId}
+                    </span>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="mt-3">
-                    <div className="h-1 bg-white/[0.03] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-orange-600/40 transition-all duration-300"
-                        style={{
-                          width: `${calculateProgress(
-                            schedule.vestedAmount,
-                            schedule.amount
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1.5 text-[13px]">
-                      <span className="text-white/40">
-                        {formatAmount(
-                          schedule.vestedAmount,
-                          schedule.tokenAddress
-                        )}{" "}
-                        vested
-                      </span>
-                      <span className="text-white/40">
-                        {formatAmount(
-                          schedule.claimableAmount,
-                          schedule.tokenAddress
-                        )}{" "}
-                        claimable
-                      </span>
-                    </div>
+                  {/* Amount */}
+                  <div className="flex items-center gap-2 min-w-[160px]">
+                    <Image
+                      src={`/tokens/${getTokenSymbol(
+                        schedule.tokenAddress
+                      )}.png`}
+                      alt={getTokenSymbol(schedule.tokenAddress)}
+                      width={16}
+                      height={16}
+                      className="opacity-80"
+                    />
+                    <span className="text-sm text-white/80">
+                      {formatAmount(schedule.amount, schedule.tokenAddress)}
+                    </span>
+                    <span className="text-sm text-white/40">
+                      {getTokenSymbol(schedule.tokenAddress)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Section */}
+                <div className="flex items-center gap-6">
+                  {/* Address */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/40 text-sm">
+                      {view === "incoming" ? "from" : "to"}
+                    </span>
+                    <span className="text-sm text-white/60">
+                      {view === "incoming"
+                        ? schedule.issuerAddress
+                        : schedule.beneficiaryAddress}
+                    </span>
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex items-center gap-2 min-w-[120px]">
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        vestingProgress.status === "locked"
+                          ? "bg-red-500"
+                          : vestingProgress.status === "completed"
+                          ? "bg-emerald-500"
+                          : "bg-orange-500 animate-pulse"
+                      }`}
+                    />
+                    <span className="text-sm text-white/40">
+                      {formatRelativeTime(schedule.endTime)}
+                    </span>
                   </div>
                 </div>
               </div>
-            </Link>
-          </motion.div>
+
+              {/* Progress Bar Section */}
+              <div className="mt-4 space-y-2">
+                {/* Progress Bar */}
+                <div className="relative h-1 bg-white/[0.03] rounded-full overflow-hidden">
+                  {/* Initial Release */}
+                  <div
+                    className="absolute h-full bg-emerald-500/40 transition-all duration-300"
+                    style={{ width: `${schedule.initialRelease}%` }}
+                  />
+                  {/* Vesting Progress */}
+                  <div
+                    className="absolute h-full bg-orange-600/40 transition-all duration-300"
+                    style={{ width: `${vestingProgress.progress}%` }}
+                  />
+                  {/* Cliff Marker */}
+                  <div
+                    className="absolute h-full w-0.5 bg-white/20"
+                    style={{ left: `${vestingProgress.cliffPosition}%` }}
+                  />
+                </div>
+
+                {/* Progress Details */}
+                <div className="flex justify-between text-[13px]">
+                  <div className="flex items-center gap-4">
+                    <span className="text-white/40">
+                      {schedule.initialRelease}% initial
+                    </span>
+                    <span className="text-white/40">
+                      {formatAmount(
+                        schedule.vestedAmount,
+                        schedule.tokenAddress
+                      )}{" "}
+                      vested
+                    </span>
+                  </div>
+                  <span className="text-white/40">
+                    {formatAmount(
+                      schedule.claimableAmount,
+                      schedule.tokenAddress
+                    )}{" "}
+                    claimable
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Link>
         );
       })}
     </div>

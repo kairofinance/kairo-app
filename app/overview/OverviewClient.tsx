@@ -20,6 +20,7 @@ import { useAccount } from "wagmi";
 import { useAccountStats } from "@/hooks/useAccountStats";
 import TokenBalanceGraph from "./components/TokenBalanceGraph";
 import { subDays } from "date-fns";
+import TokenInflow from "./components/TokenInflow";
 
 // Add props interface at the top
 interface DashboardClientProps {
@@ -100,7 +101,45 @@ const AccountStats = () => {
   );
 };
 
-export default function DashboardClient({
+const StatBox = ({ icon: Icon, title, value, change }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7"
+  >
+    <div className="flex items-center gap-2">
+      <span className="text-white/40 font-jetbrains text-sm">&gt;</span>
+      <h3 className="text-sm font-medium text-white/60 font-jetbrains">
+        {title.toLowerCase().replace(" ", "_")}
+      </h3>
+    </div>
+    <div className="mt-6">
+      <p className="text-3xl font-jetbrains font-semibold text-white tabular-nums">
+        {value}
+      </p>
+      {change && (
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-xs font-jetbrains text-white/40">#</span>
+          <div className="flex items-center gap-1">
+            <span
+              className={`text-sm font-jetbrains ${
+                change >= 0 ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {change > 0 ? "+" : ""}
+              {change}%
+            </span>
+            <span className="text-sm font-jetbrains text-white/40">
+              vs_last_period
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  </motion.div>
+);
+
+export default function OverviewClientClient({
   initialDictionary,
   initialLang,
 }: DashboardClientProps) {
@@ -140,91 +179,90 @@ export default function DashboardClient({
     ][Math.floor(Math.random() * 6)],
   }));
 
-  const StatBox = ({ icon: Icon, title, value, change }: any) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-6 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-3"
-    >
-      <div className="flex items-center gap-2">
-        <div className="p-2 rounded-lg bg-white/[0.05]">
-          <Icon className="w-5 h-5 text-white/60" />
-        </div>
-        <h3 className="text-sm font-medium text-white/60">{title}</h3>
-      </div>
-      <p className="text-2xl font-semibold text-white">{value}</p>
-      {change && (
-        <div className="flex items-center gap-1 text-sm">
-          <span className={change >= 0 ? "text-green-500" : "text-red-500"}>
-            {change > 0 ? "+" : " "}
-            {change}%
-          </span>
-          <span className="text-white/40 ml-1">vs last period</span>
-        </div>
-      )}
-    </motion.div>
-  );
-
   return (
-    <div className="min-h-screen p-6 space-y-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* First Row - CashFlow and Expenses */}
+    <div className="min-h-screen p-6">
+      <div className="max-w-6xl mx-auto space-y-12">
+        {/* First Row - CashFlow + Inflow and Monthly Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <CashFlowOverview {...cashFlowData} />
-            <TokenBalanceGraph data={activityData} days={7} />
+          {/* Left Column - Overview */}
+          <div className="relative outline-2 outline outline-white/[0.2] p-7">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              overview
+            </h2>
+
+            <div className="space-y-8">
+              {/* Cashflow Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-white/40 font-jetbrains text-sm">
+                    $
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/60">
+                    cashflow
+                  </span>
+                </div>
+                <CashFlowOverview {...cashFlowData} />
+              </div>
+
+              {/* Divider */}
+              <div className="border-b border-white/[0.08]" />
+
+              {/* Inflow Section */}
+              <TokenInflow />
+            </div>
           </div>
-          <ExpensesChart data={expensesData} />
+
+          {/* Right Column - Monthly Analytics */}
+          <div className="relative outline-2 outline outline-white/[0.2] p-7">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              monthly analytics
+            </h2>
+
+            <ExpensesChart data={expensesData} />
+          </div>
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatBox
-            icon={DocumentTextIcon}
-            title="Pending Invoices"
-            value="12"
-            change={3.2}
-          />
-          <StatBox
-            icon={ArrowPathIcon}
-            title="Active Streams"
-            value="5"
-            change={1.5}
-          />
-          <StatBox
-            icon={ClockIcon}
-            title="Active Vests"
-            value="3"
-            change={-2.0}
-          />
-          <StatBox
-            icon={BanknotesIcon}
-            title="Pending Claims"
-            value="8"
-            change={4.7}
-          />
+        <div className="relative outline-2 outline outline-white/[0.2] p-7">
+          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+            stats
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatBox
+              icon={DocumentTextIcon}
+              title="Pending Invoices"
+              value="12"
+              change={3.2}
+            />
+            <StatBox
+              icon={ArrowPathIcon}
+              title="Active Streams"
+              value="5"
+              change={1.5}
+            />
+            <StatBox
+              icon={ClockIcon}
+              title="Active Vests"
+              value="3"
+              change={-2.0}
+            />
+            <StatBox
+              icon={BanknotesIcon}
+              title="Pending Claims"
+              value="8"
+              change={4.7}
+            />
+          </div>
         </div>
 
-        {/* Activity and Stats Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-2 p-6 rounded-xl bg-white/[0.02] border border-white/[0.08]"
-          >
-            <TokenActivityTimeline />
-          </motion.div>
+        {/* Recent Activity Row */}
+        <div className="relative outline-2 outline outline-white/[0.2] p-7">
+          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+            recent activity
+          </h2>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-6 rounded-xl bg-white/[0.02] border border-white/[0.08]"
-          >
-            <h3 className="text-sm font-medium text-white/60 mb-4">
-              All Time Stats
-            </h3>
-            <AccountStats />
-          </motion.div>
+          <TokenBalanceGraph data={activityData} days={7} />
         </div>
       </div>
     </div>

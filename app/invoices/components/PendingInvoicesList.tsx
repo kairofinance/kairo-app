@@ -58,21 +58,26 @@ export default function PendingInvoicesList({
 }: PendingInvoicesListProps) {
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="flex gap-4 animate-pulse">
-            <div className="w-20 h-4 bg-white/5 rounded" />
-            <div className="flex-1 h-12 bg-white/5 rounded-lg" />
-          </div>
-        ))}
+      <div className="font-jetbrains">
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-sm">$</span>
+          <span className="text-white/40 text-sm animate-pulse">
+            loading_invoices...
+          </span>
+        </div>
       </div>
     );
   }
 
   if (!invoices.length) {
     return (
-      <div className="text-center py-12">
-        <p className="text-white/40">No {view} invoices pending</p>
+      <div className="font-jetbrains">
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-sm">$</span>
+          <span className="text-white/40 text-sm">
+            no_{view}_invoices_found
+          </span>
+        </div>
       </div>
     );
   }
@@ -83,108 +88,60 @@ export default function PendingInvoicesList({
         <Link
           key={invoice.id}
           href={`/invoice/${invoice.invoiceId}`}
-          className="block group relative cursor-pointer"
+          className="block group"
         >
-          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300">
-            {/* Content - Move to top of stack */}
-            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-4 px-4 sm:py-5 sm:px-6">
-              {/* Mobile header */}
-              <div className="flex items-center justify-between sm:hidden">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`
-                      w-2 h-2 rounded-full shrink-0
-                      ${view === "incoming" ? "bg-orange-600" : "bg-white/60"}
-                    `}
-                  />
-                  <div className="text-sm tabular-nums text-white/40">
-                    {new Date(invoice.issuedDate).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
-                <div
-                  className={`
-                    px-2.5 py-1 text-xs font-medium rounded-full
-                    backdrop-blur-sm transition-colors duration-200
-                    ${statusStyles[view]}
-                  `}
-                >
-                  {view === "incoming" ? "Incoming" : "Created"}
-                </div>
+          <div className="flex items-center justify-between px-6 py-4 bg-white/[0.02] hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200 font-jetbrains">
+            {/* Left Section */}
+            <div className="flex items-center gap-6">
+              {/* Command and ID */}
+              <div className="flex items-center gap-2 min-w-[140px]">
+                <span className="text-white/40 text-sm">$</span>
+                <span className="text-emerald-500 text-sm">
+                  {view === "incoming" ? "receive" : "send"}
+                </span>
+                <span className="text-white/40 text-sm">
+                  #{invoice.invoiceId}
+                </span>
               </div>
 
-              {/* Desktop status and time */}
-              <div className="hidden sm:flex items-center gap-4">
-                <div className="flex items-center">
-                  <div
-                    className={`
-                      w-2 h-2 rounded-full shrink-0
-                      ${view === "incoming" ? "bg-orange-600" : "bg-white/60"}
-                    `}
-                  />
-                </div>
-                <div className="w-[75px] shrink-0 flex items-center">
-                  <div className="text-sm tabular-nums text-white/40">
-                    {new Date(invoice.issuedDate).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                </div>
+              {/* Amount */}
+              <div className="flex items-center gap-2 min-w-[160px]">
+                <Image
+                  src={`/tokens/${getTokenSymbol(invoice.tokenAddress)}.png`}
+                  alt={getTokenSymbol(invoice.tokenAddress)}
+                  width={16}
+                  height={16}
+                  className="opacity-80"
+                />
+                <span className="text-sm text-white/80">
+                  {formatAmount(invoice.amount, invoice.tokenAddress)}
+                </span>
+                <span className="text-sm text-white/40">
+                  {getTokenSymbol(invoice.tokenAddress)}
+                </span>
+              </div>
+            </div>
+
+            {/* Right Section */}
+            <div className="flex items-center gap-6">
+              {/* Address */}
+              <div className="flex items-center gap-2">
+                <span className="text-white/40 text-sm">
+                  {view === "incoming" ? "from" : "to"}
+                </span>
+                <span className="text-sm text-white/60">
+                  {view === "incoming"
+                    ? invoice.issuerAddress
+                    : invoice.clientAddress}
+                </span>
               </div>
 
-              {/* Main Content */}
-              <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
-                  {/* Token Amount */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-center opacity-80 group-hover:opacity-100 transition-opacity">
-                      <Image
-                        src={`/tokens/${getTokenSymbol(
-                          invoice.tokenAddress
-                        )}.png`}
-                        alt={getTokenSymbol(invoice.tokenAddress)}
-                        width={18}
-                        height={18}
-                        className="rounded-full"
-                      />
-                    </div>
-                    <span className="text-base font-medium text-white/90 group-hover:text-white transition-colors">
-                      {formatAmount(invoice.amount, invoice.tokenAddress)}
-                    </span>
-                  </div>
-
-                  <span className="text-sm text-white/30">
-                    {view === "incoming" ? "requested by" : "requested from"}
-                  </span>
-
-                  {/* Address */}
-                  <div className="min-w-0 truncate flex items-center">
-                    <AddressDisplay
-                      address={
-                        view === "incoming"
-                          ? invoice.issuerAddress
-                          : invoice.clientAddress
-                      }
-                      className="text-sm text-white/70 group-hover:text-white/90 transition-colors duration-200"
-                    />
-                  </div>
-                </div>
-
-                {/* Status Badge - desktop only */}
-                <div className="hidden sm:flex items-center gap-2 shrink-0">
-                  <div
-                    className={`
-                      px-3 py-1 text-sm font-medium rounded-full
-                      backdrop-blur-sm transition-colors duration-200
-                      ${statusStyles[view]}
-                    `}
-                  >
-                    {view === "incoming" ? "Incoming" : "Created"}
-                  </div>
-                </div>
+              {/* Due Date */}
+              <div className="flex items-center gap-2 min-w-[120px]">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                <span className="text-sm text-white/40">
+                  {formatRelativeTime(invoice.dueDate)}
+                </span>
               </div>
             </div>
           </div>

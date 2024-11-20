@@ -246,7 +246,7 @@ export default function RecentActivity({
                           href={`/invoice/${invoice.invoiceId}`}
                           className="block group relative"
                         >
-                          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300">
+                          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300">
                             {/* Main container - make it stack on mobile */}
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-4 px-4 sm:py-5 sm:px-6">
                               {/* Top row for mobile - time and status */}

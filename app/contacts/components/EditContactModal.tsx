@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog as HeadlessDialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { XCircleIcon } from "@heroicons/react/24/solid";
-import Spinner from "@/components/Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 import { isAddress } from "viem";
 import { useEnsAddress } from "wagmi";
 import { useAppKitAccount } from "@reown/appkit/react";

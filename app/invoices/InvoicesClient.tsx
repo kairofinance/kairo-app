@@ -7,20 +7,6 @@ import { XCircleIcon } from "@heroicons/react/24/solid";
 import { motion } from "framer-motion";
 import PendingInvoicesList from "./components/PendingInvoicesList";
 import ToggleView from "@/components/shared/ToggleView";
-import SectionHeader from "@/components/shared/ui/SectionHeader";
-
-const fadeInVariant = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (custom: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.3,
-      delay: custom * 0.1,
-      ease: [0.25, 0.1, 0.25, 1],
-    },
-  }),
-};
 
 export default function InvoicesClient() {
   const { address } = useAppKitAccount();
@@ -41,19 +27,22 @@ export default function InvoicesClient() {
 
   if (!address) {
     return (
-      <div className="min-h-screen">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-8 text-center">
-            <XCircleIcon className="mx-auto h-12 w-12 text-orange-600/90" />
-            <h3 className="mt-2 text-lg font-medium text-white/90">
-              Wallet Not Connected
-            </h3>
-            <p className="mt-2 text-sm text-white/60">
-              Please connect your wallet to view your invoices
-            </p>
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 rounded-lg overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-600/[0.02] via-transparent to-transparent opacity-50" />
+      <div className="min-h-screen p-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="relative outline-2 outline outline-white/[0.2] p-7">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              error
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-white/40 font-jetbrains text-sm">$</span>
+                <span className="text-sm font-jetbrains text-red-500">
+                  wallet_not_connected
+                </span>
+              </div>
+              <p className="text-sm font-jetbrains text-white/60 pl-4">
+                Please connect your wallet to view your invoices
+              </p>
             </div>
           </div>
         </div>
@@ -62,31 +51,64 @@ export default function InvoicesClient() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
-        <motion.div
-          className="space-y-8"
-          initial="hidden"
-          animate="visible"
-          variants={fadeInVariant}
-          custom={0}
-        >
-          <SectionHeader
-            title="Pending Invoices"
-            description="Manage your unpaid incoming and outgoing invoices"
-          >
-            <ToggleView view={view} onChange={setView} />
-          </SectionHeader>
+    <div className="min-h-screen p-6">
+      <div className="mx-auto max-w-6xl space-y-6">
+        {/* Main Container */}
+        <div className="relative outline-2 outline outline-white/[0.2] p-7">
+          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+            invoices
+          </h2>
+
+          {/* View Toggle */}
+          <div className="flex gap-2 mb-6">
+            <motion.button
+              onClick={() => setView("incoming")}
+              className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                ${view === "incoming" ? "bg-white/[0.08]" : "bg-white/[0.02]"}
+                hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+            >
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
+                incoming
+              </span>
+              {view === "incoming" && (
+                <span className="ml-1 animate-pulse">▋</span>
+              )}
+            </motion.button>
+
+            <motion.button
+              onClick={() => setView("outgoing")}
+              className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                ${view === "outgoing" ? "bg-white/[0.08]" : "bg-white/[0.02]"}
+                hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+            >
+              <span className="text-white/40 font-jetbrains text-sm">$</span>
+              <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
+                outgoing
+              </span>
+              {view === "outgoing" && (
+                <span className="ml-1 animate-pulse">▋</span>
+              )}
+            </motion.button>
+          </div>
+
+          {/* Command Line Header */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-white/40 font-jetbrains text-sm">$</span>
+            <span className="text-sm font-jetbrains text-white/60">
+              {view}_invoices
+            </span>
+          </div>
 
           {/* Invoices List */}
-          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] bg-white/[0.02] p-6 group">
+          <div className="relative">
             <PendingInvoicesList
               invoices={invoices?.invoices || []}
               isLoading={isLoading}
               view={view}
             />
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

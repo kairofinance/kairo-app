@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import AuthWrapper from "@/auth/AuthWrapper";
-import Spinner from "@/components/Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 import ManageStreamsClient from "./ManageStreamsClient";
 import { Metadata } from "next";
 
@@ -22,7 +22,7 @@ export default function ManageStreamsPage() {
         <Suspense
           fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
-              <Spinner />
+              <SpinningLogo />
             </div>
           }
         >

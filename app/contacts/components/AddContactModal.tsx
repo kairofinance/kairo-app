@@ -3,7 +3,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { isAddress } from "viem";
 import { useEnsAddress } from "wagmi";
-import Spinner from "@/components/Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 import { Fragment } from "react";
 import { XCircleIcon } from "@heroicons/react/24/solid";
 

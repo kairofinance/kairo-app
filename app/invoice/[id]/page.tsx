@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import AuthWrapper from "@/auth/AuthWrapper";
-import Spinner from "@/components/Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 import InvoiceIdClient from "./InvoiceIdClient";
 import { Metadata } from "next";
 
@@ -27,7 +27,7 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
 
   return (
     <AuthWrapper>
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<SpinningLogo />}>
         <InvoiceIdClient invoiceId={id} />
       </Suspense>
     </AuthWrapper>

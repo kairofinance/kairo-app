@@ -1,8 +1,8 @@
-import Navbar from "./components/Navbar";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { getDictionary } from "@/utils/get-dictionary";
 import { Locale } from "@/utils/i18n-config";
+import { CubeTransparentIcon, ServerIcon } from "@heroicons/react/20/solid";
 
 type ValidLang = "en" | "fr" | "es" | "pt" | "ja" | "zh" | "de";
 
@@ -15,25 +15,25 @@ export default async function NotFound() {
   const dictionary = await getDictionary(currentLang as Locale);
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow flex flex-col items-center justify-center bg-kairo-black bg-gradient-to-t ">
-        <div className="text-center place-content-center place-items-center">
-          <h1 className="text-6xl font-bold text-kairo-white mb-4">404</h1>
-          <h2 className="text-2xl font-semibold text-kairo-white mb-4">
-            {dictionary?.notFound?.title || "Page Not Found"}
-          </h2>
-          <p className="text-xl text-kairo-white mb-8">
-            {dictionary?.notFound?.description ||
-              "The page you are looking for does not exist."}
-          </p>
-          <Link
-            href="/"
-            className="relative flex items-center font-semibold gap-x-4 px-4 py-2 text-sm leading-6 hover:bg-orange-600-a20/50 text-orange-600 bg-orange-600-a20 bg-opacity-30 rounded-full"
-          >
-            {dictionary?.notFound?.goHome || "Go Back Home"}
-          </Link>
-        </div>
-      </main>
-    </div>
+    <main className="flex-grow flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-white mb-4 font-jetbrains">
+          404*
+        </h1>
+        <h2 className="text-2xl font-semibold text-white mb-4 font-jetbrains">
+          {dictionary?.notFound?.title || "Page Not Found"}
+        </h2>
+        <p className="text-xl text-zinc-400 mb-8 font-jetbrains">
+          {dictionary?.notFound?.description ||
+            "The page you are looking for does not exist."}
+        </p>
+        <Link
+          href="/"
+          className="inline-flex font-jetbrains items-center px-4 py-2 text-sm font-semibold text-white bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors duration-200"
+        >
+          {dictionary?.notFound?.goHome || "Go Back Home"}
+        </Link>
+      </div>
+    </main>
   );
 }

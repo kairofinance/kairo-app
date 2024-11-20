@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Document, Page } from "react-pdf";
-import Spinner from "./Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 
 interface PDFViewerProps {
   url: string;
@@ -23,7 +23,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ url }) => {
         onLoadSuccess={onDocumentLoadSuccess}
         loading={
           <div className="flex items-center justify-center p-4">
-            <Spinner />
+            <SpinningLogo />
           </div>
         }
         error={
@@ -37,7 +37,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ url }) => {
           className="max-w-full"
           loading={
             <div className="flex items-center justify-center p-4">
-              <Spinner />
+              <SpinningLogo />
             </div>
           }
         />

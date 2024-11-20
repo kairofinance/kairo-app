@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dialog as HeadlessDialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import EditContactModal from "./EditContactModal";
-import Spinner from "@/components/Spinner";
+import SpinningLogo from "@/components/SpinningLogo";
 
 interface Contact {
   id: string;
