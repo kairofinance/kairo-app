@@ -58,7 +58,7 @@ const Navbar = () => {
           <div>
             <button
               onMouseEnter={() => setShowModal(true)}
-              className="flex items-center gap-x-2 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 h-10 hover:bg-zinc-800 rounded-lg"
+              className="flex items-center gap-x-2 px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 h-10 hover:bg-white/[0.04] rounded-lg border border-white/[0.08] bg-white/[0.02]"
             >
               <div className="h-6 w-6 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
                 <Image
@@ -69,7 +69,7 @@ const Navbar = () => {
                   className="rounded-full"
                 />
               </div>
-              <span className="inline-flex font-jetbrains items-center leading-none">
+              <span className="inline-flex font-jetbrains items-center leading-none text-white/80">
                 {address
                   ? `${address.slice(0, 6)}-${address.slice(-4)}`
                   : "Account"}
@@ -81,32 +81,69 @@ const Navbar = () => {
               <div
                 ref={modalRef}
                 onMouseLeave={() => setShowModal(false)}
-                className="absolute right-0 mt-2 p-2 w-48 rounded-lg backdrop-blur-sm border border-white/[0.08] bg-zinc-950 shadow-lg"
+                className="absolute right-0 mt-2 p-4 w-64 rounded-lg backdrop-blur-sm border border-white/[0.08] bg-black/80"
               >
-                <Link
-                  href="/profile"
-                  className="flex items-center rounded-lg gap-2 px-4 py-2 text-sm text-white hover:bg-zinc-800 transition-colors duration-200"
-                >
-                  <UserCircleIcon className="h-4 w-4" />
-                  View Profile
-                </Link>
-                <button
-                  onClick={() => {
-                    disconnect();
-                    setShowModal(false);
-                  }}
-                  className="flex items-center rounded-lg gap-2 px-4 py-2 text-sm text-white hover:bg-zinc-800 transition-colors duration-200 w-full"
-                >
-                  <ArrowRightOnRectangleIcon className="h-4 w-4" />
-                  Sign Out
-                </button>
+                {/* Command Line Header */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-white/40 font-jetbrains text-sm">
+                    $
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/60">
+                    user_actions
+                  </span>
+                </div>
+
+                {/* Menu Items */}
+                <div className="space-y-2">
+                  {address && (
+                    <Link
+                      href={`/${address}`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-white/80 hover:text-white hover:bg-white/[0.04] rounded-lg transition-all duration-200 group"
+                    >
+                      <span className="text-white/40 group-hover:text-white/60 transition-colors">
+                        &gt;
+                      </span>
+                      <UserCircleIcon className="h-4 w-4 text-white/60" />
+                      view_profile
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      disconnect();
+                      setShowModal(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-white/80 hover:text-white hover:bg-white/[0.04] rounded-lg transition-all duration-200 group"
+                  >
+                    <span className="text-white/40 group-hover:text-white/60 transition-colors">
+                      &gt;
+                    </span>
+                    <ArrowRightOnRectangleIcon className="h-4 w-4 text-white/60" />
+                    sign_out
+                  </button>
+                </div>
+
+                {/* Status Line */}
+                <div className="flex items-center gap-2 pt-3 mt-3 border-t border-white/[0.08]">
+                  <span className="text-white/40 font-jetbrains text-sm">
+                    $
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/60">
+                    status:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-sm font-jetbrains text-white/40">
+                      connected
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         ) : (
           <button
             onClick={() => open({ view: "Connect" })}
-            className="px-4 py-2 text-sm font-semibold text-white bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors duration-200 h-10"
+            className="px-4 py-2 text-sm font-semibold text-white/80 hover:text-white bg-white/[0.02] hover:bg-white/[0.04] rounded-lg transition-colors duration-200 h-10 border border-white/[0.08]"
           >
             Connect Wallet
           </button>

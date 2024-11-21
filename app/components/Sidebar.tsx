@@ -66,6 +66,7 @@ const navigation: NavigationElement[] = [
       { name: "Invoices", href: "/invoices", icon: DocumentDuplicateIcon },
     ],
   },
+  { name: "Teams", href: "/teams", icon: PlusIcon, current: false },
 ];
 
 function classNames(...classes: string[]) {

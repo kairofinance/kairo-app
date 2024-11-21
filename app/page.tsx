@@ -14,7 +14,6 @@ import {
 import SpinningLogo from "@/components/SpinningLogo";
 import Image from "next/image";
 import * as cheerio from "cheerio";
-import PageTransition from "@/components/PageTransition";
 
 // Placeholder data
 async function getTotalPaid() {
@@ -129,196 +128,194 @@ export default async function Home() {
   );
 
   return (
-    <PageTransition>
-      <div className="min-h-screen p-6">
-        <div className="max-w-5xl mx-auto space-y-12">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 relative gap-6 outline-2 outline outline-white/[0.2] p-7">
-            {/* Total Paid Section */}
-            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-              stats
-            </h2>
-            <div className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7">
-              <div className="flex items-center gap-2">
-                <span className="text-white/40 font-jetbrains">$</span>
-                <h3 className="text-sm font-medium text-white/60 font-jetbrains">
-                  total_paid
-                </h3>
-              </div>
-              <Suspense fallback={<SpinningLogo />}>
-                <div className="mt-4">
-                  <p className="text-4xl font-jetbrains font-semibold text-white">
-                    <span className="text-white/40">=</span> {totalPaid}
-                  </p>
-                  <p className="mt-2 text-sm font-jetbrains text-white/40">
-                    # across all payment types
-                  </p>
-                </div>
-              </Suspense>
+    <div className="min-h-screen p-6">
+      <div className="max-w-5xl mx-auto space-y-12">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 relative gap-6 outline-2 outline outline-white/[0.2] p-7">
+          {/* Total Paid Section */}
+          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+            stats
+          </h2>
+          <div className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7">
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains">$</span>
+              <h3 className="text-sm font-medium text-white/60 font-jetbrains">
+                total_paid
+              </h3>
             </div>
-
-            {/* Activity Stats Section */}
-            <div className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7">
-              <div className="flex items-center gap-2">
-                <span className="text-white/40 font-jetbrains">&gt;</span>
-                <h3 className="text-sm font-medium text-white/60 font-jetbrains">
-                  analytics
-                </h3>
+            <Suspense fallback={<SpinningLogo />}>
+              <div className="mt-4">
+                <p className="text-4xl font-jetbrains font-semibold text-white">
+                  <span className="text-white/40">=</span> {totalPaid}
+                </p>
+                <p className="mt-2 text-sm font-jetbrains text-white/40">
+                  # across all payment types
+                </p>
               </div>
-              <div className="grid grid-cols-3 gap-8 mt-4">
-                <div className="flex flex-col">
-                  <span className="text-sm text-white/60 font-jetbrains">
-                    streams
-                  </span>
-                  <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
-                    {stats.streams}
-                  </span>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-sm text-white/60 font-jetbrains">
-                    vests
-                  </span>
-                  <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
-                    {stats.vests}
-                  </span>
-                </div>
-
-                <div className="flex flex-col">
-                  <span className="text-sm text-white/60 font-jetbrains">
-                    invoices
-                  </span>
-                  <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
-                    {stats.invoices}
-                  </span>
-                </div>
-              </div>
-            </div>
+            </Suspense>
           </div>
 
-          {/* Featured Users Section */}
-          <div>
-            <div className="grid grid-cols-6 grid-rows-2 gap-4 outline-2 outline outline-white/[0.2] p-7 relative">
-              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-                featured users
-              </h2>
-              {featuredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-4 flex flex-col items-center gap-2"
-                >
-                  <div className="h-10 w-10 overflow-hidden">
-                    <Image
-                      src={`https://cdn.stamp.fyi/avatar/${
-                        user.address.split("...")[0]
-                      }?s=50`}
-                      alt="User Avatar"
-                      width={40}
-                      height={40}
-                      className="[image-rendering:pixelated]"
-                      quality={100}
-                    />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-white/60 font-jetbrains">
-                      {user.address}
-                    </p>
-                    <p className="text-sm text-white font-semibold mt-1">
-                      {user.username}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          {/* Activity Stats Section */}
+          <div className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7">
+            <div className="flex items-center gap-2">
+              <span className="text-white/40 font-jetbrains">&gt;</span>
+              <h3 className="text-sm font-medium text-white/60 font-jetbrains">
+                analytics
+              </h3>
             </div>
-          </div>
+            <div className="grid grid-cols-3 gap-8 mt-4">
+              <div className="flex flex-col">
+                <span className="text-sm text-white/60 font-jetbrains">
+                  streams
+                </span>
+                <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
+                  {stats.streams}
+                </span>
+              </div>
 
-          {/* Featured DAOs Section */}
-          <div className="mt-12">
-            <div className="grid grid-cols-2 gap-6 outline-2 outline outline-white/[0.2] p-7 relative">
-              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-                featured daos
-              </h2>
-              {featuredDAOs.map((dao) => (
-                <div
-                  key={dao.id}
-                  className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-6 flex items-start gap-4"
-                >
-                  <div className="h-12 w-12 overflow-hidden flex-shrink-0">
-                    <Image
-                      src={`https://cdn.stamp.fyi/avatar/${
-                        dao.address.split("...")[0]
-                      }?s=100`}
-                      alt={`${dao.name} Avatar`}
-                      width={48}
-                      height={48}
-                      className="[image-rendering:pixelated]"
-                      quality={100}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-white">
-                        {dao.name}
-                      </h3>
-                      <span className="text-xs text-white/60 font-jetbrains">
-                        {dao.address}
-                      </span>
-                    </div>
-                    <p className="text-sm text-white/60 mt-1 line-clamp-2">
-                      {dao.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+              <div className="flex flex-col">
+                <span className="text-sm text-white/60 font-jetbrains">
+                  vests
+                </span>
+                <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
+                  {stats.vests}
+                </span>
+              </div>
 
-          {/* Featured News Section */}
-          <div className="mt-12">
-            <div className="grid grid-cols-2 gap-6 outline-2 outline outline-white/[0.2] p-7 relative">
-              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-                news
-              </h2>
-              {featuredNews.map((article) => (
-                <a
-                  key={article.id}
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex flex-col overflow-hidden backdrop-blur-sm border border-white/[0.08] bg-white/[0.02]"
-                >
-                  {/* Banner Image Container */}
-                  <div className="relative h-32 w-full">
-                    <Image
-                      src={article.imageUrl}
-                      alt={article.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 text-xs text-white/60 mb-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      {article.date}
-                    </div>
-
-                    <h3 className="text-lg font-semibold text-white group-hover:text-orange-600 transition-colors duration-200">
-                      {article.title}
-                    </h3>
-
-                    <p className="text-sm text-white/60 line-clamp-2 mt-2">
-                      {article.summary}
-                    </p>
-                  </div>
-                </a>
-              ))}
+              <div className="flex flex-col">
+                <span className="text-sm text-white/60 font-jetbrains">
+                  invoices
+                </span>
+                <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
+                  {stats.invoices}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Featured Users Section */}
+        <div>
+          <div className="grid grid-cols-6 grid-rows-2 gap-4 outline-2 outline outline-white/[0.2] p-7 relative">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              featured users
+            </h2>
+            {featuredUsers.map((user) => (
+              <div
+                key={user.id}
+                className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-4 flex flex-col items-center gap-2"
+              >
+                <div className="h-10 w-10 overflow-hidden">
+                  <Image
+                    src={`https://cdn.stamp.fyi/avatar/${
+                      user.address.split("...")[0]
+                    }?s=50`}
+                    alt="User Avatar"
+                    width={40}
+                    height={40}
+                    className="[image-rendering:pixelated]"
+                    quality={100}
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-white/60 font-jetbrains">
+                    {user.address}
+                  </p>
+                  <p className="text-sm text-white font-semibold mt-1">
+                    {user.username}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Featured DAOs Section */}
+        <div className="mt-12">
+          <div className="grid grid-cols-2 gap-6 outline-2 outline outline-white/[0.2] p-7 relative">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              featured daos
+            </h2>
+            {featuredDAOs.map((dao) => (
+              <div
+                key={dao.id}
+                className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-6 flex items-start gap-4"
+              >
+                <div className="h-12 w-12 overflow-hidden flex-shrink-0">
+                  <Image
+                    src={`https://cdn.stamp.fyi/avatar/${
+                      dao.address.split("...")[0]
+                    }?s=100`}
+                    alt={`${dao.name} Avatar`}
+                    width={48}
+                    height={48}
+                    className="[image-rendering:pixelated]"
+                    quality={100}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-white">
+                      {dao.name}
+                    </h3>
+                    <span className="text-xs text-white/60 font-jetbrains">
+                      {dao.address}
+                    </span>
+                  </div>
+                  <p className="text-sm text-white/60 mt-1 line-clamp-2">
+                    {dao.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Featured News Section */}
+        <div className="mt-12">
+          <div className="grid grid-cols-2 gap-6 outline-2 outline outline-white/[0.2] p-7 relative">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              news
+            </h2>
+            {featuredNews.map((article) => (
+              <a
+                key={article.id}
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col overflow-hidden backdrop-blur-sm border border-white/[0.08] bg-white/[0.02]"
+              >
+                {/* Banner Image Container */}
+                <div className="relative h-32 w-full">
+                  <Image
+                    src={article.imageUrl}
+                    alt={article.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <div className="flex items-center gap-2 text-xs text-white/60 mb-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {article.date}
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-white group-hover:text-orange-600 transition-colors duration-200">
+                    {article.title}
+                  </h3>
+
+                  <p className="text-sm text-white/60 line-clamp-2 mt-2">
+                    {article.summary}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
-    </PageTransition>
+    </div>
   );
 }
 

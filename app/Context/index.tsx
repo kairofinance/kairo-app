@@ -22,6 +22,9 @@ import type {
 import { createSIWEConfig, formatMessage } from "@reown/appkit-siwe";
 import { Chain } from "viem";
 import { defineChain } from "viem";
+import { SafeAdapter } from "../adapters/SafeAdapter";
+import { SafeAppProvider } from "@safe-global/safe-apps-provider";
+import Safe from "@safe-global/safe-apps-sdk";
 
 // Define a properly typed Sepolia chain configuration
 const sepoliaChain = defineChain({
@@ -138,6 +141,10 @@ const appKit = createAppKit({
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
 
+// Initialize Safe SDK
+const safe = new Safe();
+const safeAdapter = new SafeAdapter();
+
 export default function Context({
   children,
   cookies,
@@ -149,6 +156,27 @@ export default function Context({
     wagmiAdapter.wagmiConfig as Config,
     cookies
   );
+
+  React.useEffect(() => {
+    // Initialize Safe when the app loads
+    const initSafe = async () => {
+      try {
+        // Check if we're running inside a Safe iframe
+        const safeInfo = await safe.safe.getInfo();
+
+        if (safeInfo) {
+          // We're inside a Safe App
+          const provider = new SafeAppProvider(safeInfo, safe);
+          await safeAdapter.init(provider, safeInfo.safeAddress);
+        }
+      } catch (err) {
+        // Not running as a Safe App, continue with normal wallet connection
+        console.log("Not running as a Safe App");
+      }
+    };
+
+    initSafe();
+  }, []);
 
   return (
     <WagmiProvider
@@ -163,3 +191,6 @@ export default function Context({
     </WagmiProvider>
   );
 }
+
+// Export the Safe instances for use in other components
+export { safe, safeAdapter };
