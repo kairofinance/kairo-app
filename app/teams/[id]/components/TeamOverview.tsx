@@ -12,7 +12,9 @@ import {
   CloudArrowUpIcon,
   LinkIcon,
   ShieldCheckIcon,
+  UserMinusIcon,
 } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 
 import { useTeam } from "@/hooks/useTeam";
 import { useSafe } from "../../../hooks/useSafe";
@@ -31,6 +33,9 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
   const [previewUrl, setPreviewUrl] = useState(team.profilePicture);
   const { updateTeam, isUpdating } = useTeam(team.id);
   const { isSafeApp, safeInfo, createSafe, proposeTx } = useSafe();
+  const [treasuryAddress, setTreasuryAddress] = useState(
+    team.treasuryAddress || ""
+  );
 
   const isOwner =
     userAddress?.toLowerCase() === team.owner.address.toLowerCase();
@@ -65,6 +70,7 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
         name,
         description,
         website,
+        treasuryAddress,
       });
 
       setIsEditing(false);
@@ -78,6 +84,7 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
     setIsEditing(false);
     setNewProfilePicture(null);
     setPreviewUrl(team.profilePicture);
+    setTreasuryAddress(team.treasuryAddress || "");
   };
 
   // Generate a unique color based on team name
@@ -95,13 +102,6 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
     return colors[index % colors.length];
   };
 
-  const handleCreateSafe = async () => {
-    const owners = ["0x123...", "0x456..."];
-    const threshold = 2;
-    const safeAddress = await createSafe(owners, threshold);
-    console.log("New Safe created at:", safeAddress);
-  };
-
   const handleProposeTx = async () => {
     const tx = {
       to: "0x123...",
@@ -110,6 +110,36 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
     };
     const txHash = await proposeTx(tx);
     console.log("Transaction proposed:", txHash);
+  };
+
+  const router = useRouter();
+
+  const handleLeaveTeam = async () => {
+    try {
+      // Find the member ID for the current user
+      const currentMember = team.members.find(
+        (member: any) =>
+          member.user.address.toLowerCase() === userAddress?.toLowerCase()
+      );
+
+      if (!currentMember) return;
+
+      const response = await fetch(
+        `/api/teams/${team.id}/members/${currentMember.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to leave team");
+      }
+
+      // Redirect to teams page after leaving
+      router.push("/teams");
+    } catch (error) {
+      console.error("Error leaving team:", error);
+    }
   };
 
   return (
@@ -122,25 +152,26 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
             get team_info
           </span>
         </div>
-        {isOwner && !isEditing && (
+        {userAddress && (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-white/60 hover:text-white/80 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200"
-            >
-              <PencilIcon className="w-4 h-4" />
-              edit
-            </button>
-            <button
-              onClick={() => {
-                // Handle DAO verification here
-                console.log("Verify as DAO clicked");
-              }}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all duration-200"
-            >
-              <ShieldCheckIcon className="w-4 h-4" />
-              verify_as_dao
-            </button>
+            {isOwner && !isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-white/60 hover:text-white/80 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200"
+              >
+                <PencilIcon className="w-4 h-4" />
+                edit
+              </button>
+            )}
+            {!isEditing && (
+              <button
+                onClick={handleLeaveTeam}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-red-500/60 hover:text-red-500/80 bg-red-500/[0.02] hover:bg-red-500/[0.04] transition-all duration-200"
+              >
+                <UserMinusIcon className="w-4 h-4" />
+                leave_team
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -226,10 +257,28 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
               <div className="flex items-center gap-2 mb-1">
                 <DocumentIcon className="w-4 h-4 text-white/60" />
                 <span className="text-sm font-jetbrains text-white/60">
-                  invoices
+                  treasury
                 </span>
               </div>
-              <span className="text-xl font-jetbrains text-white/80">0</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={treasuryAddress}
+                  onChange={(e) => setTreasuryAddress(e.target.value)}
+                  className="w-full bg-transparent outline outline-1 p-2 outline-white/[0.06] text-white/80 font-jetbrains text-sm focus:outline-none"
+                  placeholder="0x..."
+                />
+              ) : treasuryAddress ? (
+                <span className="text-sm font-jetbrains text-white/80">
+                  {`${treasuryAddress.slice(0, 6)}...${treasuryAddress.slice(
+                    -4
+                  )}`}
+                </span>
+              ) : (
+                <span className="text-sm font-jetbrains text-white/60">
+                  not set
+                </span>
+              )}
             </div>
             <div className="bg-white/[0.02] p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
@@ -319,19 +368,6 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
           </span>
         </div>
       </div>
-
-      {isSafeApp ? (
-        <div>
-          <p>Running as Safe App</p>
-          <p>Safe Address: {safeInfo?.safeAddress}</p>
-          <button onClick={handleProposeTx}>Propose Transaction</button>
-        </div>
-      ) : (
-        <div>
-          <p>Running as standalone app</p>
-          <button onClick={handleCreateSafe}>Create New Safe</button>
-        </div>
-      )}
     </div>
   );
 }

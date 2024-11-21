@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import { getDictionary } from "@/utils/get-dictionary";
 import { cookies } from "next/headers";
-import { i18n, Locale } from "@/utils/i18n-config";
 import SpinningLogo from "@/components/SpinningLogo";
 import TeamClient from "./TeamClient";
 import { getCacheHeaders } from "@/utils/cache-headers";
@@ -18,10 +16,6 @@ export default async function TeamPage({ params }: TeamPageProps) {
     cookies(),
   ]);
 
-  const langCookie = cookieStore.get("NEXT_LOCALE");
-  const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
-  const dictionary = await getDictionary(lang);
-
   return (
     <div className="min-h-screen">
       <Suspense
@@ -31,11 +25,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
           </div>
         }
       >
-        <TeamClient
-          teamId={teamId}
-          initialDictionary={dictionary}
-          initialLang={lang}
-        />
+        <TeamClient teamId={teamId} />
       </Suspense>
     </div>
   );

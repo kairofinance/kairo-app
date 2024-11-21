@@ -9,15 +9,9 @@ import Link from "next/link";
 
 interface TeamClientProps {
   teamId: string;
-  initialDictionary: any;
-  initialLang: string;
 }
 
-export default function TeamClient({
-  teamId,
-  initialDictionary,
-  initialLang,
-}: TeamClientProps) {
+export default function TeamClient({ teamId }: TeamClientProps) {
   const { address } = useAppKitAccount();
   const { team, isLoading, error } = useTeam(teamId);
 

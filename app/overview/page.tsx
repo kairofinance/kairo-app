@@ -1,17 +1,12 @@
 import { Suspense } from "react";
 import AuthWrapper from "@/auth/AuthWrapper";
-import { getDictionary } from "@/utils/get-dictionary";
 import { cookies } from "next/headers";
-import { i18n, Locale } from "@/utils/i18n-config";
 import SpinningLogo from "@/components/SpinningLogo";
 import OverviewClient from "./OverviewClient";
 import { getCacheHeaders } from "@/utils/cache-headers";
 
 export default async function DashboardPage() {
   const cookieStore = cookies();
-  const langCookie = (await cookieStore).get("NEXT_LOCALE");
-  const lang = langCookie ? (langCookie.value as Locale) : i18n.defaultLocale;
-  const dictionary = await getDictionary(lang);
 
   return (
     <AuthWrapper>
@@ -23,7 +18,7 @@ export default async function DashboardPage() {
             </div>
           }
         >
-          <OverviewClient initialDictionary={dictionary} initialLang={lang} />
+          <OverviewClient />
         </Suspense>
       </div>
     </AuthWrapper>

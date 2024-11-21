@@ -4,15 +4,7 @@ import React from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import TeamsList from "./components/TeamsList";
 
-interface TeamsClientProps {
-  initialDictionary: any;
-  initialLang: string;
-}
-
-export default function TeamsClient({
-  initialDictionary,
-  initialLang,
-}: TeamsClientProps) {
+export default function TeamsClient() {
   const { address } = useAppKitAccount();
 
   return (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAddress } from "viem";
 import { getCacheHeaders } from "@/utils/cache-headers";
+import { USDC_ADDRESS, DAI_ADDRESS } from "../../../contracts/addresses";
 
 const prisma = new PrismaClient();
 
@@ -98,13 +99,13 @@ async function getPeriodStats(
     if (invoice.paid) {
       if (
         invoice.tokenAddress.toLowerCase() ===
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".toLowerCase()
+        USDC_ADDRESS[11155111].toLowerCase()
       ) {
         // USDC (6 decimals)
         balances.USDC += Number(invoice.amount) / 1e6;
       } else if (
         invoice.tokenAddress.toLowerCase() ===
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F".toLowerCase()
+        DAI_ADDRESS[11155111].toLowerCase()
       ) {
         // DAI (18 decimals)
         balances.DAI += Number(invoice.amount) / 1e18;

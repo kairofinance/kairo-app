@@ -11,6 +11,7 @@ import {
   ChartPieIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import { useQuery } from "@tanstack/react-query";
 
 type IconComponent = React.ForwardRefExoticComponent<
   Omit<React.SVGProps<SVGSVGElement>, "ref"> & {
@@ -76,7 +77,20 @@ function classNames(...classes: string[]) {
 const Sidebar = () => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState(pathname);
-  const { isConnected } = useAppKitAccount();
+  const { isConnected, address } = useAppKitAccount();
+
+  const { data: pendingInvites } = useQuery({
+    queryKey: ["pendingInvites", address],
+    queryFn: async () => {
+      if (!address) return [];
+      const response = await fetch(
+        `/api/teams/invites?address=${address}&status=PENDING`
+      );
+      if (!response.ok) throw new Error("Failed to fetch invites");
+      return response.json();
+    },
+    enabled: !!address,
+  });
 
   const isNavigationGroup = (
     item: NavigationElement
@@ -166,8 +180,13 @@ const Sidebar = () => {
 
             {/* Teams Section */}
             <div className="relative outline-2 outline outline-white/[0.2] p-7 mt-6">
-              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
+              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500 flex items-center gap-2">
                 teams
+                {pendingInvites?.length > 0 && (
+                  <span className="px-1.5 py-0.5 text-xs bg-orange-500/20 text-orange-500 rounded-full">
+                    {pendingInvites.length}
+                  </span>
+                )}
               </h2>
               <ul className="flex flex-1 flex-col gap-y-1">
                 {teams.map((team) => (

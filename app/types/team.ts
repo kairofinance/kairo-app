@@ -3,6 +3,7 @@ export interface Team {
   name: string;
   description?: string;
   profilePicture?: string;
+  treasuryAddress?: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
   memberCount: number;
   lastActivity: string;
@@ -33,4 +34,24 @@ export interface TeamDetails extends Team {
     id: string;
     address: string;
   };
+}
+
+export interface TeamInvite {
+  id: string;
+  teamId: string;
+  inviteeId: string;
+  inviterId: string;
+  status: "PENDING" | "ACCEPTED" | "DECLINED";
+  createdAt: string;
+  updatedAt: string;
+  invitee: {
+    id: string;
+    address: string;
+    profilePicture?: string;
+  };
+  inviter: {
+    id: string;
+    address: string;
+  };
+  team: Team;
 }

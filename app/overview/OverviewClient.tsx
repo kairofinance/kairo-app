@@ -1,32 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import TimeFrameSelector from "./components/TimeFrameSelector";
 import CashFlowOverview from "./components/CashFlowOverview";
 import ExpensesChart from "./components/ExpensesChart";
 import { motion } from "framer-motion";
 import {
   BanknotesIcon,
   ClockIcon,
-  ArrowTrendingUpIcon,
-  UserGroupIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import TokenActivityTimeline from "./components/TokenActivityTimeline";
-import { formatEther } from "viem";
 import { useAccount } from "wagmi";
 import { useAccountStats } from "@/hooks/useAccountStats";
 import TokenBalanceGraph from "./components/TokenBalanceGraph";
 import { subDays } from "date-fns";
 import TokenInflow from "./components/TokenInflow";
-
-// Add props interface at the top
-interface DashboardClientProps {
-  initialDictionary: any; // Replace 'any' with proper dictionary type if available
-  initialLang: string;
-}
 
 const AccountStats = () => {
   const { address } = useAccount();
@@ -139,10 +128,7 @@ const StatBox = ({ icon: Icon, title, value, change }: any) => (
   </motion.div>
 );
 
-export default function OverviewClientClient({
-  initialDictionary,
-  initialLang,
-}: DashboardClientProps) {
+export default function OverviewClientClient({}) {
   const [timeFrame, setTimeFrame] = useState("7d");
 
   const cashFlowData = {

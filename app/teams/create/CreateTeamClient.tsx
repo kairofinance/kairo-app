@@ -5,15 +5,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import CreateTeam from "../components/CreateTeam";
 import Link from "next/link";
 
-interface CreateTeamClientProps {
-  initialDictionary: any;
-  initialLang: string;
-}
-
-export default function CreateTeamClient({
-  initialDictionary,
-  initialLang,
-}: CreateTeamClientProps) {
+export default function CreateTeamClient() {
   const { address } = useAppKitAccount();
 
   return (

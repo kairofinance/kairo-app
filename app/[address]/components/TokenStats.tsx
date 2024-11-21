@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { formatUnits } from "viem";
 import { useBalance } from "wagmi";
+import { USDC_ADDRESS, DAI_ADDRESS } from "../../../contracts/addresses";
 
 interface TokenStatsProps {
   address: string;
@@ -15,7 +16,7 @@ export default function TokenStats({ address }: TokenStatsProps) {
 
   const { data: usdcBalance } = useBalance({
     address: address as `0x${string}`,
-    token: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Sepolia USDC
+    token: USDC_ADDRESS[11155111],
   });
 
   return (

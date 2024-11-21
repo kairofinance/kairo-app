@@ -3,15 +3,9 @@ import ProfileOverview from "./components/ProfileOverview";
 
 interface ProfileClientProps {
   address: string;
-  initialDictionary: any;
-  initialLang: string;
 }
 
-export default function ProfileClient({
-  address,
-  initialDictionary,
-  initialLang,
-}: ProfileClientProps) {
+export default function ProfileClient({ address }: ProfileClientProps) {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto space-y-6">

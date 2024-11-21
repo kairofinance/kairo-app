@@ -10,7 +10,6 @@ interface DashboardHeaderProps {
   periods: Period[];
   currentPeriod: string;
   onPeriodChange: (period: string) => void;
-  dictionary: any;
 }
 
 export default function DashboardHeader({
@@ -18,7 +17,6 @@ export default function DashboardHeader({
   periods,
   currentPeriod,
   onPeriodChange,
-  dictionary,
 }: DashboardHeaderProps) {
   return (
     <header className="pb-4 pt-6 sm:pb-6">
@@ -40,7 +38,7 @@ export default function DashboardHeader({
                 }
               `}
             >
-              {dictionary.dashboard.periods[item.period]}
+              {item.period}
             </button>
           ))}
         </div>

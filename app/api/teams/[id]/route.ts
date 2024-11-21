@@ -41,7 +41,8 @@ export async function PATCH(
 ) {
   try {
     const teamId = params.id;
-    const { name, description, website } = await request.json();
+    const { name, description, website, treasuryAddress } =
+      await request.json();
 
     const team = await prisma.team.update({
       where: { id: teamId },
@@ -49,6 +50,7 @@ export async function PATCH(
         name,
         description,
         website,
+        treasuryAddress,
       },
       include: {
         members: {

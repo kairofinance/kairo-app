@@ -13,9 +13,17 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { useTeam } from "@/hooks/useTeam";
+import { TeamInvite } from "@/types/team";
 
 interface TeamMembersProps {
-  team: any; // Will be replaced with proper type
+  team: {
+    id: string;
+    members: any[];
+    owner: {
+      address: string;
+    };
+    invites?: TeamInvite[];
+  };
   userAddress?: string;
 }
 
@@ -36,6 +44,9 @@ export default function TeamMembers({ team, userAddress }: TeamMembersProps) {
     isUpdatingMember,
     removeMember,
     isRemovingMember,
+    inviteMember,
+    isInvitingMember,
+    refetch,
   } = useTeam(team.id);
 
   const isOwner =
@@ -62,7 +73,7 @@ export default function TeamMembers({ team, userAddress }: TeamMembersProps) {
     if (!inviteAddress.trim()) return;
 
     try {
-      await addMember({
+      await inviteMember({
         address: inviteAddress,
         role: "MEMBER",
       });
@@ -101,6 +112,28 @@ export default function TeamMembers({ team, userAddress }: TeamMembersProps) {
       setShowConfirmModal(false);
       setIsManaging(false);
     }
+  };
+
+  const handleCancelInvite = async (inviteId: string) => {
+    try {
+      const response = await fetch(`/api/teams/invites/${inviteId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel invite");
+      }
+
+      // Refetch team data to update the UI
+      await refetch();
+    } catch (error) {
+      console.error("Error canceling invite:", error);
+    }
+  };
+
+  // Helper function to get pending invites
+  const getPendingInvites = () => {
+    return team.invites?.filter((invite) => invite.status === "PENDING") || [];
   };
 
   return (
@@ -169,10 +202,10 @@ export default function TeamMembers({ team, userAddress }: TeamMembersProps) {
             />
             <button
               type="submit"
-              disabled={isAddingMember || !inviteAddress.trim()}
+              disabled={isInvitingMember || !inviteAddress.trim()}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-jetbrains text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isAddingMember ? "inviting..." : "send_invite"}
+              {isInvitingMember ? "inviting..." : "send_invite"}
             </button>
           </form>
         </div>
@@ -309,6 +342,72 @@ export default function TeamMembers({ team, userAddress }: TeamMembersProps) {
         ))}
       </div>
 
+      {/* Pending Invites Section */}
+      {getPendingInvites().length > 0 && (
+        <div className="mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-white/40 font-jetbrains text-sm">$</span>
+            <span className="text-sm font-jetbrains text-white/60">
+              pending_invites
+            </span>
+          </div>
+          <div className="space-y-2">
+            {getPendingInvites().map((invite) => (
+              <div
+                key={invite.id}
+                className="bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200 p-4"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="text-white/40 font-jetbrains text-sm">
+                      &gt;
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 overflow-hidden">
+                        <Image
+                          src={`https://cdn.stamp.fyi/avatar/${invite.invitee.address}?s=50`}
+                          alt={invite.invitee.address}
+                          width={32}
+                          height={32}
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-jetbrains text-white/80">
+                            {`${invite.invitee.address.slice(
+                              0,
+                              6
+                            )}...${invite.invitee.address.slice(-4)}`}
+                          </span>
+                          <span className="text-xs font-jetbrains text-orange-500">
+                            pending
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-jetbrains text-white/40">
+                            invited:{" "}
+                            {new Date(invite.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleCancelInvite(invite.id)}
+                      className="px-3 py-1 text-xs font-jetbrains text-red-500/40 hover:text-red-500/60 transition-colors bg-white/[0.02] hover:bg-white/[0.04] rounded"
+                    >
+                      cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Status Line */}
       <div className="flex items-center gap-2 pt-4 border-t border-white/[0.08]">
         <span className="text-white/40 font-jetbrains text-sm">$</span>
@@ -316,7 +415,9 @@ export default function TeamMembers({ team, userAddress }: TeamMembersProps) {
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-sm font-jetbrains text-white/40">
-            {isAddingMember || isUpdatingMember || isRemovingMember
+            {isInvitingMember
+              ? "inviting..."
+              : isUpdatingMember || isRemovingMember
               ? "updating..."
               : isManaging
               ? "managing"

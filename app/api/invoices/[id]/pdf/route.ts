@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import puppeteer from "puppeteer-core";
 import chrome from "@sparticuz/chromium";
 import path from "path";
+import { USDC_ADDRESS, DAI_ADDRESS } from "../../../../contracts/addresses";
 
 const prisma = new PrismaClient();
 
@@ -42,8 +43,8 @@ async function getTokenImageBase64(tokenAddress: string): Promise<string> {
   );
 
   const tokenMap: { [key: string]: string } = {
-    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": "USDC",
-    "0x552ceaDf3B47609897279F42D3B3309B604896f3": "DAI",
+    [USDC_ADDRESS[11155111]]: "USDC",
+    [DAI_ADDRESS[11155111]]: "DAI",
   };
 
   const tokenSymbol = tokenMap[tokenAddress] || "Unknown";
@@ -72,11 +73,11 @@ async function getTokenImageBase64(tokenAddress: string): Promise<string> {
 
 function formatAmount(amount: string, tokenAddress: string) {
   const tokenMap: { [key: string]: { symbol: string; decimals: number } } = {
-    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": {
+    [USDC_ADDRESS[11155111]]: {
       symbol: "USDC",
       decimals: 6,
     },
-    "0x552ceaDf3B47609897279F42D3B3309B604896f3": {
+    [DAI_ADDRESS[11155111]]: {
       symbol: "DAI",
       decimals: 18,
     },

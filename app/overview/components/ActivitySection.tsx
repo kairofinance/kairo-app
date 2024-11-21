@@ -5,7 +5,6 @@ import { ChevronDownIcon, FunnelIcon } from "@heroicons/react/24/outline";
 import { Fragment } from "react";
 
 interface ActivitySectionProps {
-  dictionary: any;
   groupedInvoices: any[];
   isLoading: boolean;
   userAddress: string;
@@ -20,7 +19,6 @@ const filterOptions = [
 ];
 
 export default function ActivitySection({
-  dictionary,
   groupedInvoices,
   isLoading,
   userAddress,
@@ -34,11 +32,9 @@ export default function ActivitySection({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
           <div>
             <h2 className="text-lg font-garet font-extrabold text-white">
-              {dictionary.dashboard.recentActivity.title}
+              ete
             </h2>
-            <p className="mt-1 text-sm text-white/60">
-              {dictionary.dashboard.recentActivity.description}
-            </p>
+            <p className="mt-1 text-sm text-white/60">ete</p>
           </div>
 
           <Menu as="div" className="relative">

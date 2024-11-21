@@ -23,12 +23,16 @@ model User {
   lastSignIn        DateTime
   createdAt         DateTime    @default(now())
   clients           Client[]
-  streams           Stream[]
+  sentStreams       Stream[]    @relation("SentStreams")
+  receivedStreams   Stream[]    @relation("ReceivedStreams")
   issuedInvoices    Invoice[]   @relation("IssuedInvoices")
   receivedInvoices  Invoice[]   @relation("ReceivedInvoices")
   contacts          Contact[]
   teams             Team[]      @relation("TeamOwner")
   teamMemberships   TeamMember[]
+  sentTeamInvites   TeamInvite[] @relation("SentTeamInvites")
+  receivedTeamInvites TeamInvite[] @relation("ReceivedTeamInvites")
+  profile           Profile?
 }
 
 model Client {
@@ -84,19 +88,26 @@ model Transaction {
 }
 
 model Stream {
-  id              String   @id @default(cuid())
-  name            String
-  direction       String
-  address         String
-  token           String
-  amountPerPeriod Float
-  period          String
-  totalStreamed   Float
-  isWithdrawable  Boolean
-  user            User     @relation(fields: [userId], references: [id])
-  userId          String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String      @id @default(cuid())
+  streamId          BigInt      @unique // On-chain stream ID
+  senderAddress     String
+  recipientAddress  String
+  tokenAddress      String
+  amount            String      // Total amount to be streamed
+  startTime         DateTime
+  endTime           DateTime
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  status            StreamStatus @default(ACTIVE)
+  creationTxHash    String?
+  cancelTxHash      String?
+  
+  // Define relations with User model
+  sender            User        @relation("SentStreams", fields: [senderAddress], references: [address])
+  recipient         User        @relation("ReceivedStreams", fields: [recipientAddress], references: [address])
+
+  @@index([senderAddress])
+  @@index([recipientAddress])
 }
 
 model Contact {
@@ -117,11 +128,13 @@ model Team {
   description    String?
   website        String?
   profilePicture String?
+  treasuryAddress String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   members        TeamMember[]
   owner          User        @relation("TeamOwner", fields: [ownerId], references: [id])
   ownerId        String
+  invites        TeamInvite[]
 }
 
 model TeamMember {
@@ -136,10 +149,52 @@ model TeamMember {
   @@unique([teamId, userId])
 }
 
+model TeamInvite {
+  id        String   @id @default(cuid())
+  team      Team     @relation(fields: [teamId], references: [id])
+  teamId    String
+  invitee   User     @relation("ReceivedTeamInvites", fields: [inviteeId], references: [id])
+  inviteeId String
+  inviter   User     @relation("SentTeamInvites", fields: [inviterId], references: [id])
+  inviterId String
+  status    InviteStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teamId, inviteeId])
+}
+
 enum Role {
   OWNER
   ADMIN
   MEMBER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum StreamStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+// Add this model to your schema
+model Profile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  username        String    @unique
+  bio             String?   @db.Text
+  profilePicture  String?
+  bannerPicture   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 // You can add other models here as needed for your application

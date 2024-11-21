@@ -5,19 +5,18 @@ import { motion } from "framer-motion";
 import { useAppKitAccount, useAppKit } from "@reown/appkit/react";
 import { useReadContract, useWriteContract } from "wagmi";
 import { InvoiceManagerABI } from "contracts/InvoiceManager.sol/InvoiceManager";
-import { INVOICE_MANAGER_ADDRESS, getAddress } from "contracts/addresses";
+import {
+  INVOICE_MANAGER_ADDRESS,
+  USDC_ADDRESS,
+  DAI_ADDRESS,
+  getAddress,
+} from "../../../contracts/addresses";
 import { sepolia } from "viem/chains";
 import { formatUnits } from "viem";
 import Image from "next/image";
-import { useEnsName } from "wagmi";
-import SpinningLogo from "@/components/SpinningLogo";
 import { ERC20ABI } from "contracts/ERC20.sol/ERC20";
 import { client } from "../../../wagmi.config";
-import ContentSkeleton from "@/components/shared/ui/ContentSkeleton";
-import { XCircleIcon } from "@heroicons/react/24/solid";
-import { HomeIcon } from "@heroicons/react/20/solid";
 import Link from "next/link";
-import AddressDisplay from "@/components/shared/AddressDisplay";
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
@@ -48,17 +47,18 @@ interface Invoice {
   paymentTransactionHash?: string | null;
 }
 
+const tokenMap: { [key: string]: { symbol: string; decimals: number } } = {
+  [USDC_ADDRESS[11155111]]: {
+    symbol: "USDC",
+    decimals: 6,
+  },
+  [DAI_ADDRESS[11155111]]: {
+    symbol: "DAI",
+    decimals: 18,
+  },
+};
+
 const getTokenInfo = (tokenAddress: string | undefined) => {
-  const tokenMap: { [key: string]: { symbol: string; decimals: number } } = {
-    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": {
-      symbol: "USDC",
-      decimals: 6,
-    },
-    "0x552ceaDf3B47609897279F42D3B3309B604896f3": {
-      symbol: "DAI",
-      decimals: 18,
-    },
-  };
   if (!tokenAddress) return { symbol: "Unknown", decimals: 18 };
   return tokenMap[tokenAddress] || { symbol: "Unknown", decimals: 18 };
 };
@@ -92,7 +92,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   const { data: onChainInvoice } = useReadContract({
     address: CONTRACT_ADDRESS,
-    abi: InvoiceManagerABI,
+    abi: InvoiceManagerABI.abi,
     functionName: "getInvoice",
     args: [BigInt(invoiceId)],
   });
@@ -206,7 +206,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
       setPaymentStep("paying");
       const payTx = await payInvoice({
         address: CONTRACT_ADDRESS as `0x${string}`,
-        abi: InvoiceManagerABI,
+        abi: InvoiceManagerABI.abi,
         functionName: "payInvoice",
         args: [BigInt(invoice.invoiceId)],
       });
