@@ -12,10 +12,10 @@ interface InvoicePageProps {
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Invoice Details | Kairo",
+    title: "Invoice Details | Plasma",
     description: "View invoice details",
     openGraph: {
-      title: "Invoice Details | Kairo",
+      title: "Invoice Details | Plasma",
       description: "View invoice details",
     },
   };

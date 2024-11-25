@@ -6,12 +6,24 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import {
   HomeIcon,
   DocumentDuplicateIcon,
-  UserGroupIcon,
   PlusIcon,
   ChartPieIcon,
   UsersIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface NavItemProps {
+  item: {
+    name?: string;
+    href: string;
+    icon?: IconComponent;
+  };
+  isActive: boolean;
+  onClick: () => void;
+  children?: React.ReactNode;
+}
 
 type IconComponent = React.ForwardRefExoticComponent<
   Omit<React.SVGProps<SVGSVGElement>, "ref"> & {
@@ -24,60 +36,77 @@ interface NavigationItem {
   name: string;
   href: string;
   icon: IconComponent;
-  current: boolean;
 }
 
 interface NavigationGroup {
   name: string;
-  items: {
-    name: string;
-    href: string;
-    icon: IconComponent;
-  }[];
+  icon: IconComponent;
+  items: NavigationItem[];
 }
 
 type NavigationElement = NavigationItem | NavigationGroup;
 
-// Add teams data
 const teams = [
-  { id: 1, name: "Kairo", href: "/teams/kairo", initial: "K", current: false },
-  { id: 2, name: "Reown", href: "/teams/reown", initial: "R", current: false },
-  {
-    id: 3,
-    name: "Protocol",
-    href: "/teams/protocol",
-    initial: "P",
-    current: false,
-  },
+  { id: 1, name: "Plasma", href: "/teams/plasma" },
+  { id: 2, name: "Reown", href: "/teams/reown" },
+  { id: 3, name: "Protocol", href: "/teams/protocol" },
 ];
 
 const navigation: NavigationElement[] = [
-  { name: "Home", href: "/", icon: HomeIcon, current: false },
-  { name: "Overview", href: "/overview", icon: HomeIcon, current: false },
-  { name: "Create", href: "/create", icon: PlusIcon, current: false },
+  { name: "Home", href: "/", icon: HomeIcon },
+  { name: "Overview", href: "/overview", icon: ChartPieIcon },
+  { name: "Create", href: "/create", icon: PlusIcon },
   {
     name: "View",
+    icon: DocumentDuplicateIcon,
     items: [
-      {
-        name: "Vesting Schedules",
-        href: "/vesting",
-        icon: DocumentDuplicateIcon,
-      },
-      { name: "Token Streams", href: "/streams", icon: DocumentDuplicateIcon },
+      { name: "Vesting", href: "/vesting", icon: DocumentDuplicateIcon },
+      { name: "Streams", href: "/streams", icon: DocumentDuplicateIcon },
       { name: "Invoices", href: "/invoices", icon: DocumentDuplicateIcon },
     ],
   },
-  { name: "Teams", href: "/teams", icon: PlusIcon, current: false },
+  { name: "Teams", href: "/teams", icon: UsersIcon },
 ];
 
-function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
-}
+const NavItem: React.FC<NavItemProps> = ({
+  item,
+  isActive,
+  onClick,
+  children,
+}) => (
+  <motion.div
+    whileHover={{ x: 4 }}
+    className={`relative group ${isActive ? "text-white" : "text-zinc-500"}`}
+  >
+    <Link
+      href={item.href}
+      onClick={onClick}
+      className="flex items-center gap-3 py-2 px-3 transition-colors hover:text-white"
+    >
+      {item.icon && (
+        <item.icon
+          className={`h-4 w-4 transition-colors ${
+            isActive ? "text-white" : "text-zinc-500 group-hover:text-white"
+          }`}
+        />
+      )}
+      <span className="text-sm font-medium tracking-wide">
+        {children || item.name}
+      </span>
+    </Link>
+    {isActive && (
+      <motion.div
+        layoutId="activeTab"
+        className="absolute right-0 w-[2px] h-4 bg-white top-1/2 -translate-y-1/2"
+      />
+    )}
+  </motion.div>
+);
 
 const Sidebar = () => {
   const pathname = usePathname();
-  const [activeItem, setActiveItem] = useState(pathname);
   const { isConnected, address } = useAppKitAccount();
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const { data: pendingInvites } = useQuery({
     queryKey: ["pendingInvites", address],
@@ -92,131 +121,101 @@ const Sidebar = () => {
     enabled: !!address,
   });
 
-  const isNavigationGroup = (
-    item: NavigationElement
-  ): item is NavigationGroup => {
-    return "items" in item;
+  const toggleExpanded = (name: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(name)
+        ? prev.filter((item) => item !== name)
+        : [...prev, name]
+    );
   };
 
-  const handleNavigation = (href: string) => {
-    setActiveItem(href);
-  };
+  if (!isConnected) return null;
 
   return (
-    <>
-      {isConnected && <div className="mr-[20rem]" />}
-      <div
-        className={`flex flex-col gap-y-5 overflow-y-auto bg-zinc-950 px-6 h-screen fixed
-        transition-all duration-300 ease-in-out
-        ${
-          isConnected
-            ? "w-[20rem] opacity-100 translate-x-0"
-            : "w-0 opacity-0 -translate-x-full"
-        }
-      `}
-      >
-        {isConnected && (
-          <nav className="flex flex-1 flex-col pt-12">
-            <div className="relative outline-2 outline outline-white/[0.2] p-7">
-              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-                nav
-              </h2>
-              <ul role="list" className="flex flex-1 flex-col gap-y-1">
-                {navigation.map((item) => {
-                  if (isNavigationGroup(item)) {
-                    return (
-                      <React.Fragment key={item.name}>
-                        {item.items.map((subItem) => (
-                          <li key={subItem.name}>
-                            <Link
-                              href={subItem.href}
-                              onClick={() => handleNavigation(subItem.href)}
-                              className={`group flex items-center gap-2 p-2 backdrop-blur-sm
-                              ${
-                                activeItem === subItem.href
-                                  ? "bg-white/[0.08]"
-                                  : "bg-white/[0.02]"
-                              }
-                              hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
-                            >
-                              <span className="text-white/40 font-jetbrains text-sm">
-                                &gt;
-                              </span>
-                              <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
-                                {subItem.name.toLowerCase().replace(/ /g, "_")}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </React.Fragment>
-                    );
-                  }
-
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        onClick={() => handleNavigation(item.href)}
-                        className={`group flex items-center gap-2 p-2 backdrop-blur-sm
-                        ${
-                          activeItem === item.href
-                            ? "bg-white/[0.08]"
-                            : "bg-white/[0.02]"
-                        }
-                        hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+    <div className="fixed w-64 h-screen pt-20 px-4">
+      <div className="space-y-8">
+        <nav className="space-y-1">
+          {navigation.map((item) => {
+            if ("items" in item) {
+              return (
+                <div key={item.name} className="space-y-1">
+                  <button
+                    onClick={() => toggleExpanded(item.name)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-500 hover:text-white transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4 group-hover:text-white" />
+                      <span className="tracking-wide">{item.name}</span>
+                    </div>
+                    <ChevronRightIcon
+                      className={`h-3 w-3 transition-transform duration-200 ${
+                        expandedItems.includes(item.name) ? "rotate-90" : ""
+                      }`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {expandedItems.includes(item.name) && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-6 space-y-1 overflow-hidden"
                       >
-                        <span className="text-white/40 font-jetbrains text-sm">
-                          &gt;
-                        </span>
-                        <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
-                          {item.name.toLowerCase()}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                        {item.items.map((subItem) => (
+                          <NavItem
+                            key={subItem.name}
+                            item={subItem}
+                            isActive={pathname === subItem.href}
+                            onClick={() => {}}
+                          >
+                            {subItem.name}
+                          </NavItem>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            }
 
-            {/* Teams Section */}
-            <div className="relative outline-2 outline outline-white/[0.2] p-7 mt-6">
-              <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500 flex items-center gap-2">
-                teams
-                {pendingInvites?.length > 0 && (
-                  <span className="px-1.5 py-0.5 text-xs bg-orange-500/20 text-orange-500 rounded-full">
-                    {pendingInvites.length}
-                  </span>
-                )}
-              </h2>
-              <ul className="flex flex-1 flex-col gap-y-1">
-                {teams.map((team) => (
-                  <li key={team.name}>
-                    <Link
-                      href={team.href}
-                      onClick={() => handleNavigation(team.href)}
-                      className={`group flex items-center gap-2 p-2 backdrop-blur-sm
-                      ${
-                        activeItem === team.href
-                          ? "bg-white/[0.08]"
-                          : "bg-white/[0.02]"
-                      }
-                      hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
-                    >
-                      <span className="text-white/40 font-jetbrains text-sm">
-                        &gt;
-                      </span>
-                      <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
-                        {team.name.toLowerCase()}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
-        )}
+            return (
+              <NavItem
+                key={item.name}
+                item={item}
+                isActive={pathname === item.href}
+                onClick={() => {}}
+              />
+            );
+          })}
+        </nav>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-3">
+            <h3 className="text-xs uppercase tracking-wider text-zinc-500 font-medium">
+              Teams
+            </h3>
+            {pendingInvites?.length > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium bg-orange-500/10 text-orange-500 rounded-full">
+                {pendingInvites.length}
+              </span>
+            )}
+          </div>
+          <div className="space-y-1">
+            {teams.map((team) => (
+              <NavItem
+                key={team.name}
+                item={team}
+                isActive={pathname === team.href}
+                onClick={() => {}}
+              >
+                {team.name}
+              </NavItem>
+            ))}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

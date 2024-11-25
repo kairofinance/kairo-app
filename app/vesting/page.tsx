@@ -6,10 +6,10 @@ import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Manage Vesting | Kairo",
+    title: "Manage Vesting | Plasma",
     description: "View and manage your token vesting schedules",
     openGraph: {
-      title: "Manage Vesting | Kairo",
+      title: "Manage Vesting | Plasma",
       description: "View and manage your token vesting schedules",
     },
   };

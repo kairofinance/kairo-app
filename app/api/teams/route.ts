@@ -89,9 +89,12 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ teams });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error fetching teams:", error);
     return Response.json(
-      { error: "Failed to fetch teams", details: message },
+      {
+        error: "Failed to fetch teams",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   } finally {
@@ -99,10 +102,10 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/teams - Create a new team
 export async function POST(request: NextRequest) {
   try {
-    const { name, description, ownerAddress } = await request.json();
+    const body = await request.json();
+    const { name, description, ownerAddress } = body;
 
     if (!name || !ownerAddress) {
       return Response.json(
@@ -111,55 +114,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use a transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
-      // Get or create user
-      const user = await tx.user.upsert({
-        where: { address: ownerAddress.toLowerCase() },
-        update: { lastSignIn: new Date() },
-        create: {
-          address: ownerAddress.toLowerCase(),
-          lastSignIn: new Date(),
-        },
-      });
-
-      // Create team with owner membership
-      const team = await tx.team.create({
-        data: {
-          name,
-          description,
-          owner: {
-            connect: { id: user.id },
-          },
-          members: {
-            create: {
-              user: {
-                connect: { id: user.id },
-              },
-              role: "OWNER",
-            },
-          },
-        },
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-          owner: true,
-        },
-      });
-
-      return team;
+    // First, get or create user outside the transaction
+    const user = await prisma.user.upsert({
+      where: { address: ownerAddress.toLowerCase() },
+      update: { lastSignIn: new Date() },
+      create: {
+        address: ownerAddress.toLowerCase(),
+        lastSignIn: new Date(),
+      },
     });
+
+    // Then create team in a separate transaction
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const team = await tx.team.create({
+          data: {
+            name,
+            description,
+            owner: {
+              connect: { id: user.id },
+            },
+            members: {
+              create: {
+                user: {
+                  connect: { id: user.id },
+                },
+                role: "OWNER",
+              },
+            },
+          },
+          include: {
+            members: {
+              include: {
+                user: true,
+              },
+            },
+            owner: true,
+          },
+        });
+
+        return team;
+      },
+      {
+        timeout: 20000, // Increased timeout to 20 seconds
+        maxWait: 10000, // Increased maximum wait time to 10 seconds
+        isolationLevel: "ReadCommitted", // Changed to a less strict isolation level
+      }
+    );
 
     return Response.json({ team: result });
   } catch (error) {
-    console.error("Error in POST /api/teams:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     return Response.json(
-      { error: "Internal server error", details: errorMessage },
+      { error: "Failed to create team", details: errorMessage },
       { status: 500 }
     );
   } finally {

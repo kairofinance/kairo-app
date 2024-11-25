@@ -127,10 +127,10 @@ const appKit = createAppKit({
   networks: [sepoliaChain as any],
   defaultNetwork: sepoliaChain as any,
   metadata: {
-    name: "Kairo",
+    name: "Plasma",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions.",
-    url: "https://kairo.finance",
+    url: "https://plasma.finance",
     icons: ["../favicon.ico"],
   },
   features: {

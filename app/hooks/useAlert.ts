@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-type AlertType = "success" | "error";
+export type AlertType = "success" | "error" | "info";
 
 export const useAlert = () => {
   const [alertState, setAlertState] = useState<{

@@ -6,10 +6,10 @@ import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Pending Invoices | Kairo",
+    title: "Pending Invoices | Plasma",
     description: "View your pending invoices",
     openGraph: {
-      title: "Pending Invoices | Kairo",
+      title: "Pending Invoices | Plasma",
       description: "View your pending invoices",
     },
   };

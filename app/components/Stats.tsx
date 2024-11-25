@@ -16,18 +16,18 @@ export default function Stats({ stats }: StatsProps) {
       {stats.map((stat) => (
         <div
           key={stat.name}
-          className="relative overflow-hidden rounded-lg bg-kairo-black-a20/40 px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6"
+          className="relative overflow-hidden rounded-lg bg-plasma-black-a20/40 px-4 pb-12 pt-5 shadow sm:px-6 sm:pt-6"
         >
           <dt>
             <div className="absolute rounded-md bg-orange-600/10 p-3">
               {/* Icon can be added here if needed */}
             </div>
-            <p className="ml-16 truncate text-sm font-medium text-kairo-white/70">
+            <p className="ml-16 truncate text-sm font-medium text-plasma-white/70">
               {stat.name}
             </p>
           </dt>
           <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-            <p className="text-2xl font-semibold text-kairo-white">
+            <p className="text-2xl font-semibold text-plasma-white">
               {stat.value}
             </p>
             {stat.change && (

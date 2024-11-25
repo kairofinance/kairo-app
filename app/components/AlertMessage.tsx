@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import {
   CheckCircleIcon,
   XCircleIcon,
+  InformationCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/20/solid";
+import type { AlertType } from "@/hooks/useAlert";
 
 interface AlertMessageProps {
   message: string;
-  type: "success" | "error";
+  type: AlertType;
   onDismiss: () => void;
 }
 
@@ -22,11 +24,37 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
     setIsVisible(true);
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onDismiss, 300); // Wait for fade out animation before dismissing
+      setTimeout(onDismiss, 300);
     }, 5000);
 
     return () => clearTimeout(timer);
   }, [onDismiss]);
+
+  const getAlertStyles = () => {
+    switch (type) {
+      case "success":
+        return "bg-orange-600/10 text-orange-600";
+      case "error":
+        return "bg-red-500/10 text-red-400";
+      case "info":
+        return "bg-blue-500/10 text-blue-400";
+      default:
+        return "bg-orange-600/10 text-orange-600";
+    }
+  };
+
+  const getIcon = () => {
+    switch (type) {
+      case "success":
+        return <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />;
+      case "error":
+        return <XCircleIcon className="h-5 w-5" aria-hidden="true" />;
+      case "info":
+        return <InformationCircleIcon className="h-5 w-5" aria-hidden="true" />;
+      default:
+        return <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />;
+    }
+  };
 
   return (
     <div
@@ -35,26 +63,18 @@ const AlertMessage: React.FC<AlertMessageProps> = ({
       }`}
     >
       <div
-        className={`rounded-lg shadow-lg backdrop-blur-sm ${
-          type === "success"
-            ? "bg-orange-600/10 text-orange-600"
-            : "bg-red-500/10 text-red-400"
-        } p-4 flex items-center gap-3 min-w-[320px]`}
+        className={`rounded-lg shadow-lg backdrop-blur-sm ${getAlertStyles()} p-4 flex items-center gap-3 min-w-[320px]`}
       >
-        <div className="flex-shrink-0">
-          {type === "success" ? (
-            <CheckCircleIcon className="h-5 w-5" aria-hidden="true" />
-          ) : (
-            <XCircleIcon className="h-5 w-5" aria-hidden="true" />
-          )}
-        </div>
+        <div className="flex-shrink-0">{getIcon()}</div>
         <p className="text-sm font-medium flex-1">{message}</p>
         <button
           type="button"
-          className={`flex-shrink-0 rounded-md p-1.5 transition-colors duration-200 ${
+          className={`flex-shrink-0 rounded-md p-1.5 transition-colors duration-200 hover:${
             type === "success"
-              ? "hover:bg-orange-600/20"
-              : "hover:bg-red-500/20"
+              ? "bg-orange-600/20"
+              : type === "error"
+              ? "bg-red-500/20"
+              : "bg-blue-500/20"
           }`}
           onClick={() => setIsVisible(false)}
         >

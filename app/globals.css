@@ -119,37 +119,37 @@ input[type="date"]::-moz-calendar-picker-indicator {
 }
 
 .react-datepicker {
-  @apply bg-kairo-black/90 border border-kairo-black-a40 !important;
+  @apply bg-plasma-black/90 border border-plasma-black-a40 !important;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .react-datepicker__header {
-  @apply bg-kairo-black-a20/50 border-kairo-black-a40 p-4 !important;
+  @apply bg-plasma-black-a20/50 border-plasma-black-a40 p-4 !important;
 }
 
 .react-datepicker__current-month {
-  @apply text-kairo-white font-medium mb-4 !important;
+  @apply text-plasma-white font-medium mb-4 !important;
 }
 
 .react-datepicker__day-name {
-  @apply text-kairo-white/60 font-medium !important;
+  @apply text-plasma-white/60 font-medium !important;
   width: 2rem !important;
   line-height: 2rem !important;
 }
 
 .react-datepicker__day {
-  @apply text-kairo-white/90 font-medium transition-colors duration-200 !important;
+  @apply text-plasma-white/90 font-medium transition-colors duration-200 !important;
   width: 2rem !important;
   line-height: 2rem !important;
   margin: 0.2rem !important;
 }
 
 .react-datepicker__day:hover {
-  @apply bg-orange-600 text-kairo-black rounded-md !important;
+  @apply bg-orange-600 text-plasma-black rounded-md !important;
 }
 
 .react-datepicker__day--selected {
-  @apply bg-orange-600 text-kairo-black rounded-md !important;
+  @apply bg-orange-600 text-plasma-black rounded-md !important;
 }
 
 .react-datepicker__day--keyboard-selected {
@@ -157,11 +157,11 @@ input[type="date"]::-moz-calendar-picker-indicator {
 }
 
 .react-datepicker__day--disabled {
-  @apply text-kairo-white/20 hover:bg-transparent hover:text-kairo-white/20 cursor-not-allowed !important;
+  @apply text-plasma-white/20 hover:bg-transparent hover:text-plasma-white/20 cursor-not-allowed !important;
 }
 
 .react-datepicker__navigation-icon::before {
-  @apply border-kairo-white/60 !important;
+  @apply border-plasma-white/60 !important;
 }
 
 .react-datepicker__navigation:hover *::before {
@@ -172,7 +172,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
   .react-datepicker__triangle::before,
 .react-datepicker-popper[data-placement^="bottom"]
   .react-datepicker__triangle::after {
-  @apply border-b-kairo-black-a20 !important;
+  @apply border-b-plasma-black-a20 !important;
 }
 
 /* Add backdrop blur to the calendar */
@@ -193,4 +193,53 @@ input[type="date"]::-moz-calendar-picker-indicator {
   .page-transition {
     @apply transition-opacity duration-500;
   }
+}
+
+/* Update the keyframes and utility classes */
+@keyframes flowingBorder {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.flowing-border {
+  position: relative;
+  isolation: isolate;
+}
+
+.flowing-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 9999px;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.1),
+    rgba(37, 99, 235, 0.2),
+    rgba(37, 99, 235, 0.1)
+  );
+  background-size: 200% 200%;
+  animation: flowingBorder 3s linear infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+.flowing-border-active::before {
+  background: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.2),
+    rgba(37, 99, 235, 0.3),
+    rgba(37, 99, 235, 0.2)
+  );
+  animation: flowingBorder 2s linear infinite;
 }

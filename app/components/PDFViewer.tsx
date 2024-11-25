@@ -47,12 +47,12 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ url }) => {
         <button
           onClick={() => setPageNumber((page) => Math.max(1, page - 1))}
           disabled={pageNumber <= 1}
-          className="px-3 py-1 rounded-md bg-kairo-black-a20/40 text-kairo-white/90 disabled:opacity-50"
+          className="px-3 py-1 rounded-md bg-plasma-black-a20/40 text-plasma-white/90 disabled:opacity-50"
         >
           Previous
         </button>
 
-        <p className="text-kairo-white">
+        <p className="text-plasma-white">
           Page {pageNumber} of {numPages}
         </p>
 
@@ -61,7 +61,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ url }) => {
             setPageNumber((page) => Math.min(numPages || page, page + 1))
           }
           disabled={pageNumber >= (numPages || 1)}
-          className="px-3 py-1 rounded-md bg-kairo-black-a20/40 text-kairo-white/90 disabled:opacity-50"
+          className="px-3 py-1 rounded-md bg-plasma-black-a20/40 text-plasma-white/90 disabled:opacity-50"
         >
           Next
         </button>

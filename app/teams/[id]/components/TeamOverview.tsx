@@ -13,8 +13,11 @@ import {
   LinkIcon,
   ShieldCheckIcon,
   UserMinusIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
+import { Dialog } from "@headlessui/react";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 import { useTeam } from "@/hooks/useTeam";
 import { useSafe } from "../../../hooks/useSafe";
@@ -26,6 +29,8 @@ interface TeamOverviewProps {
 
 export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [confirmTeamName, setConfirmTeamName] = useState("");
   const [name, setName] = useState(team.name);
   const [description, setDescription] = useState(team.description || "");
   const [website, setWebsite] = useState(team.website || "");
@@ -114,6 +119,22 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
 
   const router = useRouter();
 
+  const handleDeleteTeam = async () => {
+    try {
+      const response = await fetch(`/api/teams/${team.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete team");
+      }
+
+      router.push("/teams");
+    } catch (error) {
+      console.error("Error deleting team:", error);
+    }
+  };
+
   const handleLeaveTeam = async () => {
     try {
       // Find the member ID for the current user
@@ -135,7 +156,6 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
         throw new Error("Failed to leave team");
       }
 
-      // Redirect to teams page after leaving
       router.push("/teams");
     } catch (error) {
       console.error("Error leaving team:", error);
@@ -155,15 +175,24 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
         {userAddress && (
           <div className="flex items-center gap-2">
             {isOwner && !isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-white/60 hover:text-white/80 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200"
-              >
-                <PencilIcon className="w-4 h-4" />
-                edit
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-white/60 hover:text-white/80 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                  edit
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-red-500/60 hover:text-red-500/80 bg-red-500/[0.02] hover:bg-red-500/[0.04] transition-all duration-200"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                  delete_team
+                </button>
+              </>
             )}
-            {!isEditing && (
+            {!isOwner && !isEditing && (
               <button
                 onClick={handleLeaveTeam}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-jetbrains text-red-500/60 hover:text-red-500/80 bg-red-500/[0.02] hover:bg-red-500/[0.04] transition-all duration-200"
@@ -368,6 +397,71 @@ export default function TeamOverview({ team, userAddress }: TeamOverviewProps) {
           </span>
         </div>
       </div>
+
+      {/* Delete Team Modal */}
+      <Dialog
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        className="relative z-50"
+      >
+        {/* Background overlay */}
+        <div className="fixed inset-0 bg-black/90" aria-hidden="true" />
+
+        {/* Full-screen container */}
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="relative outline-2 outline outline-white/[0.2] p-7 bg-black/95 max-w-md w-full">
+            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-zinc-500">
+              confirm_delete
+            </h2>
+
+            <div className="space-y-6">
+              {/* Warning Message */}
+              <div className="flex items-center gap-2 text-orange-500">
+                <ExclamationTriangleIcon className="w-5 h-5" />
+                <span className="text-sm font-jetbrains">
+                  This action cannot be undone
+                </span>
+              </div>
+
+              {/* Confirmation Input */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/40 font-jetbrains text-sm">
+                    &gt;
+                  </span>
+                  <span className="text-sm font-jetbrains text-white/60">
+                    Type {team.name} to confirm
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={confirmTeamName}
+                  onChange={(e) => setConfirmTeamName(e.target.value)}
+                  className="w-full bg-white/[0.02] hover:bg-white/[0.04] focus:bg-white/[0.04] transition-all duration-200 p-3 text-white font-jetbrains text-sm focus:outline-none"
+                  placeholder="team name"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-4 border-t border-white/[0.08]">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 text-sm font-jetbrains text-white/60 hover:text-white/80 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200"
+                >
+                  cancel
+                </button>
+                <button
+                  onClick={handleDeleteTeam}
+                  disabled={confirmTeamName !== team.name}
+                  className="px-4 py-2 text-sm font-jetbrains text-red-500/60 hover:text-red-500/80 disabled:opacity-50 disabled:cursor-not-allowed bg-red-500/[0.02] hover:bg-red-500/[0.04] transition-all duration-200"
+                >
+                  delete_team
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 }

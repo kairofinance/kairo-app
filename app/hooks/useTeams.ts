@@ -45,9 +45,10 @@ export function useTeams(address?: string) {
 
   const createTeamMutation = useMutation({
     mutationFn: createTeam,
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate and refetch teams after successful creation
       queryClient.invalidateQueries({ queryKey: [TEAMS_QUERY_KEY] });
+      return data; // Return the created team data
     },
   });
 
@@ -55,7 +56,7 @@ export function useTeams(address?: string) {
     teams,
     isLoading,
     error,
-    createTeam: createTeamMutation.mutate,
+    createTeam: createTeamMutation.mutateAsync, // Changed to mutateAsync to get the result
     isCreating: createTeamMutation.isPending,
     createError: createTeamMutation.error,
   };

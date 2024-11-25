@@ -2,7 +2,12 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import {
+  UserGroupIcon,
+  ClockIcon,
+  ChevronRightIcon,
+  BoltIcon,
+} from "@heroicons/react/24/solid";
 import Link from "next/link";
 import Image from "next/image";
 import { useTeams } from "@/hooks/useTeams";
@@ -11,131 +16,111 @@ interface TeamsListProps {
   address?: string;
 }
 
+const roleColors = {
+  OWNER: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  ADMIN: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+  MEMBER: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+};
+
 export default function TeamsList({ address }: TeamsListProps) {
   const { teams, isLoading } = useTeams(address);
 
-  // Generate a unique color based on team name
-  const getTeamColor = (name: string) => {
-    const colors = [
-      "bg-orange-600",
-      "bg-emerald-600",
-      "bg-blue-600",
-      "bg-purple-600",
-      "bg-pink-600",
-    ];
-    const index = name
-      .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[index % colors.length];
-  };
-
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <span className="text-white/40 font-jetbrains text-sm">$</span>
-          <span className="text-sm font-jetbrains text-white/60">
-            loading_teams...
-          </span>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-24 rounded-lg bg-white/5 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!teams?.length) {
+    return (
+      <div className="rounded-lg bg-white/5 border border-white/10">
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+            <BoltIcon className="w-8 h-8 text-yellow-500/50" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">No teams yet</h3>
+          <p className="text-zinc-400">Create a team to get started</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Command Line Header */}
-      <div className="flex items-center gap-2">
-        <span className="text-white/40 font-jetbrains text-sm">$</span>
-        <span className="text-sm font-jetbrains text-white/60">
-          get my_teams
-        </span>
-      </div>
-
-      <div className="space-y-2">
-        {teams?.map((team) => (
-          <Link
-            href={`/teams/${team.id}`}
-            key={team.id}
-            className="block group"
+    <div className="space-y-3">
+      {teams.map((team) => (
+        <Link href={`/teams/${team.id}`} key={team.id}>
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="group flex items-center justify-between p-6 
+                     rounded-lg bg-white/[0.03] hover:bg-white/[0.06]
+                     border border-white/10 hover:border-white/20
+                     transition-all duration-200"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200 p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="text-white/40 font-jetbrains text-sm">
-                    &gt;
-                  </span>
-                  {/* Team Profile Picture */}
-                  <div className="h-10 w-10 rounded-lg overflow-hidden flex items-center justify-center">
-                    {team?.profilePicture ? (
-                      <Image
-                        src={team?.profilePicture}
-                        alt={team.name}
-                        width={40}
-                        height={40}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div
-                        className={`w-full h-full flex items-center justify-center ${getTeamColor(
-                          team.name
-                        )} bg-opacity-20`}
-                      >
-                        <span className="text-lg font-bold text-white/80">
-                          {team.name.slice(0, 2).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-jetbrains text-white/80">
-                        {team.name.toLowerCase()}
-                      </span>
-                      <span className="text-xs font-jetbrains text-emerald-500">
-                        {team.role.toLowerCase()}
+            <div className="flex items-center gap-5">
+              {/* Team Avatar */}
+              <div className="shrink-0">
+                <div
+                  className="w-12 h-12 rounded-lg bg-white/5 
+                            border border-white/10 overflow-hidden"
+                >
+                  {team.profilePicture ? (
+                    <Image
+                      src={team.profilePicture}
+                      alt={team.name}
+                      width={48}
+                      height={48}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-lg font-medium text-white/60">
+                        {team.name.charAt(0)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-jetbrains text-white/40">
-                        #
-                      </span>
-                      <span className="text-xs font-jetbrains text-white/40">
-                        {team.memberCount} members
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/40 font-jetbrains text-sm">
-                      last_active:
-                    </span>
-                    <span className="text-sm font-jetbrains text-white/60">
-                      {new Date(team.lastActivity).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <ChevronRightIcon className="w-4 h-4 text-white/40 group-hover:text-white/60 transition-colors" />
+                  )}
                 </div>
               </div>
-            </motion.div>
-          </Link>
-        ))}
-      </div>
 
-      {/* Status Line */}
-      <div className="flex items-center gap-2 pt-4 border-t border-white/[0.08]">
-        <span className="text-white/40 font-jetbrains text-sm">$</span>
-        <span className="text-sm font-jetbrains text-white/60">status:</span>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-sm font-jetbrains text-white/40">synced</span>
-        </div>
-      </div>
+              {/* Team Info */}
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-lg font-medium text-white">
+                    {team.name}
+                  </h3>
+                  <span
+                    className={`px-2.5 py-1 text-xs font-medium rounded-full border ${
+                      roleColors[team.role]
+                    }`}
+                  >
+                    {team.role.toLowerCase()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2 text-sm text-zinc-400">
+                    <UserGroupIcon className="w-4 h-4" />
+                    <span>{team.memberCount} members</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-zinc-400">
+                    <ClockIcon className="w-4 h-4" />
+                    <span>
+                      Active {new Date(team.lastActivity).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <ChevronRightIcon
+              className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 
+                                    transition-colors shrink-0"
+            />
+          </motion.div>
+        </Link>
+      ))}
     </div>
   );
 }

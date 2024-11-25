@@ -1,12 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import CashFlowOverview from "./components/CashFlowOverview";
-import ExpensesChart from "./components/ExpensesChart";
-import { motion } from "framer-motion";
+import React from "react";
 import {
   BanknotesIcon,
-  ClockIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   ArrowPathIcon,
@@ -15,139 +11,211 @@ import { useAccount } from "wagmi";
 import { useAccountStats } from "@/hooks/useAccountStats";
 import TokenBalanceGraph from "./components/TokenBalanceGraph";
 import { subDays } from "date-fns";
-import TokenInflow from "./components/TokenInflow";
+import { motion } from "framer-motion";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-const AccountStats = () => {
-  const { address } = useAccount();
-  const stats = useAccountStats(address);
+const DailyFlowGraph = () => {
+  // Generate 30 days of data with inflow and outflow
+  const data = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - i));
+    const inflow = Math.random() * 1000 + 500;
+    const outflow = Math.random() * 800 + 200;
+    return {
+      date: date,
+      inflow,
+      outflow,
+    };
+  });
 
-  if (stats.isLoading) {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className="animate-pulse flex items-center justify-between p-3 rounded-lg bg-white/[0.03]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white/[0.05]" />
-              <div className="h-4 w-24 bg-white/[0.05] rounded" />
-            </div>
-            <div className="h-4 w-16 bg-white/[0.05] rounded" />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // Calculate the maximum value for Y axis
+  const maxValue = Math.max(...data.map((d) => d.inflow + d.outflow));
+  const yAxisMax = Math.ceil((maxValue * 1.1) / 1000) * 1000;
 
-  const statItems = [
-    {
-      icon: DocumentTextIcon,
-      label: "Invoices Created",
-      value: stats.totalInvoices || 0,
-    },
-    {
-      icon: CheckCircleIcon,
-      label: "Invoices Paid",
-      value: stats.totalPaidInvoices || 0,
-    },
-    {
-      icon: ArrowPathIcon,
-      label: "Completed Streams",
-      value: stats.completedStreams || 0,
-    },
-    {
-      icon: BanknotesIcon,
-      label: "Vests Unlocked",
-      value: stats.unlockedVests || 0,
-    },
-    {
-      icon: BanknotesIcon,
-      label: "Gross Income",
-      value: stats.unlockedVests || "$" + 0,
-    },
-  ];
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+    }).format(date);
+  };
+
+  // Modified markers generation to ensure unique values
+  const markers = Array.from({ length: 5 }, (_, i) => {
+    const dayNumber = Math.round((i * 29) / 4);
+    const date = data[dayNumber].date;
+    return {
+      value: formatDate(date),
+      dayNumber,
+      // Add a unique id
+      id: date.toISOString(),
+    };
+  });
 
   return (
     <div className="relative">
-      <div className="space-y-4 pr-6 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-        {statItems.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] transition-colors duration-200"
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="h-[300px]"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
           >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <item.icon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">{item.label}</span>
-            </div>
-            <span className="text-sm font-medium text-white">{item.value}</span>
-          </div>
-        ))}
-      </div>
+            <defs>
+              <linearGradient id="inflowGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="rgb(34, 197, 94)"
+                  stopOpacity={0.9}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="rgb(34, 197, 94)"
+                  stopOpacity={0.6}
+                />
+              </linearGradient>
+              <linearGradient id="outflowGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="rgb(239, 68, 68)"
+                  stopOpacity={0.9}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="rgb(239, 68, 68)"
+                  stopOpacity={0.6}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255, 255, 255, 0.05)"
+              vertical={false}
+            />
+            <XAxis
+              dataKey={(data) => data.date.toISOString()} // Use ISO string as unique key
+              axisLine={false}
+              tickLine={false}
+              tick={{
+                fill: "rgba(255, 255, 255, 0.4)",
+                fontSize: 10,
+                fontFamily: "JetBrains Mono",
+              }}
+              ticks={markers.map((m) => m.id)} // Use unique IDs for ticks
+              tickFormatter={(value) => formatDate(new Date(value))} // Format the ISO string back to display format
+              interval={0}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{
+                fill: "rgba(255, 255, 255, 0.4)",
+                fontSize: 10,
+                fontFamily: "JetBrains Mono",
+              }}
+              dx={-10}
+              tickFormatter={(value) => `$${value.toLocaleString()}`}
+              domain={[0, yAxisMax]}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.[0]) return null;
+
+                const inflow = Number(
+                  payload.find((p) => p.dataKey === "inflow")?.value || 0
+                );
+                const outflow = Number(
+                  payload.find((p) => p.dataKey === "outflow")?.value || 0
+                );
+                const total = inflow + outflow;
+
+                return (
+                  <div className="font-jetbrains rounded-lg bg-black/80 border border-white/20 px-4 py-3 backdrop-blur-md">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <p className="text-[11px] font-medium text-white/80">
+                        {formatDate(payload[0].payload.date)}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-6">
+                        <span className="text-[11px] text-white/60">
+                          Inflow
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="text-[12px] font-medium text-emerald-500">
+                            ${inflow.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-6">
+                        <span className="text-[11px] text-white/60">
+                          Outflow
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                          <span className="text-[12px] font-medium text-red-500">
+                            ${outflow.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-white/20">
+                        <div className="flex items-center justify-between gap-6">
+                          <span className="text-[11px] text-white/60">
+                            Total Flow
+                          </span>
+                          <span className="text-[12px] font-semibold text-white">
+                            ${total.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }}
+              cursor={{
+                stroke: "rgba(255, 255, 255, 0.05)",
+                strokeWidth: 1,
+                strokeDasharray: "4 4",
+              }}
+            />
+            <Bar
+              dataKey="outflow"
+              fill="url(#outflowGradient)"
+              radius={[0, 0, 0, 0]}
+              stackId="stack"
+              maxBarSize={40}
+            />
+            <Bar
+              dataKey="inflow"
+              fill="url(#inflowGradient)"
+              radius={[2, 2, 0, 0]}
+              stackId="stack"
+              maxBarSize={40}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
     </div>
   );
 };
 
-const StatBox = ({ icon: Icon, title, value, change }: any) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7"
-  >
-    <div className="flex items-center gap-2">
-      <span className="text-white/40 font-jetbrains text-sm">&gt;</span>
-      <h3 className="text-sm font-medium text-white/60 font-jetbrains">
-        {title.toLowerCase().replace(" ", "_")}
-      </h3>
-    </div>
-    <div className="mt-6">
-      <p className="text-3xl font-jetbrains font-semibold text-white tabular-nums">
-        {value}
-      </p>
-      {change && (
-        <div className="flex items-center gap-2 mt-3">
-          <span className="text-xs font-jetbrains text-white/40">#</span>
-          <div className="flex items-center gap-1">
-            <span
-              className={`text-sm font-jetbrains ${
-                change >= 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              {change > 0 ? "+" : ""}
-              {change}%
-            </span>
-            <span className="text-sm font-jetbrains text-white/40">
-              vs_last_period
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  </motion.div>
-);
-
 export default function OverviewClientClient({}) {
-  const [timeFrame, setTimeFrame] = useState("7d");
-
-  const cashFlowData = {
-    incoming: {
-      total: "$12,450.00",
-      change: 12.5,
-    },
-    outgoing: {
-      total: "$8,230.00",
-      change: -5.2,
-    },
-  };
-
-  const expensesData = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-    incoming: [4000, 3000, 5000, 4500, 6000, 5500],
-    outgoing: [3000, 2500, 4000, 3500, 4500, 4000],
-  };
-
   const activityData = Array.from({ length: 10 }, (_, i) => ({
     date: subDays(new Date(), Math.floor(Math.random() * 7)),
     type: ["payment", "stream", "invoice"][Math.floor(Math.random() * 3)] as
@@ -168,88 +236,43 @@ export default function OverviewClientClient({}) {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto space-y-12">
-        {/* First Row - CashFlow + Inflow and Monthly Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Overview */}
-          <div className="relative outline-2 outline outline-white/[0.2] p-7">
-            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-              overview
-            </h2>
-
-            <div className="space-y-8">
-              {/* Cashflow Section */}
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-white/40 font-jetbrains text-sm">
-                    $
-                  </span>
-                  <span className="text-sm font-jetbrains text-white/60">
-                    cashflow
-                  </span>
-                </div>
-                <CashFlowOverview {...cashFlowData} />
+        {/* Money Flow Graph Section - removed outline and background */}
+        <div className="p-9">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Monthly Flow
+              </h2>
+              <p className="text-white/40 mt-1 font-semibold">
+                Last 30 days of transactions
+              </p>
+            </div>
+            <div className="flex items-center gap-8">
+              <div className="flex flex-col items-end">
+                <span className="text-sm text-emerald-500 font-semibold">
+                  Total Inflow
+                </span>
+                <p className="font-jetbrains text-xl text-white mt-1">
+                  $45,234.00
+                </p>
               </div>
-
-              {/* Divider */}
-              <div className="border-b border-white/[0.08]" />
-
-              {/* Inflow Section */}
-              <TokenInflow />
+              <div className="flex flex-col items-end">
+                <span className="text-sm text-rose-500 font-semibold">
+                  Total Outflow
+                </span>
+                <p className="font-jetbrains text-xl text-white mt-1">
+                  $32,819.00
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Right Column - Monthly Analytics */}
-          <div className="relative outline-2 outline outline-white/[0.2] p-7">
-            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-              monthly analytics
-            </h2>
-
-            <ExpensesChart data={expensesData} />
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="relative outline-2 outline outline-white/[0.2] p-7">
-          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-            stats
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatBox
-              icon={DocumentTextIcon}
-              title="Pending Invoices"
-              value="12"
-              change={3.2}
-            />
-            <StatBox
-              icon={ArrowPathIcon}
-              title="Active Streams"
-              value="5"
-              change={1.5}
-            />
-            <StatBox
-              icon={ClockIcon}
-              title="Active Vests"
-              value="3"
-              change={-2.0}
-            />
-            <StatBox
-              icon={BanknotesIcon}
-              title="Pending Claims"
-              value="8"
-              change={4.7}
-            />
-          </div>
+          {/* Graph */}
+          <DailyFlowGraph />
         </div>
 
         {/* Recent Activity Row */}
-        <div className="relative outline-2 outline outline-white/[0.2] p-7">
-          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-            recent activity
-          </h2>
-
-          <TokenBalanceGraph data={activityData} days={7} />
-        </div>
+        <TokenBalanceGraph data={activityData} days={7} />
       </div>
     </div>
   );

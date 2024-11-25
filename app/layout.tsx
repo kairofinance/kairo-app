@@ -11,7 +11,7 @@ import Navbar from "./components/Navbar";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Kairo - Web3 Billing Platform",
+  title: "Plasma - Web3 Billing Platform",
   description:
     "Secure Web3 billing with real-time insights and seamless transactions.",
   keywords: [
@@ -22,24 +22,24 @@ export const metadata: Metadata = {
     "payment solutions",
     "Web3 payments",
   ],
-  authors: [{ name: "Kairo" }],
-  creator: "Kairo",
-  publisher: "Kairo",
+  authors: [{ name: "Plasma" }],
+  creator: "Plasma",
+  publisher: "Plasma",
   icons: {
     icon: "./favicon.ico",
   },
   openGraph: {
-    title: "Kairo - Web3 Billing Platform",
+    title: "Plasma - Web3 Billing Platform",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions",
-    url: "https://kairo.finance",
-    siteName: "Kairo",
+    url: "https://plasma.finance",
+    siteName: "Plasma",
     images: [
       {
-        url: "https://kairo.finance/preview.png",
+        url: "https://plasma.finance/preview.png",
         width: 1200,
         height: 630,
-        alt: "Kairo Web3 Billing Platform Preview",
+        alt: "Plasma Web3 Billing Platform Preview",
       },
     ],
     locale: "en_US",
@@ -47,11 +47,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kairo - Web3 Billing Platform",
+    title: "Plasma - Web3 Billing Platform",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions.",
-    images: ["https://kairo.finance/preview.png"],
-    creator: "@KairoFinance",
+    images: ["https://plasma.finance/preview.png"],
+    creator: "@PlasmaFinance",
   },
 };
 
@@ -64,19 +64,19 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="bg-zinc-950">
+      <body className="bg-[#060606]">
         <Context cookies={cookieHeader || ""}>
           <Navbar />
-          <div className="flex min-h-screen pt-16 relative">
-            <Sidebar />
+          <div className="flex min-h-screen relative">
             <div className="flex-1 flex flex-col">
               <div className="flex flex-col flex-1">
-                <main className="flex-grow p-6">
+                <main className="flex-grow">
                   <Suspense fallback={null}>{children}</Suspense>
                 </main>
               </div>
             </div>
           </div>
+          <Footer />
         </Context>
         <Analytics />
       </body>

@@ -5,7 +5,7 @@ interface ContentSkeletonProps {
 const ContentSkeleton: React.FC<ContentSkeletonProps> = ({ className }) => {
   return (
     <div
-      className={`animate-pulse bg-kairo-black-a20/40 rounded-lg ${
+      className={`animate-pulse bg-plasma-black-a20/40 rounded-lg ${
         className || ""
       }`}
     />

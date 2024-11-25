@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Line } from "react-chartjs-2";
@@ -13,14 +13,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
-import { useWriteContract } from "wagmi";
+import { useWriteContract, useReadContract } from "wagmi";
 import { parseUnits } from "viem";
 import { useAlert } from "@/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/AlertMessage";
-import { VESTING_MANAGER_ADDRESS } from "@/config/contracts";
-import { VestingManagerABI } from "@/config/abis";
+import { VEST_MANAGER_ADDRESS } from "../../../contracts/addresses";
+import { VestManagerABI } from "../../../contracts/VestManager.sol/VestManager";
+import { sepolia } from "viem/chains";
+import { client } from "../../../wagmi.config";
+import { ERC20ABI } from "../../../contracts/ERC20.sol/ERC20";
+import { UserCircleIcon, CalendarIcon } from "@heroicons/react/24/outline";
 
 const tokens = [
   {
@@ -45,7 +49,19 @@ interface VestingRecipient {
   initialRelease: string;
 }
 
-export default function CreateVesting() {
+interface CreateVestingProps {
+  onDataUpdate: (
+    recipients: {
+      recipient: string;
+      amount: string;
+      cliffDuration: string;
+      vestingDuration: string;
+      initialRelease: string;
+    }[]
+  ) => void;
+}
+
+export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
   const [recipients, setRecipients] = useState<VestingRecipient[]>([
     {
@@ -62,6 +78,7 @@ export default function CreateVesting() {
   const router = useRouter();
   const { address, isConnected } = useAppKitAccount();
   const { writeContractAsync, isPending } = useWriteContract();
+  const { readContract } = useReadContract();
 
   // Calculate total amount
   const totalAmount = recipients.reduce((sum, recipient) => {
@@ -110,33 +127,110 @@ export default function CreateVesting() {
 
     setIsLoading(true);
     try {
-      // Create multiple vesting schedules in a loop
-      // for (const recipient of recipients) {
-      //   const parsedAmount = parseUnits(
-      //     recipient.amount.replace(/,/g, ""),
-      //     selectedToken.decimals
-      //   );
+      // Calculate total amount needed including fees for all vesting schedules
+      const totalBaseAmount = recipients.reduce((sum, recipient) => {
+        const amount = parseUnits(
+          recipient.amount.replace(/,/g, ""),
+          selectedToken.decimals
+        );
+        return sum + amount;
+      }, BigInt(0));
 
-      //   await writeContractAsync({
-      //     address: VESTING_MANAGER_ADDRESS,
-      //     abi: VestingManagerABI,
-      //     functionName: "createVesting",
-      //     args: [
-      //       recipient.recipient,
-      //       parsedAmount,
-      //       BigInt(parseFloat(recipient.cliffDuration) * 30 * 24 * 60 * 60),
-      //       BigInt(parseFloat(recipient.vestingDuration) * 30 * 24 * 60 * 60),
-      //       parseFloat(recipient.initialRelease) * 100,
-      //       selectedToken.address,
-      //     ],
-      //   });
-      // }
+      // Calculate fee amount (1.5%) with 200 token cap
+      const maxFee = BigInt(200) * BigInt(10 ** selectedToken.decimals);
+      const calculatedFee = (totalBaseAmount * BigInt(15)) / BigInt(1000);
+      const feeAmount = calculatedFee > maxFee ? maxFee : calculatedFee;
+      const totalWithFee = totalBaseAmount + feeAmount;
+
+      // Check current allowance
+      const allowance = (await readContract({
+        address: selectedToken.address as `0x${string}`,
+        abi: ERC20ABI,
+        functionName: "allowance",
+        args: [address as `0x${string}`, VEST_MANAGER_ADDRESS[sepolia.id]],
+      })) as bigint;
+
+      // Handle token approval if needed
+      if (allowance < totalWithFee) {
+        showAlert("Approving token spending...", "info");
+
+        const approveTx = await writeContractAsync({
+          address: selectedToken.address as `0x${string}`,
+          abi: ERC20ABI,
+          functionName: "approve",
+          args: [VEST_MANAGER_ADDRESS[sepolia.id], totalWithFee],
+        });
+
+        // Wait for approval transaction to be confirmed
+        const approvalReceipt = await client.waitForTransactionReceipt({
+          hash: approveTx,
+        });
+
+        if (approvalReceipt.status !== "success") {
+          throw new Error("Approval transaction failed");
+        }
+
+        showAlert(
+          "Token approval successful. Creating vesting schedules...",
+          "info"
+        );
+      }
+
+      // Create multiple vesting schedules in a loop
+      for (const recipient of recipients) {
+        const parsedAmount = parseUnits(
+          recipient.amount.replace(/,/g, ""),
+          selectedToken.decimals
+        );
+
+        const cliffSeconds = BigInt(
+          Math.floor(parseFloat(recipient.cliffDuration) * 30 * 24 * 60 * 60)
+        );
+        const vestingSeconds = BigInt(
+          Math.floor(parseFloat(recipient.vestingDuration) * 30 * 24 * 60 * 60)
+        );
+        const initialReleasePercentage = BigInt(
+          Math.floor(parseFloat(recipient.initialRelease) * 100)
+        );
+
+        const vestingTx = await writeContractAsync({
+          address: VEST_MANAGER_ADDRESS[sepolia.id],
+          abi: VestManagerABI.abi,
+          functionName: "createVestingSchedule",
+          args: [
+            recipient.recipient,
+            selectedToken.address as `0x${string}`,
+            parsedAmount,
+            cliffSeconds,
+            vestingSeconds,
+            initialReleasePercentage,
+          ],
+        });
+
+        // Wait for vesting creation transaction to be confirmed
+        const vestingReceipt = await client.waitForTransactionReceipt({
+          hash: vestingTx,
+        });
+
+        if (vestingReceipt.status !== "success") {
+          throw new Error("Vesting schedule creation failed");
+        }
+      }
 
       showAlert("Vesting schedules created successfully!", "success");
       router.push("/vesting");
     } catch (error: any) {
       console.error("Error creating vesting schedules:", error);
-      showAlert(error.message || "Failed to create vesting schedules", "error");
+      const errorMessage =
+        error.message || "Failed to create vesting schedules";
+      // Check for specific error types
+      if (errorMessage.toLowerCase().includes("allowance")) {
+        showAlert("Please approve token spending first", "error");
+      } else if (errorMessage.toLowerCase().includes("insufficient")) {
+        showAlert("Insufficient token balance", "error");
+      } else {
+        showAlert(errorMessage, "error");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -217,64 +311,62 @@ export default function CreateVesting() {
 
   const chartData = generateChartData();
 
+  // Inside the component, add useEffect to update parent when data changes
+  useEffect(() => {
+    if (recipients.some((r) => r.amount || r.recipient)) {
+      onDataUpdate(recipients);
+    }
+  }, [recipients, onDataUpdate]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Form Section */}
-      <div className="relative outline-2 outline outline-white/[0.2] p-7">
-        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-          details
+      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
+        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+          Details
         </h2>
 
         <div className="space-y-6">
           {/* Token Selection */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <h3 className="text-sm font-jetbrains text-white/60">
-                select_token
-              </h3>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Select Token
+            </label>
             <div className="flex gap-2">
               {tokens.map((token) => (
-                <motion.button
+                <button
                   key={token.name}
                   onClick={() => setSelectedToken(token)}
-                  className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
                     ${
                       selectedToken.name === token.name
                         ? "bg-white/[0.08]"
-                        : "bg-white/[0.02]"
-                    }
-                    hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+                        : "bg-white/[0.02] hover:bg-white/[0.04]"
+                    }`}
                 >
                   <Image
                     src={token.image}
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     alt={token.name}
-                    className="opacity-80"
+                    className="rounded-full"
                   />
-                  <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
-                    {token.name.toLowerCase()}
-                  </span>
-                </motion.button>
+                  <span className="text-white/80">{token.name}</span>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Recipients */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <h3 className="text-sm font-jetbrains text-white/60">
-                recipients
-              </h3>
-            </div>
-            <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Recipients
+            </label>
+            <div className="space-y-4">
               {recipients.map((recipient, index) => (
                 <div
                   key={index}
-                  className="space-y-3 p-4 bg-white/[0.02] border border-white/[0.08]"
+                  className="space-y-3 p-4 bg-white/[0.02] border border-white/[0.08] rounded-lg"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -308,10 +400,9 @@ export default function CreateVesting() {
                         )
                       }
                       placeholder="0x.../ENS"
-                      className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 
-                               text-white placeholder-white/40 border border-white/[0.08] 
-                               focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                               transition-all duration-200"
+                      className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                               placeholder:text-white/20 transition-all duration-200
+                               hover:bg-white/[0.04] focus:bg-white/[0.04]"
                     />
                     <div className="relative">
                       <input
@@ -321,10 +412,9 @@ export default function CreateVesting() {
                           handleRecipientChange(index, "amount", e.target.value)
                         }
                         placeholder="Amount"
-                        className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 pr-16 py-3 
-                                 text-white placeholder-white/40 border border-white/[0.08] 
-                                 focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                                 transition-all duration-200"
+                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-16 py-3 text-white 
+                                 placeholder:text-white/20 transition-all duration-200
+                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
                         {selectedToken.name}
@@ -345,10 +435,9 @@ export default function CreateVesting() {
                           )
                         }
                         placeholder="Cliff"
-                        className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 pr-20 py-3 
-                                 text-white placeholder-white/40 border border-white/[0.08] 
-                                 focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                                 transition-all duration-200"
+                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-20 py-3 text-white 
+                                 placeholder:text-white/20 transition-all duration-200
+                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
                         Months
@@ -366,10 +455,9 @@ export default function CreateVesting() {
                           )
                         }
                         placeholder="Duration"
-                        className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 pr-20 py-3 
-                                 text-white placeholder-white/40 border border-white/[0.08] 
-                                 focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                                 transition-all duration-200"
+                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-20 py-3 text-white 
+                                 placeholder:text-white/20 transition-all duration-200
+                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
                         Months
@@ -387,10 +475,9 @@ export default function CreateVesting() {
                           )
                         }
                         placeholder="Initial"
-                        className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 pr-12 py-3 
-                                 text-white placeholder-white/40 border border-white/[0.08] 
-                                 focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                                 transition-all duration-200"
+                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-12 py-3 text-white 
+                                 placeholder:text-white/20 transition-all duration-200
+                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
                         %
@@ -411,242 +498,78 @@ export default function CreateVesting() {
           </div>
 
           {/* Create Button */}
-          <motion.button
+          <button
             onClick={handleSubmit}
             disabled={isLoading || isPending}
-            className="w-full py-3 px-6 font-jetbrains text-sm text-white 
-                     bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
-                     disabled:cursor-not-allowed transition-all duration-200
-                     border border-white/[0.08] hover:border-white/[0.12]"
+            className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
+                     disabled:cursor-not-allowed transition-all duration-200 rounded-lg
+                     py-3 px-6 text-white font-medium"
           >
-            <span className="flex items-center gap-2">
-              <span className="text-white/40">$</span>
-              {isLoading || isPending ? "processing..." : "create_vesting"}
-            </span>
-          </motion.button>
+            {isLoading || isPending ? "Processing..." : "Create Vesting"}
+          </button>
         </div>
       </div>
 
       {/* Preview Section */}
-      <div className="relative outline-2 outline outline-white/[0.2] p-7">
-        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-          preview
+      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
+        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+          Preview
         </h2>
 
-        <div className="space-y-6">
-          {/* Command Line Header */}
-          <div className="flex items-center gap-2">
-            <span className="text-white/40 font-jetbrains text-sm">$</span>
-            <span className="text-sm font-jetbrains text-white/60">
-              cat vesting.json
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <Image
+                  src={selectedToken.image}
+                  width={16}
+                  height={16}
+                  alt={selectedToken.name}
+                  className="opacity-80"
+                />
+              </div>
+              <span className="text-sm text-white/60">Total Amount</span>
+            </div>
+            <span className="text-sm font-medium text-white">
+              {totalAmount.toLocaleString()} {selectedToken.name}
             </span>
           </div>
 
-          {/* JSON-like Preview */}
-          <div className="font-jetbrains text-sm space-y-2">
-            <div className="text-white/40">{`{`}</div>
-            <div className="pl-4 space-y-1">
-              {/* Total Amount */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">
-                  &quot;total_amount&quot;
+          {recipients.map((recipient, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/[0.05]">
+                  <UserCircleIcon className="w-4 h-4 text-white/60" />
+                </div>
+                <span className="text-sm text-white/60">
+                  Recipient {index + 1}
                 </span>
-                <span className="text-white/40 mx-2">:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/80">
-                    {totalAmount.toLocaleString()}
-                  </span>
-                  <Image
-                    src={selectedToken.image}
-                    width={14}
-                    height={14}
-                    alt={selectedToken.name}
-                    className="opacity-60"
-                  />
-                  <span className="text-white/40">{selectedToken.name}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-sm font-medium text-white">
+                  {recipient.amount || "0"} {selectedToken.name}
+                </span>
+                <div className="text-xs text-white/40">
+                  {recipient.cliffDuration} months cliff,{" "}
+                  {recipient.vestingDuration} months vesting
                 </div>
               </div>
+            </div>
+          ))}
 
-              {/* Recipients */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;schedules&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/40">[</span>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <CalendarIcon className="w-4 h-4 text-white/60" />
               </div>
-              <div className="pl-4">
-                {recipients.map((recipient, index) => (
-                  <div key={index} className="text-white/80">
-                    {`{
-                      "recipient": "${recipient.recipient || "null"}",
-                      "amount": "${recipient.amount || "0"} ${
-                      selectedToken.name
-                    }",
-                      "cliff": "${recipient.cliffDuration} months",
-                      "duration": "${recipient.vestingDuration} months",
-                      "initial": "${recipient.initialRelease}%"
-                    }${index < recipients.length - 1 ? "," : ""}`}
-                  </div>
-                ))}
-              </div>
-              <div className="text-white/40">]</div>
+              <span className="text-sm text-white/60">Initial Release</span>
             </div>
-            <div className="text-white/40">{`}`}</div>
-          </div>
-
-          {/* Graph Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <span className="text-sm font-jetbrains text-white/60">
-                plot vesting_schedule --format=chart
-              </span>
-            </div>
-
-            <div className="relative h-[300px] border border-white/[0.08] bg-white/[0.02] p-4">
-              {totalAmount > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={chartData}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="totalGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#22c55e"
-                          stopOpacity={0.1}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#22c55e"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="recipientGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#f97316"
-                          stopOpacity={0.1}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#f97316"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "rgba(255, 255, 255, 0.4)", fontSize: 10 }}
-                      dy={10}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "rgba(255, 255, 255, 0.4)", fontSize: 10 }}
-                      dx={-10}
-                      tickFormatter={(value) =>
-                        `${value.toLocaleString()} ${selectedToken.name}`
-                      }
-                    />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="rounded-lg bg-black/90 border border-white/10 px-3 py-2">
-                              <p className="text-[10px] font-medium text-white/60 mb-1">
-                                {label}
-                              </p>
-                              {payload.map((entry: any, index: number) => (
-                                <div
-                                  key={`tooltip-${index}`}
-                                  className="flex items-center gap-2"
-                                >
-                                  <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: entry.color }}
-                                  />
-                                  <p className="text-[11px] font-medium text-white">
-                                    {entry.name === "total"
-                                      ? "Total: "
-                                      : `Recipient ${entry.name.replace(
-                                          "recipient",
-                                          ""
-                                        )}: `}
-                                    {entry.value.toLocaleString()}{" "}
-                                    {selectedToken.name}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                      cursor={{
-                        stroke: "rgba(255, 255, 255, 0.1)",
-                        strokeWidth: 1,
-                        strokeDasharray: "4 4",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      fill="url(#totalGradient)"
-                      dot={false}
-                    />
-                    {recipients.map((_, index) => (
-                      <Area
-                        key={`recipient-${index}`}
-                        type="monotone"
-                        dataKey={`recipient${index + 1}`}
-                        stroke="#f97316"
-                        strokeWidth={2}
-                        fill="url(#recipientGradient)"
-                        dot={false}
-                      />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-white/40 font-jetbrains text-sm space-y-2">
-                  <span>$ No data available for plotting</span>
-                  <span className="text-white/20">
-                    Enter vesting details to visualize...
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Terminal Status Line */}
-          <div className="flex items-center gap-2 pt-4 border-t border-white/[0.08]">
-            <span className="text-white/40 font-jetbrains text-sm">$</span>
-            <span className="text-sm font-jetbrains text-white/60">
-              status:
+            <span className="text-sm font-medium text-white">
+              {recipients[0]?.initialRelease || "0"}%
             </span>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              <span className="text-sm font-jetbrains text-white/40">
-                ready_to_deploy
-              </span>
-            </div>
           </div>
         </div>
       </div>

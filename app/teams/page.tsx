@@ -29,7 +29,7 @@ export async function generateMetadata() {
   });
 
   return {
-    title: "Teams | Kairo",
+    title: "Teams | Plasma",
     description: "Manage your teams and memberships",
     other: {
       headers,

@@ -6,10 +6,10 @@ import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Manage Streams | Kairo",
+    title: "Manage Streams | Plasma",
     description: "View and manage your active token streams",
     openGraph: {
-      title: "Manage Streams | Kairo",
+      title: "Manage Streams | Plasma",
       description: "View and manage your active token streams",
     },
   };

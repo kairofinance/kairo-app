@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: any): Promise<Metadata> {
   });
 
   return {
-    title: `Profile ${params.address.slice(0, 6)}... | Kairo`,
+    title: `Profile ${params.address.slice(0, 6)}... | Plasma`,
     description: `View profile and activity for ${params.address}`,
   };
 }

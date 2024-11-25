@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Line } from "react-chartjs-2";
@@ -15,13 +15,22 @@ import {
 } from "recharts";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract } from "wagmi";
+import { readContract } from "@wagmi/core";
 import { parseUnits } from "viem";
 import { useAlert } from "@/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/AlertMessage";
-import { STREAM_MANAGER_ADDRESS } from "@/config/contracts";
-import { StreamManagerABI } from "@/config/abis";
+import { STREAM_MANAGER_ADDRESS } from "../../../contracts/addresses";
+import { StreamManagerABI } from "../../../contracts/StreamManager.sol/StreamManager";
+import { sepolia } from "viem/chains";
+import { ERC20ABI } from "../../../contracts/ERC20.sol/ERC20";
+import { client } from "../../../wagmi.config";
+import {
+  ArrowPathIcon,
+  UserCircleIcon,
+  CalendarIcon,
+} from "@heroicons/react/24/outline";
 
 const tokens = [
   {
@@ -53,7 +62,16 @@ const timeUnits = [
 
 type TimeUnit = (typeof timeUnits)[number];
 
-export default function CreateStream() {
+const FEE_PERCENTAGE = 1.5; // 1.5%
+
+interface CreateStreamProps {
+  onDataUpdate: (
+    recipients: { address: string; amount: string }[],
+    duration: { value: string; unit: string; inHours: number }
+  ) => void;
+}
+
+export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
   const [recipients, setRecipients] = useState<Recipient[]>([
     { address: "", amount: "" },
@@ -194,88 +212,171 @@ export default function CreateStream() {
       return;
     }
 
+    // Validate recipients
+    if (
+      !recipients.every((r) => isAddress(r.address) && parseFloat(r.amount) > 0)
+    ) {
+      showAlert(
+        "Please enter valid addresses and amounts for all recipients.",
+        "error"
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const recipientAddresses = recipients.map((r) => r.address);
+      const recipientAddresses = recipients.map(
+        (r) => r.address as `0x${string}`
+      );
       const recipientAmounts = recipients.map((r) =>
         parseUnits(r.amount, selectedToken.decimals)
       );
 
-      const result = await writeContractAsync({
-        address: STREAM_MANAGER_ADDRESS,
+      // Calculate total amount needed including fee
+      const totalAmount = recipientAmounts.reduce(
+        (sum, amount) => sum + amount,
+        BigInt(0)
+      );
+
+      // Calculate fee amount (1.5%) with 200 token cap
+      const maxFee = BigInt(200) * BigInt(10 ** selectedToken.decimals);
+      const calculatedFee = (totalAmount * BigInt(15)) / BigInt(1000);
+      const feeAmount = calculatedFee > maxFee ? maxFee : calculatedFee;
+      const totalWithFee = totalAmount + feeAmount;
+
+      // Check current allowance
+      const allowance = (await readContract(client, {
+        address: selectedToken.address as `0x${string}`,
+        abi: ERC20ABI,
+        functionName: "allowance",
+        args: [address as `0x${string}`, STREAM_MANAGER_ADDRESS[sepolia.id]],
+      })) as bigint;
+
+      // Handle token approval if needed
+      if (allowance < totalWithFee) {
+        showAlert("Approving token spending...", "info");
+
+        const approveTx = await writeContractAsync({
+          address: selectedToken.address as `0x${string}`,
+          abi: ERC20ABI,
+          functionName: "approve",
+          args: [STREAM_MANAGER_ADDRESS[sepolia.id], totalWithFee],
+        });
+
+        // Wait for approval transaction to be confirmed
+        const approvalReceipt = await client.waitForTransactionReceipt({
+          hash: approveTx,
+        });
+
+        if (approvalReceipt.status !== "success") {
+          throw new Error("Approval transaction failed");
+        }
+
+        showAlert("Token approval successful. Creating stream...", "info");
+      }
+
+      // Get current timestamp for startTime
+      const startTime = BigInt(Math.floor(Date.now() / 1000));
+      // Calculate endTime by adding duration in seconds to startTime
+      const endTime = startTime + BigInt(Math.floor(durationInHours * 3600));
+
+      const streamTx = await writeContractAsync({
+        address: STREAM_MANAGER_ADDRESS[sepolia.id],
         abi: StreamManagerABI,
-        functionName: "createStream",
+        functionName: "createStreams",
         args: [
           recipientAddresses,
           recipientAmounts,
-          BigInt(Math.floor(durationInHours * 3600)), // Convert hours to seconds
-          selectedToken.address,
+          selectedToken.address as `0x${string}`,
+          startTime,
+          endTime,
         ],
       });
 
+      // Wait for stream creation transaction to be confirmed
+      const streamReceipt = await client.waitForTransactionReceipt({
+        hash: streamTx,
+      });
+
+      if (streamReceipt.status !== "success") {
+        throw new Error("Stream creation failed");
+      }
+
       showAlert("Stream created successfully!", "success");
-      router.push(`/stream/${result}`);
+      router.push(`/stream/${streamTx}`);
     } catch (error: any) {
       console.error("Error creating stream:", error);
-      showAlert(error.message || "Failed to create stream", "error");
+      const errorMessage = error.message || "Failed to create stream";
+      // Check for specific error types
+      if (errorMessage.toLowerCase().includes("allowance")) {
+        showAlert("Please approve token spending first", "error");
+      } else if (errorMessage.toLowerCase().includes("insufficient")) {
+        showAlert("Insufficient token balance", "error");
+      } else {
+        showAlert(errorMessage, "error");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (
+      recipients.some((r) => r.amount || r.address) ||
+      durationValue !== "0"
+    ) {
+      onDataUpdate(recipients, {
+        value: durationValue,
+        unit: durationUnit.value,
+        inHours: durationUnit.inHours,
+      });
+    }
+  }, [recipients, durationValue, durationUnit, onDataUpdate]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Form Section */}
-      <div className="relative outline-2 outline outline-white/[0.2] p-7">
-        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-          details
+      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
+        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+          Details
         </h2>
 
         <div className="space-y-6">
           {/* Token Selection */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <h3 className="text-sm font-jetbrains text-white/60">
-                select_token
-              </h3>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Select Token
+            </label>
             <div className="flex gap-2">
               {tokens.map((token) => (
-                <motion.button
+                <button
                   key={token.name}
                   onClick={() => setSelectedToken(token)}
-                  className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
                     ${
                       selectedToken.name === token.name
                         ? "bg-white/[0.08]"
-                        : "bg-white/[0.02]"
-                    }
-                    hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+                        : "bg-white/[0.02] hover:bg-white/[0.04]"
+                    }`}
                 >
                   <Image
                     src={token.image}
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     alt={token.name}
-                    className="opacity-80"
+                    className="rounded-full"
                   />
-                  <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
-                    {token.name.toLowerCase()}
-                  </span>
-                </motion.button>
+                  <span className="text-white/80">{token.name}</span>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Recipients */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <h3 className="text-sm font-jetbrains text-white/60">
-                recipients
-              </h3>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Recipients
+            </label>
             <div className="space-y-3">
               {recipients.map((recipient, index) => (
                 <div key={index} className="flex gap-3 items-center">
@@ -286,10 +387,9 @@ export default function CreateStream() {
                       handleRecipientChange(index, "address", e.target.value)
                     }
                     placeholder="0x.../ENS"
-                    className="flex-1 bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 
-                             text-white placeholder-white/40 border border-white/[0.08] 
-                             focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                             transition-all duration-200"
+                    className="flex-1 bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                             placeholder:text-white/20 transition-all duration-200
+                             hover:bg-white/[0.04] focus:bg-white/[0.04]"
                   />
                   <div className="relative">
                     <input
@@ -331,26 +431,19 @@ export default function CreateStream() {
           </div>
 
           {/* Duration */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <h3 className="text-sm font-jetbrains text-white/60">duration</h3>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Duration
+            </label>
             <div className="flex gap-3">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={durationValue}
-                  onChange={(e) => setDurationValue(e.target.value)}
-                  className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 pr-20 py-3 
-                           text-white placeholder-white/40 border border-white/[0.08] 
-                           focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                           transition-all duration-200"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
-                  {durationUnit.label}
-                </span>
-              </div>
+              <input
+                type="text"
+                value={durationValue}
+                onChange={(e) => setDurationValue(e.target.value)}
+                className="flex-1 bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                         placeholder:text-white/20 transition-all duration-200
+                         hover:bg-white/[0.04] focus:bg-white/[0.04]"
+              />
               <select
                 value={durationUnit.value}
                 onChange={(e) => {
@@ -359,9 +452,8 @@ export default function CreateStream() {
                   );
                   if (newUnit) setDurationUnit(newUnit);
                 }}
-                className="w-32 bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 text-white 
-                         border border-white/[0.08] focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04] 
-                         transition-all duration-200"
+                className="w-32 bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                         transition-all duration-200 hover:bg-white/[0.04]"
               >
                 {timeUnits.map((unit) => (
                   <option
@@ -377,287 +469,84 @@ export default function CreateStream() {
           </div>
 
           {/* Create Button */}
-          <motion.button
+          <button
             onClick={handleSubmit}
             disabled={isLoading || isPending}
-            className="w-full py-3 px-6 font-jetbrains text-sm text-white 
-                     bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
-                     disabled:cursor-not-allowed transition-all duration-200
-                     border border-white/[0.08] hover:border-white/[0.12]"
+            className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
+                     disabled:cursor-not-allowed transition-all duration-200 rounded-lg
+                     py-3 px-6 text-white font-medium"
           >
-            <span className="flex items-center gap-2">
-              <span className="text-white/40">$</span>
-              {isLoading || isPending ? "processing..." : "create_stream"}
-            </span>
-          </motion.button>
+            {isLoading || isPending ? "Processing..." : "Create Stream"}
+          </button>
         </div>
       </div>
 
       {/* Preview Section */}
-      <div className="relative outline-2 outline outline-white/[0.2] p-7">
-        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-          preview
+      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
+        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+          Preview
         </h2>
 
-        <div className="space-y-6">
-          {/* Command Line Header */}
-          <div className="flex items-center gap-2">
-            <span className="text-white/40 font-jetbrains text-sm">$</span>
-            <span className="text-sm font-jetbrains text-white/60">
-              cat stream.json
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <Image
+                  src={selectedToken.image}
+                  width={16}
+                  height={16}
+                  alt={selectedToken.name}
+                  className="opacity-80"
+                />
+              </div>
+              <span className="text-sm text-white/60">Total Amount</span>
+            </div>
+            <span className="text-sm font-medium text-white">
+              {totalAmount.toLocaleString()} {selectedToken.name}
             </span>
           </div>
 
-          {/* Stream Details */}
-          <div className="font-jetbrains text-sm space-y-2">
-            <div className="text-white/40">{`{`}</div>
-            <div className="pl-4 space-y-1">
-              {/* Total Amount */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">
-                  &quot;total_amount&quot;
-                </span>
-                <span className="text-white/40 mx-2">:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/80">
-                    {totalAmount.toLocaleString()}
-                  </span>
-                  <Image
-                    src={selectedToken.image}
-                    width={14}
-                    height={14}
-                    alt={selectedToken.name}
-                    className="opacity-60"
-                  />
-                  <span className="text-white/40">{selectedToken.name}</span>
-                </div>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <ArrowPathIcon className="w-4 h-4 text-white/60" />
               </div>
-
-              {/* Stream Rate */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">
-                  &quot;stream_rate&quot;
-                </span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/80">
-                  {`${streamRate.toFixed(6)} ${selectedToken.name}/hr`}
-                </span>
-              </div>
-
-              {/* Duration */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;duration&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/80">
-                  {`${durationValue} ${durationUnit.label}`}
-                </span>
-              </div>
-
-              {/* Recipients */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;recipients&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/40">[</span>
-              </div>
-              <div className="pl-4">
-                {recipients.map((recipient, index) => (
-                  <div key={index} className="text-white/80">
-                    {`{ "address": "${
-                      recipient.address || "null"
-                    }", "amount": "${recipient.amount || "0"} ${
-                      selectedToken.name
-                    }" }${index < recipients.length - 1 ? "," : ""}`}
-                  </div>
-                ))}
-              </div>
-              <div className="text-white/40">]</div>
+              <span className="text-sm text-white/60">Stream Rate</span>
             </div>
-            <div className="text-white/40">{`}`}</div>
-          </div>
-
-          {/* Graph Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <span className="text-sm font-jetbrains text-white/60">
-                plot stream_data --format=chart
-              </span>
-            </div>
-
-            <div className="relative h-[300px] border border-white/[0.08] bg-white/[0.02] p-4">
-              {totalAmount > 0 && durationInHours > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={Array.from({ length: 10 }, (_, i) => ({
-                      name: `${((i * durationInHours) / 10).toFixed(1)}h`,
-                      total: (i * totalAmount) / 10,
-                      ...recipients.reduce(
-                        (acc, recipient, index) => ({
-                          ...acc,
-                          [`recipient${index + 1}`]:
-                            (i * parseFloat(recipient.amount || "0")) / 10,
-                        }),
-                        {}
-                      ),
-                    }))}
-                    margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="totalGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#22c55e"
-                          stopOpacity={0.15}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#22c55e"
-                          stopOpacity={0.05}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="recipientGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="#f97316"
-                          stopOpacity={0.15}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="#f97316"
-                          stopOpacity={0.05}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="rgba(255, 255, 255, 0.05)"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fill: "rgba(255, 255, 255, 0.4)",
-                        fontSize: 11,
-                        fontFamily: "JetBrains Mono",
-                      }}
-                      dy={10}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fill: "rgba(255, 255, 255, 0.4)",
-                        fontSize: 11,
-                        fontFamily: "JetBrains Mono",
-                      }}
-                      dx={-10}
-                      tickFormatter={(value) =>
-                        `${value.toLocaleString()} ${selectedToken.name}`
-                      }
-                    />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="font-jetbrains rounded-none bg-black/90 border border-white/10 px-4 py-3">
-                              <p className="text-[10px] font-medium text-white/60 mb-2">
-                                $ time {label}
-                              </p>
-                              {payload.map((entry: any, index: number) => (
-                                <div
-                                  key={`tooltip-${index}`}
-                                  className="flex items-center gap-2 py-1"
-                                >
-                                  <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: entry.color }}
-                                  />
-                                  <p className="text-[11px] font-medium text-white/80">
-                                    {entry.name === "total"
-                                      ? "$ total_stream"
-                                      : `$ recipient_${entry.name.replace(
-                                          "recipient",
-                                          ""
-                                        )}`}
-                                    <span className="ml-2 text-white/40">
-                                      =
-                                    </span>
-                                    <span className="ml-2">
-                                      {entry.value.toLocaleString()}{" "}
-                                      {selectedToken.name}
-                                    </span>
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                      cursor={{
-                        stroke: "rgba(255, 255, 255, 0.1)",
-                        strokeWidth: 1,
-                        strokeDasharray: "4 4",
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#22c55e"
-                      strokeWidth={1.5}
-                      fill="url(#totalGradient)"
-                      dot={false}
-                    />
-                    {recipients.map((_, index) => (
-                      <Area
-                        key={`recipient-${index}`}
-                        type="monotone"
-                        dataKey={`recipient${index + 1}`}
-                        stroke="#f97316"
-                        strokeWidth={1.5}
-                        fill="url(#recipientGradient)"
-                        dot={false}
-                      />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-white/40 font-jetbrains text-sm space-y-2">
-                  <span>$ No data available for plotting</span>
-                  <span className="text-white/20">
-                    Enter stream details to visualize...
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Terminal Status Line */}
-          <div className="flex items-center gap-2 pt-4 border-t border-white/[0.08]">
-            <span className="text-white/40 font-jetbrains text-sm">$</span>
-            <span className="text-sm font-jetbrains text-white/60">
-              status:
+            <span className="text-sm font-medium text-white">
+              {streamRate.toFixed(6)} {selectedToken.name}/hr
             </span>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              <span className="text-sm font-jetbrains text-white/40">
-                ready_to_deploy
+          </div>
+
+          {recipients.map((recipient, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/[0.05]">
+                  <UserCircleIcon className="w-4 h-4 text-white/60" />
+                </div>
+                <span className="text-sm text-white/60">
+                  Recipient {index + 1}
+                </span>
+              </div>
+              <span className="text-sm font-medium text-white">
+                {recipient.amount || "0"} {selectedToken.name}
               </span>
             </div>
+          ))}
+
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <CalendarIcon className="w-4 h-4 text-white/60" />
+              </div>
+              <span className="text-sm text-white/60">Duration</span>
+            </div>
+            <span className="text-sm font-medium text-white">
+              {durationValue} {durationUnit.label}
+            </span>
           </div>
         </div>
       </div>

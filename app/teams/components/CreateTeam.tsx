@@ -21,16 +21,18 @@ export default function CreateTeam({ address }: CreateTeamProps) {
     if (!address || !teamName.trim()) return;
 
     try {
-      await createTeam(
+      const result = await createTeam(
         {
           name: teamName.trim(),
           description: description.trim(),
           ownerAddress: address,
         },
         {
-          onSuccess: () => {
-            // Redirect to teams page after successful creation
-            router.push("/teams");
+          onSuccess: (data) => {
+            // Route directly to the new team's page
+            if (data?.team?.id) {
+              router.push(`/teams/${data.team.id}`);
+            }
           },
         }
       );

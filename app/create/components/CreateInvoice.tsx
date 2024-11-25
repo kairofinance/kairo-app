@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
@@ -10,10 +10,12 @@ import { useAlert } from "@/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/AlertMessage";
-import { INVOICE_MANAGER_ADDRESS } from "@/config/contracts";
-import { InvoiceManagerABI } from "@/config/abis";
+import { INVOICE_MANAGER_ADDRESS } from "../../../contracts/addresses";
+import { InvoiceManagerABI } from "../../../contracts/InvoiceManager.sol/InvoiceManager";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { sepolia } from "viem/chains";
+import { UserCircleIcon, CalendarIcon } from "@heroicons/react/24/outline";
 
 const tokens = [
   {
@@ -36,7 +38,11 @@ interface InvoiceDetails {
   dueDate: Date | null;
 }
 
-export default function CreateInvoice() {
+interface CreateInvoiceProps {
+  onDataUpdate: (amount: string, dueDate: Date | null) => void;
+}
+
+export default function CreateInvoice({ onDataUpdate }: CreateInvoiceProps) {
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
   const [details, setDetails] = useState<InvoiceDetails>({
     amount: "",
@@ -61,16 +67,12 @@ export default function CreateInvoice() {
   };
 
   const formatAmount = (value: string): string => {
-    // Remove non-numeric characters except decimal point
     const numericValue = value.replace(/[^0-9.]/g, "");
-
-    // Handle decimal places based on token decimals
     const parts = numericValue.split(".");
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     const decimalPart = parts[1]
       ? `.${parts[1].slice(0, selectedToken.decimals)}`
       : "";
-
     return integerPart + decimalPart;
   };
 
@@ -108,8 +110,8 @@ export default function CreateInvoice() {
       const dueDateTimestamp = Math.floor(details.dueDate.getTime() / 1000);
 
       const result = await writeContractAsync({
-        address: INVOICE_MANAGER_ADDRESS,
-        abi: InvoiceManagerABI,
+        address: INVOICE_MANAGER_ADDRESS[sepolia.id],
+        abi: InvoiceManagerABI.abi,
         functionName: "createInvoice",
         args: [
           details.recipient,
@@ -129,246 +131,167 @@ export default function CreateInvoice() {
     }
   };
 
+  useEffect(() => {
+    if (details.amount || details.dueDate) {
+      onDataUpdate(details.amount, details.dueDate);
+    }
+  }, [details.amount, details.dueDate, onDataUpdate]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Form Section */}
-      <div className="relative outline-2 outline outline-white/[0.2] p-7">
-        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-          details
+      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
+        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+          Details
         </h2>
 
         <div className="space-y-6">
           {/* Token Selection */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <h3 className="text-sm font-jetbrains text-white/60">
-                select_token
-              </h3>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Select Token
+            </label>
             <div className="flex gap-2">
               {tokens.map((token) => (
-                <motion.button
+                <button
                   key={token.name}
                   onClick={() => setSelectedToken(token)}
-                  className={`group flex items-center gap-2 p-2 backdrop-blur-sm
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
                     ${
                       selectedToken.name === token.name
                         ? "bg-white/[0.08]"
-                        : "bg-white/[0.02]"
-                    }
-                    hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200`}
+                        : "bg-white/[0.02] hover:bg-white/[0.04]"
+                    }`}
                 >
                   <Image
                     src={token.image}
-                    width={16}
-                    height={16}
+                    width={20}
+                    height={20}
                     alt={token.name}
-                    className="opacity-80"
+                    className="rounded-full"
                   />
-                  <span className="text-sm font-jetbrains text-white/60 group-hover:text-white/80">
-                    {token.name.toLowerCase()}
-                  </span>
-                </motion.button>
+                  <span className="text-white/80">{token.name}</span>
+                </button>
               ))}
             </div>
           </div>
 
           {/* Amount Input */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <label className="text-sm font-jetbrains text-white/60">
-                amount
-              </label>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Amount
+            </label>
             <div className="relative">
               <input
                 type="text"
                 value={details.amount}
                 onChange={handleAmountChange}
                 placeholder="Enter amount"
-                className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 
-                         text-white placeholder-white/40 border border-white/[0.08] 
-                         focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                         transition-all duration-200"
+                className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                         placeholder:text-white/20 transition-all duration-200
+                         hover:bg-white/[0.04] focus:bg-white/[0.04]"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">
                 {selectedToken.name}
               </span>
             </div>
           </div>
 
           {/* Recipient Input */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <label className="text-sm font-jetbrains text-white/60">
-                recipient
-              </label>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Recipient
+            </label>
             <input
               type="text"
               value={details.recipient}
               onChange={(e) => handleDetailsChange("recipient", e.target.value)}
               placeholder="Enter recipient address or ENS"
-              className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 
-                       text-white placeholder-white/40 border border-white/[0.08] 
-                       focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                       transition-all duration-200"
+              className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                       placeholder:text-white/20 transition-all duration-200
+                       hover:bg-white/[0.04] focus:bg-white/[0.04]"
             />
           </div>
 
           {/* Due Date Input */}
-          <div className="space-y-2 flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains text-sm">$</span>
-              <label className="text-sm font-jetbrains text-white/60">
-                due_date
-              </label>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">
+              Due Date
+            </label>
             <DatePicker
               selected={details.dueDate}
               onChange={(date) => handleDetailsChange("dueDate", date)}
               minDate={new Date()}
               placeholderText="Select due date"
-              className="w-full bg-white/[0.02] font-jetbrains rounded-none px-4 py-3 
-                       text-white placeholder-white/40 border border-white/[0.08] 
-                       focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                       transition-all duration-200"
+              className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
+                       placeholder:text-white/20 transition-all duration-200
+                       hover:bg-white/[0.04] focus:bg-white/[0.04]"
             />
           </div>
 
           {/* Create Button */}
-          <motion.button
+          <button
             onClick={handleSubmit}
             disabled={isLoading || isPending}
-            className="w-full py-3 px-6 font-jetbrains text-sm text-white 
-                     bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
-                     disabled:cursor-not-allowed transition-all duration-200
-                     border border-white/[0.08] hover:border-white/[0.12]"
+            className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
+                     disabled:cursor-not-allowed transition-all duration-200 rounded-lg
+                     py-3 px-6 text-white font-medium"
           >
-            <span className="flex items-center gap-2">
-              <span className="text-white/40">$</span>
-              {isLoading || isPending ? "processing..." : "create_invoice"}
-            </span>
-          </motion.button>
+            {isLoading || isPending ? "Processing..." : "Create Invoice"}
+          </button>
         </div>
       </div>
 
       {/* Preview Section */}
-      <div className="relative outline-2 outline outline-white/[0.2] p-7">
-        <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-          preview
+      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
+        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+          Preview
         </h2>
 
-        <div className="space-y-6">
-          {/* Command Line Header */}
-          <div className="flex items-center gap-2">
-            <span className="text-white/40 font-jetbrains text-sm">$</span>
-            <span className="text-sm font-jetbrains text-white/60">
-              cat invoice.json
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <Image
+                  src={selectedToken.image}
+                  width={16}
+                  height={16}
+                  alt={selectedToken.name}
+                  className="opacity-80"
+                />
+              </div>
+              <span className="text-sm text-white/60">Amount</span>
+            </div>
+            <span className="text-sm font-medium text-white">
+              {details.amount || "0"} {selectedToken.name}
             </span>
           </div>
 
-          {/* JSON-like Preview */}
-          <div className="font-jetbrains text-sm space-y-2">
-            <div className="text-white/40">{`{`}</div>
-
-            {/* Amount */}
-            <div className="pl-4 space-y-1">
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;amount&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/80">{details.amount || "0"}</span>
-                  <Image
-                    src={selectedToken.image}
-                    width={14}
-                    height={14}
-                    alt={selectedToken.name}
-                    className="opacity-60"
-                  />
-                  <span className="text-white/40">{selectedToken.name}</span>
-                </div>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <UserCircleIcon className="w-4 h-4 text-white/60" />
               </div>
-
-              {/* Recipient */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;recipient&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/80">
-                  {details.recipient || "null"}
-                </span>
-              </div>
-
-              {/* Due Date */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;due_date&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/80">
-                  {details.dueDate
-                    ? `"${details.dueDate.toISOString()}"`
-                    : "null"}
-                </span>
-              </div>
-
-              {/* Token */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;token&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-white/80">
-                  {`"${selectedToken.address}"`}
-                </span>
-              </div>
-
-              {/* Status */}
-              <div className="flex items-start">
-                <span className="text-emerald-500">&quot;status&quot;</span>
-                <span className="text-white/40 mx-2">:</span>
-                <span className="text-orange-500">&quot;draft&quot;</span>
-              </div>
+              <span className="text-sm text-white/60">Recipient</span>
             </div>
-            <div className="text-white/40">{`}`}</div>
-          </div>
-
-          {/* Terminal Status Line */}
-          <div className="flex items-center gap-2 pt-4 border-t border-white/[0.08]">
-            <span className="text-white/40 font-jetbrains text-sm">$</span>
-            <span className="text-sm font-jetbrains text-white/60">
-              status:
+            <span className="text-sm font-medium text-white">
+              {details.recipient || "Not set"}
             </span>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-              <span className="text-sm font-jetbrains text-white/40">
-                ready_to_deploy
-              </span>
-            </div>
           </div>
 
-          {/* Validation Messages */}
-          {(!details.amount || !details.recipient || !details.dueDate) && (
-            <div className="space-y-1 pt-2">
-              {!details.amount && (
-                <div className="flex items-center gap-2 text-sm font-jetbrains">
-                  <span className="text-red-500">!</span>
-                  <span className="text-red-500/60">amount required</span>
-                </div>
-              )}
-              {!details.recipient && (
-                <div className="flex items-center gap-2 text-sm font-jetbrains">
-                  <span className="text-red-500">!</span>
-                  <span className="text-red-500/60">recipient required</span>
-                </div>
-              )}
-              {!details.dueDate && (
-                <div className="flex items-center gap-2 text-sm font-jetbrains">
-                  <span className="text-red-500">!</span>
-                  <span className="text-red-500/60">due date required</span>
-                </div>
-              )}
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <CalendarIcon className="w-4 h-4 text-white/60" />
+              </div>
+              <span className="text-sm text-white/60">Due Date</span>
             </div>
-          )}
+            <span className="text-sm font-medium text-white">
+              {details.dueDate
+                ? details.dueDate.toLocaleDateString()
+                : "Not set"}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -31,7 +31,7 @@ export default function Card({
   return (
     <div
       className={cn(
-        "bg-kairo-black-a20 bg-opacity-30 rounded-lg shadow-lg",
+        "bg-plasma-black-a20 bg-opacity-30 rounded-lg shadow-lg",
         paddingStyles[padding],
         className
       )}

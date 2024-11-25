@@ -131,68 +131,6 @@ export default async function Home() {
     <div className="min-h-screen p-6">
       <div className="max-w-5xl mx-auto space-y-12">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 relative gap-6 outline-2 outline outline-white/[0.2] p-7">
-          {/* Total Paid Section */}
-          <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-            stats
-          </h2>
-          <div className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains">$</span>
-              <h3 className="text-sm font-medium text-white/60 font-jetbrains">
-                total_paid
-              </h3>
-            </div>
-            <Suspense fallback={<SpinningLogo />}>
-              <div className="mt-4">
-                <p className="text-4xl font-jetbrains font-semibold text-white">
-                  <span className="text-white/40">=</span> {totalPaid}
-                </p>
-                <p className="mt-2 text-sm font-jetbrains text-white/40">
-                  # across all payment types
-                </p>
-              </div>
-            </Suspense>
-          </div>
-
-          {/* Activity Stats Section */}
-          <div className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-7">
-            <div className="flex items-center gap-2">
-              <span className="text-white/40 font-jetbrains">&gt;</span>
-              <h3 className="text-sm font-medium text-white/60 font-jetbrains">
-                analytics
-              </h3>
-            </div>
-            <div className="grid grid-cols-3 gap-8 mt-4">
-              <div className="flex flex-col">
-                <span className="text-sm text-white/60 font-jetbrains">
-                  streams
-                </span>
-                <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
-                  {stats.streams}
-                </span>
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-sm text-white/60 font-jetbrains">
-                  vests
-                </span>
-                <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
-                  {stats.vests}
-                </span>
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-sm text-white/60 font-jetbrains">
-                  invoices
-                </span>
-                <span className="text-4xl mt-1 font-jetbrains font-semibold text-white">
-                  {stats.invoices}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Featured Users Section */}
         <div>

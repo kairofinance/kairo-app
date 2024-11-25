@@ -64,7 +64,7 @@ export const PDFDownloadButton: React.FC<PDFDownloadButtonProps> = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `kairo-invoice-${invoice.invoiceId}.pdf`;
+      link.download = `plasma-invoice-${invoice.invoiceId}.pdf`;
 
       // Trigger download
       document.body.appendChild(link);
@@ -88,7 +88,7 @@ export const PDFDownloadButton: React.FC<PDFDownloadButtonProps> = ({
       <button
         onClick={handleDownload}
         disabled={isGenerating}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-kairo-black-a20/40 hover:bg-kairo-black-a20/60 text-kairo-white/90 hover:text-kairo-white transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-plasma-black-a20/40 hover:bg-plasma-black-a20/60 text-plasma-white/90 hover:text-plasma-white transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isGenerating ? (
           <div className="flex items-center gap-2">

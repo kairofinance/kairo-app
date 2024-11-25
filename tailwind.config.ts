@@ -17,7 +17,7 @@ const config: Config = {
         jetbrains: ["JetBrains Mono", "monospace"],
       },
       colors: {
-        kairo: {
+        plasma: {
           green: {
             DEFAULT: "#89f95e", // a0
             a20: "#99fa72",
@@ -41,6 +41,16 @@ const config: Config = {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      },
+      keyframes: {
+        gradient: {
+          "0%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+          "100%": { backgroundPosition: "0% 50%" },
+        },
+      },
+      animation: {
+        gradient: "gradient 3s ease infinite",
       },
     },
   },
