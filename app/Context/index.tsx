@@ -25,6 +25,7 @@ import { defineChain } from "viem";
 import { SafeAdapter } from "../adapters/SafeAdapter";
 import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import Safe from "@safe-global/safe-apps-sdk";
+import { TeamProvider } from "@/contexts/TeamContext";
 
 // Define a properly typed Sepolia chain configuration
 const sepoliaChain = defineChain({
@@ -185,7 +186,7 @@ export default function Context({
     >
       <SessionProvider>
         <QueryClientProvider client={queryClient}>
-          {children}
+          <TeamProvider>{children}</TeamProvider>
         </QueryClientProvider>
       </SessionProvider>
     </WagmiProvider>

@@ -3,7 +3,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import "react-loading-skeleton/dist/skeleton.css";
 import Context from "./Context";
-import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
@@ -64,21 +63,17 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className="bg-[#060606]">
+      <body className="bg-[#080808]">
         <Context cookies={cookieHeader || ""}>
-          <Navbar />
-          <div className="flex min-h-screen relative">
-            <div className="flex-1 flex flex-col">
-              <div className="flex flex-col flex-1">
-                <main className="flex-grow">
-                  <Suspense fallback={null}>{children}</Suspense>
-                </main>
-              </div>
+          <Suspense fallback={null}>
+            <div className="flex min-h-screen relative flex-col">
+              <Navbar />
+              <main className="flex-grow">{children}</main>
+              <Footer />
             </div>
-          </div>
-          <Footer />
+          </Suspense>
+          <Analytics />
         </Context>
-        <Analytics />
       </body>
     </html>
   );

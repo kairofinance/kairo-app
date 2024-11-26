@@ -1,31 +1,41 @@
+export interface TeamMember {
+  id: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  joinedAt: string;
+  user: {
+    address: string;
+    profilePicture?: string;
+  };
+}
+
 export interface Team {
   id: string;
   name: string;
   description?: string;
   profilePicture?: string;
+  website?: string;
   treasuryAddress?: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  memberCount: number;
-  lastActivity: string;
   createdAt: string;
-  updatedAt: string;
+  lastNameChange?: string;
+  memberCount: number;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  owner: {
+    address: string;
+  };
+  members: TeamMember[];
+  invites?: {
+    id: string;
+    status: "PENDING" | "ACCEPTED" | "DECLINED";
+    invitee: {
+      address: string;
+    };
+  }[];
 }
 
 export interface CreateTeamInput {
   name: string;
   description?: string;
   ownerAddress: string;
-}
-
-export interface TeamMember {
-  id: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  user: {
-    id: string;
-    address: string;
-    profilePicture?: string;
-  };
-  joinedAt: string;
 }
 
 export interface TeamDetails extends Team {

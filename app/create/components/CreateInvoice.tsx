@@ -16,6 +16,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { sepolia } from "viem/chains";
 import { UserCircleIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import { client } from "../../../wagmi.config";
+import { useTeamContext } from "@/contexts/TeamContext";
 
 const tokens = [
   {
@@ -55,6 +57,7 @@ export default function CreateInvoice({ onDataUpdate }: CreateInvoiceProps) {
   const router = useRouter();
   const { address, isConnected } = useAppKitAccount();
   const { writeContractAsync, isPending } = useWriteContract();
+  const { selectedTeamId } = useTeamContext();
 
   const handleDetailsChange = (
     field: keyof InvoiceDetails,
@@ -86,18 +89,13 @@ export default function CreateInvoice({ onDataUpdate }: CreateInvoiceProps) {
   };
 
   const handleSubmit = async () => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       showAlert("Please connect your wallet first.", "error");
       return;
     }
 
-    if (!details.amount || !details.recipient || !details.dueDate) {
-      showAlert("Please fill out all fields.", "error");
-      return;
-    }
-
-    if (!isAddress(details.recipient)) {
-      showAlert("Please enter a valid recipient address.", "error");
+    if (!details.recipient || !details.amount || !details.dueDate) {
+      showAlert("Please fill in all required fields", "error");
       return;
     }
 
@@ -114,15 +112,47 @@ export default function CreateInvoice({ onDataUpdate }: CreateInvoiceProps) {
         abi: InvoiceManagerABI.abi,
         functionName: "createInvoice",
         args: [
-          details.recipient,
+          address as `0x${string}`,
+          details.recipient as `0x${string}`,
           parsedAmount,
           BigInt(dueDateTimestamp),
-          selectedToken.address,
+          selectedToken.address as `0x${string}`,
         ],
       });
 
+      const receipt = await client.waitForTransactionReceipt({
+        hash: result,
+      });
+
+      if (receipt.status !== "success") {
+        throw new Error("Transaction failed");
+      }
+
+      const response = await fetch("/api/invoices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          issuerAddress: address,
+          clientAddress: details.recipient,
+          tokenAddress: selectedToken.address,
+          amount: parsedAmount.toString(),
+          dueDate: details.dueDate.toISOString(),
+          creationTransactionHash: result,
+          invoiceId: result,
+          teamId: selectedTeamId || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create invoice record");
+      }
+
+      const data = await response.json();
       showAlert("Invoice created successfully!", "success");
-      router.push(`/invoice/${result}`);
+      router.push(`/invoice/${data.invoice.invoiceId}`);
     } catch (error: any) {
       console.error("Error creating invoice:", error);
       showAlert(error.message || "Failed to create invoice", "error");

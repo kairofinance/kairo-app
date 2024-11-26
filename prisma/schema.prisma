@@ -63,7 +63,13 @@ model Invoice {
   issuer                User     @relation("IssuedInvoices", fields: [issuerAddress], references: [address])
   client                User     @relation("ReceivedInvoices", fields: [clientAddress], references: [address])
   payments              Payment[]
-  isPending    Boolean  @default(false)
+  isPending             Boolean  @default(false)
+  teamId                String?
+  team                  Team?    @relation("TeamInvoices", fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@index([issuerAddress])
+  @@index([clientAddress])
 }
 
 model Payment {
@@ -135,6 +141,8 @@ model Team {
   owner          User        @relation("TeamOwner", fields: [ownerId], references: [id])
   ownerId        String
   invites        TeamInvite[]
+  flows           Flow[]    @relation("TeamFlows")
+  invoices        Invoice[]   @relation("TeamInvoices")
 }
 
 model TeamMember {
@@ -195,6 +203,42 @@ model Profile {
   user            User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
+}
+
+// Add to existing schema
+model Flow {
+  id                    String    @id @default(cuid())
+  type                  FlowType  
+  amount                String    
+  tokenAddress          String
+  status                FlowStatus
+  senderAddress         String
+  recipientAddress      String
+  endDate               DateTime?
+  streamRate            String?   
+  cliffDate            DateTime? 
+  teamId               String?   
+  team                 Team?     @relation("TeamFlows", fields: [teamId], references: [id])
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  creationTransactionHash String?
+  isIncoming           Boolean   @default(false)
+  counterpartyAddress  String
+
+  @@index([senderAddress])
+  @@index([recipientAddress])
+  @@index([teamId])
+}
+
+enum FlowType {
+  STREAM
+  VEST
+}
+
+enum FlowStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
 }
 
 // You can add other models here as needed for your application

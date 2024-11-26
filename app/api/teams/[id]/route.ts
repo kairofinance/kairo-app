@@ -8,9 +8,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const teamId = params.id;
+  const teamId = await params.id;
 
+  try {
     const team = await prisma.team.findUnique({
       where: { id: teamId },
       include: {
@@ -24,13 +24,21 @@ export async function GET(
     });
 
     if (!team) {
-      return Response.json({ error: "Team not found" }, { status: 404 });
+      return new Response(JSON.stringify({ error: "Team not found" }), {
+        status: 404,
+      });
     }
 
-    return Response.json({ team });
+    return new Response(JSON.stringify({ team }), {
+      status: 200,
+    });
   } catch (error) {
     console.error("Error fetching team:", error);
-    return Response.json({ error: "Failed to fetch team" }, { status: 500 });
+    return new Response(JSON.stringify({ error: "Failed to fetch team" }), {
+      status: 500,
+    });
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -39,19 +47,50 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const teamId = await params.id;
+
   try {
-    const teamId = params.id;
-    const { name, description, website, treasuryAddress } =
-      await request.json();
+    const body = await request.json();
+
+    // Destructure with default values to prevent null/undefined
+    const {
+      name = undefined,
+      description = undefined,
+      website = undefined,
+      treasuryAddress = undefined,
+    } = body;
+
+    // Get current team to check lastNameChange
+    const currentTeam = await prisma.team.findUnique({
+      where: { id: teamId },
+    });
+
+    if (!currentTeam) {
+      return new Response(JSON.stringify({ error: "Team not found" }), {
+        status: 404,
+      });
+    }
+
+    // Check if name is being changed
+    const nameUpdate =
+      name && name !== currentTeam.name
+        ? {
+            name,
+            lastNameChange: new Date(),
+          }
+        : {};
+
+    // Create update data object with only defined values
+    const updateData = {
+      ...nameUpdate,
+      ...(description !== undefined && { description }),
+      ...(website !== undefined && { website }),
+      ...(treasuryAddress !== undefined && { treasuryAddress }),
+    };
 
     const team = await prisma.team.update({
       where: { id: teamId },
-      data: {
-        name,
-        description,
-        website,
-        treasuryAddress,
-      },
+      data: updateData,
       include: {
         members: {
           include: {
@@ -62,10 +101,20 @@ export async function PATCH(
       },
     });
 
-    return Response.json({ team });
+    return new Response(JSON.stringify({ team }), {
+      status: 200,
+    });
   } catch (error) {
     console.error("Error updating team:", error);
-    return Response.json({ error: "Failed to update team" }, { status: 500 });
+    return new Response(
+      JSON.stringify({
+        error: "Failed to update team",
+        details: error instanceof Error ? error.message : "Unknown error",
+      }),
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
@@ -74,9 +123,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const teamId = params.id;
+  const teamId = await params.id;
 
+  try {
     // Delete all team members first
     await prisma.teamMember.deleteMany({
       where: { teamId },
@@ -87,9 +136,15 @@ export async function DELETE(
       where: { id: teamId },
     });
 
-    return Response.json({ success: true });
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+    });
   } catch (error) {
     console.error("Error deleting team:", error);
-    return Response.json({ error: "Failed to delete team" }, { status: 500 });
+    return new Response(JSON.stringify({ error: "Failed to delete team" }), {
+      status: 500,
+    });
+  } finally {
+    await prisma.$disconnect();
   }
 }

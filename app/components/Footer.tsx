@@ -36,7 +36,7 @@ const navigation = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/[0.2] text-white/[0.2] bg-black mt-12 max-w-6xl mx-auto place-items-end">
+    <footer className="border-t border-white/[0.2] text-white/[0.2]  mt-12 max-w-6xl mx-auto place-items-end">
       <div className="px-6 pb-12 pt-4 lg:px-8 flex space-x-3">
         {navigation.social.map((item) => (
           <Link

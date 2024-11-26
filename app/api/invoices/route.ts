@@ -83,55 +83,25 @@ export async function POST(request: NextRequest) {
       dueDate,
       creationTransactionHash,
       invoiceId,
+      teamId,
     } = await request.json();
 
-    console.log("Received invoice creation request:", {
-      issuerAddress,
-      clientAddress,
-      tokenAddress,
-      amount,
-      dueDate,
-      creationTransactionHash,
-      invoiceId,
-    });
-
-    // Check for missing required parameters
-    const missingParams = [];
-    if (!issuerAddress) missingParams.push("issuerAddress");
-    if (!clientAddress) missingParams.push("clientAddress");
-    if (!tokenAddress) missingParams.push("tokenAddress");
-    if (!amount) missingParams.push("amount");
-    if (!dueDate) missingParams.push("dueDate");
-    if (!creationTransactionHash) missingParams.push("creationTransactionHash");
-    if (!invoiceId) missingParams.push("invoiceId");
-
-    if (missingParams.length > 0) {
+    // Validate input
+    if (
+      !issuerAddress ||
+      !clientAddress ||
+      !tokenAddress ||
+      !amount ||
+      !dueDate ||
+      !invoiceId
+    ) {
       return NextResponse.json(
-        { error: `Missing required parameters: ${missingParams.join(", ")}` },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Check if invoice already exists
-    const existingInvoice = await prisma.invoice.findUnique({
-      where: { invoiceId },
-    });
-
-    if (existingInvoice) {
-      return NextResponse.json(
-        { error: "Invoice with this ID already exists" },
-        { status: 409 }
-      );
-    }
-
-    if (issuerAddress.toLowerCase() === clientAddress.toLowerCase()) {
-      return NextResponse.json(
-        { error: "Client cannot be the issuer" },
-        { status: 400 }
-      );
-    }
-
-    // Ensure both issuer and client exist
+    // Create or update users first
     await prisma.$transaction([
       prisma.user.upsert({
         where: { address: issuerAddress.toLowerCase() },
@@ -151,8 +121,8 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    // Create new invoice
-    const newInvoice = await prisma.invoice.create({
+    // Create the invoice with proper data structure
+    const invoice = await prisma.invoice.create({
       data: {
         invoiceId,
         issuerAddress: issuerAddress.toLowerCase(),
@@ -163,16 +133,22 @@ export async function POST(request: NextRequest) {
         issuedDate: new Date(),
         creationTransactionHash,
         paid: false,
+        isPending: false,
+        ...(teamId ? { teamId } : {}), // Only include teamId if it exists
+      },
+      include: {
+        team: true,
+        issuer: true,
+        client: true,
       },
     });
 
-    console.log("Created invoice:", newInvoice);
-    return NextResponse.json({ invoice: newInvoice });
+    return NextResponse.json({ invoice });
   } catch (error) {
     console.error("Error creating invoice:", error);
     return NextResponse.json(
       {
-        error: "Internal server error",
+        error: "Failed to create invoice",
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
