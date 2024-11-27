@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: TeamPageProps) {
   const teamId = await Promise.resolve(params.id);
 
   return {
-    title: `Team Details | Plasma`,
+    title: `Team Details | Kairo`,
     description: "View and manage team details",
     other: {
       headers,

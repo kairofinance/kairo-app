@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Line } from "react-chartjs-2";
@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract, useReadContract } from "wagmi";
-import { parseUnits } from "viem";
+import { parseUnits, formatUnits } from "viem";
 import { useAlert } from "@/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,7 @@ import { sepolia } from "viem/chains";
 import { client } from "../../../wagmi.config";
 import { ERC20ABI } from "../../../contracts/ERC20.sol/ERC20";
 import { UserCircleIcon, CalendarIcon } from "@heroicons/react/24/outline";
+import { useTeamContext } from "@/contexts/TeamContext";
 
 const tokens = [
   {
@@ -79,6 +80,7 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
   const { address, isConnected } = useAppKitAccount();
   const { writeContractAsync, isPending } = useWriteContract();
   const { readContract } = useReadContract();
+  const { selectedTeam } = useTeamContext();
 
   // Calculate total amount
   const totalAmount = recipients.reduce((sum, recipient) => {
@@ -205,6 +207,7 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
             vestingSeconds,
             initialReleasePercentage,
           ],
+          chainId: sepolia.id,
         });
 
         // Wait for vesting creation transaction to be confirmed
@@ -215,6 +218,29 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
         if (vestingReceipt.status !== "success") {
           throw new Error("Vesting schedule creation failed");
         }
+
+        // Update database with team context
+        await fetch("/api/vesting", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            vestingId: vestingTx,
+            grantor: selectedTeam
+              ? selectedTeam.treasuryAddress || address
+              : address,
+            beneficiary: recipient.recipient,
+            tokenAddress: selectedToken.address,
+            amount: recipient.amount,
+            cliffDuration: recipient.cliffDuration,
+            vestingDuration: recipient.vestingDuration,
+            initialRelease: recipient.initialRelease,
+            creationTransactionHash: vestingTx,
+            teamId: selectedTeam?.id || undefined,
+            createdBy: address, // Store the actual wallet that created it
+          }),
+        });
       }
 
       showAlert("Vesting schedules created successfully!", "success");
@@ -318,11 +344,46 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
     }
   }, [recipients, onDataUpdate]);
 
+  // Add balance check hooks
+  const { data: tokenBalance = BigInt(0) } = useReadContract({
+    address: selectedToken.address as `0x${string}`,
+    abi: ERC20ABI,
+    functionName: "balanceOf",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: {
+      enabled: !!address,
+    },
+  }) as { data: bigint };
+
+  // Add balance check function
+  const hasEnoughBalance = useCallback(() => {
+    if (!tokenBalance) return false;
+
+    // Calculate total amount needed including fee
+    const totalBaseAmount = recipients.reduce((sum, recipient) => {
+      const amount = parseUnits(
+        recipient.amount.replace(/,/g, "") || "0",
+        selectedToken.decimals
+      );
+      return sum + amount;
+    }, BigInt(0));
+
+    const maxFee = BigInt(200) * BigInt(10 ** selectedToken.decimals);
+    const calculatedFee = (totalBaseAmount * BigInt(15)) / BigInt(1000);
+    const feeAmount = calculatedFee > maxFee ? maxFee : calculatedFee;
+    const totalNeeded = totalBaseAmount + feeAmount;
+
+    return tokenBalance >= totalNeeded;
+  }, [tokenBalance, recipients, selectedToken.decimals]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Form Section */}
       <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+        <h2
+          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
+                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
+        >
           Details
         </h2>
 
@@ -500,19 +561,36 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
           {/* Create Button */}
           <button
             onClick={handleSubmit}
-            disabled={isLoading || isPending}
+            disabled={
+              isLoading ||
+              isPending ||
+              !hasEnoughBalance() ||
+              !recipients.every(
+                (r) =>
+                  isAddress(r.recipient) &&
+                  parseFloat(r.amount) > 0 &&
+                  parseFloat(r.vestingDuration) > 0
+              )
+            }
             className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
                      disabled:cursor-not-allowed transition-all duration-200 rounded-lg
                      py-3 px-6 text-white font-medium"
           >
-            {isLoading || isPending ? "Processing..." : "Create Vesting"}
+            {isLoading || isPending
+              ? "Processing..."
+              : !hasEnoughBalance()
+              ? "Insufficient Balance"
+              : "Create Vesting"}
           </button>
         </div>
       </div>
 
       {/* Preview Section */}
       <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+        <h2
+          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
+                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
+        >
           Preview
         </h2>
 
@@ -569,6 +647,18 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
             </div>
             <span className="text-sm font-medium text-white">
               {recipients[0]?.initialRelease || "0"}%
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <UserCircleIcon className="w-4 h-4 text-white/60" />
+              </div>
+              <span className="text-sm text-white/60">Grantor</span>
+            </div>
+            <span className="text-sm font-medium text-white">
+              {selectedTeam ? selectedTeam.name : "Personal Account"}
             </span>
           </div>
         </div>

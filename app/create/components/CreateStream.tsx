@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Line } from "react-chartjs-2";
@@ -14,9 +14,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
-import { useWriteContract } from "wagmi";
-import { readContract } from "@wagmi/core";
-import { parseUnits } from "viem";
+import { useWriteContract, useReadContract } from "wagmi";
+import { parseUnits, formatUnits } from "viem";
 import { useAlert } from "@/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
@@ -31,6 +30,8 @@ import {
   UserCircleIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline";
+import { useTeamContext } from "@/contexts/TeamContext";
+import DatePicker from "react-datepicker";
 
 const tokens = [
   {
@@ -84,6 +85,28 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
   const router = useRouter();
   const { address, isConnected } = useAppKitAccount();
   const { writeContractAsync, isPending } = useWriteContract();
+  const { data: allowance = BigInt(0) } = useReadContract({
+    address: selectedToken.address as `0x${string}`,
+    abi: ERC20ABI,
+    functionName: "allowance",
+    args: address
+      ? [address as `0x${string}`, STREAM_MANAGER_ADDRESS[sepolia.id]]
+      : undefined,
+    query: {
+      enabled: !!address,
+    },
+  }) as { data: bigint };
+  const { data: tokenBalance = BigInt(0) } = useReadContract({
+    address: selectedToken.address as `0x${string}`,
+    abi: ERC20ABI,
+    functionName: "balanceOf",
+    args: address ? [address as `0x${string}`] : undefined,
+    query: {
+      enabled: !!address,
+    },
+  }) as { data: bigint };
+
+  const { selectedTeam } = useTeamContext();
 
   // Calculate total amount
   const totalAmount = recipients.reduce((sum, recipient) => {
@@ -100,14 +123,19 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
 
   // Chart data
   const graphData = {
-    labels: Array.from(
-      { length: 10 },
-      (_, i) => `${((i * durationInHours) / 10).toFixed(1)}h`
-    ),
+    labels: Array.from({ length: 10 }, (_, i) => ({
+      key: `time-${i}`,
+      label: `${((i * durationInHours) / 10).toFixed(1)}h`,
+    })).map((item) => item.label),
     datasets: [
       {
         label: "Total Stream",
-        data: Array.from({ length: 10 }, (_, i) => (i * totalAmount) / 10),
+        id: "total-stream",
+        data: Array.from({ length: 10 }, (_, i) => ({
+          x: i,
+          y: (i * totalAmount) / 10,
+          key: `total-${i}`,
+        })),
         borderColor: "#22c55e",
         backgroundColor: "rgba(34, 197, 94, 0.1)",
         tension: 0.4,
@@ -115,12 +143,14 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
         pointRadius: 0,
         borderWidth: 2,
       },
-      ...recipients.map((recipient, index) => ({
-        label: `Recipient ${index + 1}`,
-        data: Array.from(
-          { length: 10 },
-          (_, i) => (i * parseFloat(recipient.amount || "0")) / 10
-        ),
+      ...recipients.map((recipient, recipientIndex) => ({
+        label: `Recipient ${recipientIndex + 1}`,
+        id: `recipient-${recipientIndex}`,
+        data: Array.from({ length: 10 }, (_, i) => ({
+          x: i,
+          y: (i * parseFloat(recipient.amount || "0")) / 10,
+          key: `recipient-${recipientIndex}-${i}`,
+        })),
         borderColor: "#f97316",
         backgroundColor: "rgba(249, 115, 22, 0.1)",
         tension: 0.4,
@@ -142,6 +172,18 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
           color: "rgba(255, 255, 255, 0.4)",
           font: { size: 10 },
           padding: 20,
+          usePointStyle: true,
+          generateLabels: (chart: any) => {
+            return chart.data.datasets.map((dataset: any, i: number) => ({
+              text: dataset.label,
+              fillStyle: dataset.backgroundColor,
+              strokeStyle: dataset.borderColor,
+              lineWidth: 2,
+              hidden: false,
+              index: i,
+              key: `legend-${dataset.id}`,
+            }));
+          },
         },
       },
       tooltip: {
@@ -155,6 +197,12 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
         bodyColor: "rgba(255, 255, 255, 0.9)",
         displayColors: true,
         boxPadding: 4,
+        callbacks: {
+          label: function (context: any) {
+            const value = context.raw || 0;
+            return `${value.toFixed(2)} ${selectedToken.name}`;
+          },
+        },
       },
     },
     scales: {
@@ -177,6 +225,9 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
         ticks: {
           color: "rgba(255, 255, 255, 0.4)",
           font: { size: 10 },
+          callback: (value: number, index: number) => {
+            return `${((index * durationInHours) / 10).toFixed(1)}h`;
+          },
         },
       },
     },
@@ -206,114 +257,197 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
     }
   };
 
+  const hasEnoughBalance = useCallback(() => {
+    if (!tokenBalance) return false;
+
+    // Calculate total amount needed including fee
+    const totalBaseAmount = recipients.reduce((sum, recipient) => {
+      const amount = parseUnits(
+        recipient.amount.replace(/,/g, "") || "0",
+        selectedToken.decimals
+      );
+      return sum + amount;
+    }, BigInt(0));
+
+    const maxFee = BigInt(200) * BigInt(10 ** selectedToken.decimals);
+    const calculatedFee = (totalBaseAmount * BigInt(15)) / BigInt(1000);
+    const feeAmount = calculatedFee > maxFee ? maxFee : calculatedFee;
+    const totalNeeded = totalBaseAmount + feeAmount;
+
+    return tokenBalance >= totalNeeded;
+  }, [tokenBalance, recipients, selectedToken.decimals]);
+
+  // Add this validation function at component level
+  const validateStreamParameters = () => {
+    // Check if any recipient has invalid values
+    for (const recipient of recipients) {
+      if (!isAddress(recipient.address)) {
+        throw new Error("Invalid recipient address");
+      }
+
+      const amount = parseFloat(recipient.amount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error("Invalid amount specified");
+      }
+    }
+
+    // Validate duration
+    const duration = parseFloat(durationValue);
+    if (isNaN(duration) || duration <= 0) {
+      throw new Error("Duration must be greater than 0");
+    }
+
+    // Calculate and validate end time
+    const startTime = Math.floor(Date.now() / 1000) + 60;
+    const endTime =
+      startTime + Math.floor(duration * durationUnit.inHours * 3600);
+
+    if (endTime <= startTime) {
+      throw new Error("End time must be after start time");
+    }
+
+    // Validate total duration is within limits (e.g., 1 year)
+    const maxDurationInSeconds = 365 * 24 * 3600; // 1 year
+    if (endTime - startTime > maxDurationInSeconds) {
+      throw new Error("Stream duration cannot exceed 1 year");
+    }
+
+    return {
+      startTime: BigInt(startTime),
+      endTime: BigInt(endTime),
+    };
+  };
+
+  // Update the handleSubmit function
   const handleSubmit = async () => {
     if (!isConnected) {
       showAlert("Please connect your wallet first.", "error");
       return;
     }
 
-    // Validate recipients
-    if (
-      !recipients.every((r) => isAddress(r.address) && parseFloat(r.amount) > 0)
-    ) {
-      showAlert(
-        "Please enter valid addresses and amounts for all recipients.",
-        "error"
-      );
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const recipientAddresses = recipients.map(
-        (r) => r.address as `0x${string}`
-      );
-      const recipientAmounts = recipients.map((r) =>
-        parseUnits(r.amount, selectedToken.decimals)
-      );
-
-      // Calculate total amount needed including fee
-      const totalAmount = recipientAmounts.reduce(
-        (sum, amount) => sum + amount,
-        BigInt(0)
-      );
-
-      // Calculate fee amount (1.5%) with 200 token cap
-      const maxFee = BigInt(200) * BigInt(10 ** selectedToken.decimals);
-      const calculatedFee = (totalAmount * BigInt(15)) / BigInt(1000);
-      const feeAmount = calculatedFee > maxFee ? maxFee : calculatedFee;
-      const totalWithFee = totalAmount + feeAmount;
-
-      // Check current allowance
-      const allowance = (await readContract(client, {
-        address: selectedToken.address as `0x${string}`,
-        abi: ERC20ABI,
-        functionName: "allowance",
-        args: [address as `0x${string}`, STREAM_MANAGER_ADDRESS[sepolia.id]],
-      })) as bigint;
-
-      // Handle token approval if needed
-      if (allowance < totalWithFee) {
-        showAlert("Approving token spending...", "info");
-
-        const approveTx = await writeContractAsync({
-          address: selectedToken.address as `0x${string}`,
-          abi: ERC20ABI,
-          functionName: "approve",
-          args: [STREAM_MANAGER_ADDRESS[sepolia.id], totalWithFee],
-        });
-
-        // Wait for approval transaction to be confirmed
-        const approvalReceipt = await client.waitForTransactionReceipt({
-          hash: approveTx,
-        });
-
-        if (approvalReceipt.status !== "success") {
-          throw new Error("Approval transaction failed");
-        }
-
-        showAlert("Token approval successful. Creating stream...", "info");
+      // Basic validation
+      if (!recipients[0].address || !recipients[0].amount || !durationValue) {
+        throw new Error("Please fill in all required fields");
       }
 
-      // Get current timestamp for startTime
-      const startTime = BigInt(Math.floor(Date.now() / 1000));
-      // Calculate endTime by adding duration in seconds to startTime
-      const endTime = startTime + BigInt(Math.floor(durationInHours * 3600));
+      if (!isAddress(recipients[0].address)) {
+        throw new Error("Invalid recipient address");
+      }
 
+      // Format amount with proper decimals
+      const amount = parseUnits(
+        recipients[0].amount.replace(/,/g, ""),
+        selectedToken.decimals
+      );
+
+      // Calculate timing
+      const now = Math.floor(Date.now() / 1000);
+      const startTimeSeconds = BigInt(now + 60); // Start 1 minute from now
+      const durationInSeconds = Math.floor(
+        parseFloat(durationValue) * durationUnit.inHours * 3600
+      );
+      const endTimeSeconds = startTimeSeconds + BigInt(durationInSeconds);
+
+      // Validate duration
+      if (durationInSeconds < 3600) {
+        throw new Error("Duration must be at least 1 hour");
+      }
+
+      // Check allowance
+      if (allowance < amount) {
+        showAlert("Approving token spending...", "info");
+        try {
+          const approveTx = await writeContractAsync({
+            address: selectedToken.address as `0x${string}`,
+            abi: ERC20ABI,
+            functionName: "approve",
+            args: [STREAM_MANAGER_ADDRESS[sepolia.id], amount],
+            chainId: sepolia.id,
+          });
+
+          const approvalReceipt = await client.waitForTransactionReceipt({
+            hash: approveTx,
+          });
+
+          if (approvalReceipt.status !== "success") {
+            throw new Error("Token approval failed");
+          }
+
+          showAlert("Token approval successful. Creating stream...", "info");
+        } catch (error: any) {
+          if (error.message.includes("user rejected")) {
+            throw new Error("User rejected token approval");
+          }
+          throw new Error("Failed to approve token spending");
+        }
+      }
+
+      // **Pass Five Separate Arguments as Expected by the ABI**
       const streamTx = await writeContractAsync({
         address: STREAM_MANAGER_ADDRESS[sepolia.id],
         abi: StreamManagerABI,
         functionName: "createStreams",
         args: [
-          recipientAddresses,
-          recipientAmounts,
-          selectedToken.address as `0x${string}`,
-          startTime,
-          endTime,
+          [recipients[0].address as `0x${string}`], // recipients array
+          [amount], // amounts array
+          selectedToken.address as `0x${string}`, // token address
+          startTimeSeconds, // start time
+          endTimeSeconds, // end time
         ],
+        chainId: sepolia.id,
       });
 
-      // Wait for stream creation transaction to be confirmed
-      const streamReceipt = await client.waitForTransactionReceipt({
+      showAlert("Stream creation submitted...", "info");
+
+      const receipt = await client.waitForTransactionReceipt({
         hash: streamTx,
       });
 
-      if (streamReceipt.status !== "success") {
+      if (receipt.status === "success") {
+        // Save to database with team context
+        await fetch("/api/streams", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            streamId: streamTx,
+            senderAddress: selectedTeam
+              ? selectedTeam.treasuryAddress || address
+              : address,
+            recipientAddress: recipients[0].address,
+            tokenAddress: selectedToken.address,
+            amount: amount.toString(),
+            startTime: new Date(Number(startTimeSeconds) * 1000),
+            endTime: new Date(Number(endTimeSeconds) * 1000),
+            creationTxHash: streamTx,
+            teamId: selectedTeam?.id || null,
+            createdBy: address,
+          }),
+        });
+
+        showAlert("Stream created successfully!", "success", {
+          txHash: streamTx,
+        });
+        router.push(`/stream/${streamTx}`);
+      } else {
         throw new Error("Stream creation failed");
       }
-
-      showAlert("Stream created successfully!", "success");
-      router.push(`/stream/${streamTx}`);
     } catch (error: any) {
-      console.error("Error creating stream:", error);
-      const errorMessage = error.message || "Failed to create stream";
-      // Check for specific error types
-      if (errorMessage.toLowerCase().includes("allowance")) {
-        showAlert("Please approve token spending first", "error");
-      } else if (errorMessage.toLowerCase().includes("insufficient")) {
+      console.error("Stream creation error:", error);
+
+      if (error.message.includes("user rejected")) {
+        showAlert("Transaction cancelled", "info");
+      } else if (error.message.includes("insufficient allowance")) {
+        showAlert("Token approval needed", "error");
+      } else if (error.message.includes("insufficient balance")) {
         showAlert("Insufficient token balance", "error");
+      } else if (error.message.includes("TokenNotWhitelisted")) {
+        showAlert("Token not supported", "error");
+      } else if (error.message.includes("InvalidDuration")) {
+        showAlert("Invalid duration specified", "error");
       } else {
-        showAlert(errorMessage, "error");
+        showAlert(error.message || "Failed to create stream", "error");
       }
     } finally {
       setIsLoading(false);
@@ -337,7 +471,10 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Form Section */}
       <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+        <h2
+          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
+                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
+        >
           Details
         </h2>
 
@@ -471,19 +608,44 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
           {/* Create Button */}
           <button
             onClick={handleSubmit}
-            disabled={isLoading || isPending}
+            disabled={
+              isLoading ||
+              isPending ||
+              !hasEnoughBalance() ||
+              !recipients.every(
+                (r) =>
+                  isAddress(r.address) &&
+                  parseFloat(r.amount.replace(/,/g, "")) > 0
+              ) ||
+              parseFloat(durationValue) <= 0
+            }
             className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
                      disabled:cursor-not-allowed transition-all duration-200 rounded-lg
                      py-3 px-6 text-white font-medium"
           >
-            {isLoading || isPending ? "Processing..." : "Create Stream"}
+            {isLoading || isPending
+              ? "Processing..."
+              : !hasEnoughBalance()
+              ? "Insufficient Balance"
+              : "Create Stream"}
           </button>
+
+          <div className="flex items-center justify-between text-sm text-white/60 mb-4">
+            <span>Balance:</span>
+            <span>
+              {formatUnits(tokenBalance, selectedToken.decimals)}{" "}
+              {selectedToken.name}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Preview Section */}
       <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2 className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 bg-black font-garet font-extrabold text-white">
+        <h2
+          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
+                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
+        >
           Preview
         </h2>
 
@@ -546,6 +708,28 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
             </div>
             <span className="text-sm font-medium text-white">
               {durationValue} {durationUnit.label}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <CalendarIcon className="w-4 h-4 text-white/60" />
+              </div>
+              <span className="text-sm text-white/60">Start Time</span>
+            </div>
+            <span className="text-sm font-medium text-white">In 1 minute</span>
+          </div>
+
+          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/[0.05]">
+                <UserCircleIcon className="w-4 h-4 text-white/60" />
+              </div>
+              <span className="text-sm text-white/60">Issuer</span>
+            </div>
+            <span className="text-sm font-medium text-white">
+              {selectedTeam ? selectedTeam.name : "Personal Account"}
             </span>
           </div>
         </div>

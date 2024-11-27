@@ -7,10 +7,10 @@ import PageTransition from "@/components/PageTransition";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Create | Plasma",
+    title: "Create | Kairo",
     description: "Create invoices, streams, and vesting schedules",
     openGraph: {
-      title: "Create | Plasma",
+      title: "Create | Kairo",
       description: "Create invoices, streams, and vesting schedules",
     },
   };

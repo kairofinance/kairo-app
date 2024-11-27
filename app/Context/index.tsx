@@ -8,6 +8,7 @@ import {
   Config,
   createStorage,
   cookieStorage,
+  http,
 } from "wagmi";
 import { createAppKit } from "@reown/appkit/react";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
@@ -27,120 +28,63 @@ import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import Safe from "@safe-global/safe-apps-sdk";
 import { TeamProvider } from "@/contexts/TeamContext";
 
-// Define a properly typed Sepolia chain configuration
-const sepoliaChain = defineChain({
-  id: 11155111,
-  name: "Sepolia",
-  network: "sepolia",
-  nativeCurrency: {
-    decimals: 18,
-    name: "Sepolia Ether",
-    symbol: "SEP",
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://rpc.sepolia.org"],
-    },
-    public: {
-      http: ["https://rpc.sepolia.org"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "Etherscan",
-      url: "https://sepolia.etherscan.io",
-      apiUrl: "https://api-sepolia.etherscan.io/api",
-    },
-  },
-  contracts: {},
-  testnet: true,
-});
+// Configure WalletConnect metadata
+const metadata = {
+  name: "Kairo",
+  description:
+    "Secure Web3 billing with real-time insights and seamless transactions.",
+  url: "https://kairo.finance",
+  icons: ["../favicon.ico"],
+};
 
-export const siweConfig = createSIWEConfig({
-  getMessageParams: async () => ({
-    domain: typeof window !== "undefined" ? window.location.host : "",
-    uri: typeof window !== "undefined" ? window.location.origin : "",
-    chains: [sepolia.id],
-    statement: "Please sign with your account",
-  }),
-  createMessage: ({ address, ...args }: SIWECreateMessageArgs) =>
-    formatMessage(args, address),
-  getNonce: async () => {
-    const nonce = await getCsrfToken();
-    if (!nonce) {
-      throw new Error("Failed to get nonce!");
-    }
-    return nonce;
-  },
-  getSession: async () => {
-    const session = await getSession();
-    if (!session) {
-      throw new Error("Failed to get session!");
-    }
-    const { address, chainId } = session as unknown as SIWESession;
-    return { address, chainId };
-  },
-  verifyMessage: async ({ message, signature }: SIWEVerifyMessageArgs) => {
-    try {
-      const success = await signIn("credentials", {
-        message,
-        redirect: false,
-        signature,
-        callbackUrl: "/protected",
-      });
-      return Boolean(success?.ok);
-    } catch (error) {
-      return false;
-    }
-  },
-  signOut: async () => {
-    try {
-      await signOut({
-        redirect: false,
-      });
-      return true;
-    } catch (error) {
-      return false;
-    }
-  },
-});
+// Configure transport with proper settings
+const transport = http(
+  process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.sepolia.org",
+  {
+    retryCount: 3,
+    retryDelay: 1000,
+    timeout: 10000,
+  }
+);
 
+// Configure WalletConnect
 const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
-
 if (!projectId) {
   throw new Error("Project ID is not defined");
 }
 
-// Set up the Wagmi Adapter with proper chain configuration
+// Create WagmiAdapter with proper configuration
 const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({
     storage: cookieStorage,
   }),
   ssr: true,
   projectId,
-  networks: [sepoliaChain as any],
+  networks: [sepolia],
 });
 
-// Create the AppKit instance with proper typing
+// Create AppKit instance
 const appKit = createAppKit({
   adapters: [wagmiAdapter as any],
   projectId,
-  networks: [sepoliaChain as any],
-  defaultNetwork: sepoliaChain as any,
-  metadata: {
-    name: "Plasma",
-    description:
-      "Secure Web3 billing with real-time insights and seamless transactions.",
-    url: "https://plasma.finance",
-    icons: ["../favicon.ico"],
-  },
+  networks: [sepolia],
+  defaultNetwork: sepolia,
+  metadata,
   features: {
     analytics: true,
   },
 });
 
-// Create a new QueryClient instance
-const queryClient = new QueryClient();
+// Create QueryClient with proper configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Initialize Safe SDK
 const safe = new Safe();
@@ -162,16 +106,12 @@ export default function Context({
     // Initialize Safe when the app loads
     const initSafe = async () => {
       try {
-        // Check if we're running inside a Safe iframe
         const safeInfo = await safe.safe.getInfo();
-
         if (safeInfo) {
-          // We're inside a Safe App
           const provider = new SafeAppProvider(safeInfo, safe);
           await safeAdapter.init(provider, safeInfo.safeAddress);
         }
       } catch (err) {
-        // Not running as a Safe App, continue with normal wallet connection
         console.log("Not running as a Safe App");
       }
     };
@@ -193,5 +133,4 @@ export default function Context({
   );
 }
 
-// Export the Safe instances for use in other components
 export { safe, safeAdapter };

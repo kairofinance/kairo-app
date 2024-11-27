@@ -222,8 +222,9 @@ const PaymentTypeGraph = ({
         return {
           x: `Day ${Math.round(currentDay)}`,
           y: currentDay * streamRatePerDay,
-          streamRate:
-            streamRatePerDay * (24 / graphData.stream.duration.inHours), // Store rate for tooltip
+          streamRate: graphData.stream?.duration?.inHours
+            ? streamRatePerDay * (24 / graphData.stream.duration.inHours)
+            : 0,
         };
       });
     }
@@ -276,9 +277,13 @@ const PaymentTypeGraph = ({
     const dayNumber = Math.round((i * totalDays) / 4);
     return {
       value: `Day ${dayNumber}`,
-      dayNumber, // Used for uniqueness
+      dayNumber, // Used for uniqueness check
     };
-  });
+  }).filter(
+    (marker, index, self) =>
+      // Remove duplicates based on dayNumber
+      index === self.findIndex((m) => m.dayNumber === marker.dayNumber)
+  );
 
   return (
     <div className="relative">
@@ -334,7 +339,25 @@ const PaymentTypeGraph = ({
                 fontFamily: "JetBrains Mono",
               }}
               ticks={markers.map((m) => m.value)}
-              tickFormatter={(value) => value}
+              tick={(props) => {
+                const { x, y, payload } = props;
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <text
+                      key={`tick-${payload.value}-${x}-${y}`}
+                      x={0}
+                      y={0}
+                      dy={16}
+                      textAnchor="middle"
+                      fill="rgba(255, 255, 255, 0.4)"
+                      fontSize={10}
+                      fontFamily="JetBrains Mono"
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
+                );
+              }}
               interval={0}
               dy={10}
             />

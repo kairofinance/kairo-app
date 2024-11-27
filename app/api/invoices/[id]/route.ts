@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getCacheHeaders } from "@/utils/cache-headers";
 
-// Create a single PrismaClient instance
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
@@ -27,38 +20,52 @@ export async function GET(
       );
     }
 
-    const invoice = await prisma.invoice.findUnique({
-      where: {
-        invoiceId: id,
-      },
+    console.log("Searching for invoice with ID:", id);
+
+    // Try to find the invoice by database ID first
+    let invoice = await prisma.invoice.findUnique({
+      where: { id },
       include: {
-        payments: {
+        team: {
           select: {
-            createdAt: true,
+            id: true,
+            name: true,
+            profilePicture: true,
           },
-          orderBy: {
-            createdAt: "desc",
-          },
-          take: 1,
         },
       },
     });
 
+    // If not found by ID, try finding by invoiceId
     if (!invoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+      invoice = await prisma.invoice.findFirst({
+        where: { invoiceId: id },
+        include: {
+          team: {
+            select: {
+              id: true,
+              name: true,
+              profilePicture: true,
+            },
+          },
+        },
+      });
     }
+
+    if (!invoice) {
+      console.log("Invoice not found for ID:", id);
+      return NextResponse.json(
+        { error: "Invoice not found", debug: { searchedId: id } },
+        { status: 404 }
+      );
+    }
+
+    console.log("Found invoice:", invoice);
 
     // Convert all addresses to lowercase for comparison
     const userAddressLower = userAddress.toLowerCase();
     const issuerAddressLower = invoice.issuerAddress.toLowerCase();
     const clientAddressLower = invoice.clientAddress.toLowerCase();
-
-    // Log the addresses for debugging
-    console.log("Comparing addresses:", {
-      user: userAddressLower,
-      issuer: issuerAddressLower,
-      client: clientAddressLower,
-    });
 
     const isAuthorized =
       userAddressLower === issuerAddressLower ||
@@ -80,11 +87,17 @@ export async function GET(
       );
     }
 
-    // Format the response
+    // Extract numeric value from transaction hash and convert to decimal
+    const chainId = invoice?.creationTransactionHash
+      ? parseInt(invoice.creationTransactionHash.slice(-10), 16).toString()
+      : null;
+
+    // Format the response with chainId
     const formattedInvoice = {
       ...invoice,
+      chainId,
       paidDate:
-        invoice.paid && invoice.payments[0]
+        invoice?.paid && invoice?.payments[0]
           ? invoice.payments[0].createdAt.toISOString()
           : null,
     };
@@ -96,5 +109,7 @@ export async function GET(
       { error: "Internal server error" },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

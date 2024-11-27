@@ -17,7 +17,7 @@ const config: Config = {
         jetbrains: ["JetBrains Mono", "monospace"],
       },
       colors: {
-        plasma: {
+        kairo: {
           green: {
             DEFAULT: "#89f95e", // a0
             a20: "#99fa72",

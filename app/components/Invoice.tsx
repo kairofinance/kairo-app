@@ -4,16 +4,16 @@ function Invoice() {
   return (
     <div className="mx-auto flex place-items-center">
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
-        <div className="bg-plasma-black-a20 bg-opacity-30 px-4 py-10 shadow sm:px-12 rounded-lg">
+        <div className="bg-kairo-black-a20 bg-opacity-30 px-4 py-10 shadow sm:px-12 rounded-lg">
           <form action="#" method="POST" className="space-y-6">
             <div>
-              <label className="block text-sm font-medium leading-6 text-plasma-white">
+              <label className="block text-sm font-medium leading-6 text-kairo-white">
                 You pay
               </label>
               <div className="mt-2">
                 <input
                   required
-                  className="block w-full border-0 py-1.5 text-plasma-white bg-plasma-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6 rounded-lg"
+                  className="block w-full border-0 py-1.5 text-kairo-white bg-kairo-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6 rounded-lg"
                 />
               </div>
             </div>
@@ -21,7 +21,7 @@ function Invoice() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium leading-6 text-plasma-white"
+                className="block text-sm font-medium leading-6 text-kairo-white"
               >
                 You receive
               </label>
@@ -32,7 +32,7 @@ function Invoice() {
                   type="password"
                   required
                   autoComplete="current-password"
-                  className="block w-full rounded-lg border-0 py-1.5 text-plasma-white bg-plasma-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-lg border-0 py-1.5 text-kairo-white bg-kairo-black-a20 bg-opacity-60 shadow-sm ring-1 ring-inset ring-zinc-700 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-orange-600 sm:text-sm sm:leading-6"
                 />
               </div>
             </div>

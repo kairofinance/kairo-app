@@ -1,29 +1,10 @@
-export function formatDate(
-  date: Date | string,
-  options?: Intl.DateTimeFormatOptions
-): string {
-  const defaultOptions: Intl.DateTimeFormatOptions = {
+export function formatDate(date: Date | string): string {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
-  };
-
-  try {
-    const dateObj = typeof date === "string" ? new Date(date) : date;
-
-    // Check if date is valid
-    if (isNaN(dateObj.getTime())) {
-      return "Invalid date";
-    }
-
-    return new Intl.DateTimeFormat(undefined, {
-      ...defaultOptions,
-      ...options,
-    }).format(dateObj);
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Invalid date";
-  }
+  });
 }
 
 export function formatDateTime(
@@ -57,43 +38,19 @@ export function formatDateTime(
   }
 }
 
-export function formatRelativeTime(date: Date | string): string {
-  try {
-    const dateObj = typeof date === "string" ? new Date(date) : date;
+export function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((date.getTime() - now.getTime()) / 1000);
+  const diffInDays = Math.floor(diffInSeconds / (60 * 60 * 24));
 
-    // Check if date is valid
-    if (isNaN(dateObj.getTime())) {
-      return "Invalid date";
-    }
-
-    const now = new Date();
-    const diffInSeconds = Math.floor(
-      (now.getTime() - dateObj.getTime()) / 1000
-    );
-
-    if (diffInSeconds < 60) {
-      return "just now";
-    }
-
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    }
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    }
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-      return `${diffInDays}d ago`;
-    }
-
-    // For older dates, return the formatted date
-    return formatDate(dateObj);
-  } catch (error) {
-    console.error("Error formatting relative time:", error);
-    return "Invalid date";
+  if (diffInDays > 0) {
+    return `Due in ${diffInDays} day${diffInDays === 1 ? "" : "s"}`;
+  } else if (diffInDays === 0) {
+    return "Due today";
+  } else {
+    return `${Math.abs(diffInDays)} day${
+      Math.abs(diffInDays) === 1 ? "" : "s"
+    } overdue`;
   }
 }

@@ -33,7 +33,7 @@ export async function generateMetadata() {
   });
 
   return {
-    title: "Overview | Plasma",
+    title: "Overview | Kairo",
     description: "View your dashboard and recent activity",
     other: {
       headers,

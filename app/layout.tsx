@@ -10,7 +10,7 @@ import Navbar from "./components/Navbar";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Plasma - Web3 Billing Platform",
+  title: "Kairo - Web3 Billing Platform",
   description:
     "Secure Web3 billing with real-time insights and seamless transactions.",
   keywords: [
@@ -21,24 +21,24 @@ export const metadata: Metadata = {
     "payment solutions",
     "Web3 payments",
   ],
-  authors: [{ name: "Plasma" }],
-  creator: "Plasma",
-  publisher: "Plasma",
+  authors: [{ name: "Kairo" }],
+  creator: "Kairo",
+  publisher: "Kairo",
   icons: {
     icon: "./favicon.ico",
   },
   openGraph: {
-    title: "Plasma - Web3 Billing Platform",
+    title: "Kairo - Web3 Billing Platform",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions",
-    url: "https://plasma.finance",
-    siteName: "Plasma",
+    url: "https://kairo.finance",
+    siteName: "Kairo",
     images: [
       {
-        url: "https://plasma.finance/preview.png",
+        url: "https://kairo.finance/preview.png",
         width: 1200,
         height: 630,
-        alt: "Plasma Web3 Billing Platform Preview",
+        alt: "Kairo Web3 Billing Platform Preview",
       },
     ],
     locale: "en_US",
@@ -46,11 +46,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Plasma - Web3 Billing Platform",
+    title: "Kairo - Web3 Billing Platform",
     description:
       "Secure Web3 billing with real-time insights and seamless transactions.",
-    images: ["https://plasma.finance/preview.png"],
-    creator: "@PlasmaFinance",
+    images: ["https://kairo.finance/preview.png"],
+    creator: "@KairoFinance",
   },
 };
 

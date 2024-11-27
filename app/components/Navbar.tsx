@@ -42,22 +42,11 @@ interface NavigationItem {
 const getNavigationItems = (
   selectedTeamId: string | null
 ): NavigationItem[] => {
-  const baseItems = [
+  return [
     { name: "Overview", href: "/overview", icon: ChartPieIcon },
     { name: "Create", href: "/create", icon: PlusIcon },
     { name: "View", href: "/view", icon: DocumentDuplicateIcon },
   ];
-
-  // Only show Teams nav item when in personal context
-  if (!selectedTeamId) {
-    baseItems.splice(2, 0, {
-      name: "Teams",
-      href: "/teams",
-      icon: UserGroupIcon,
-    });
-  }
-
-  return baseItems;
 };
 
 export default function Navbar() {
@@ -327,6 +316,17 @@ export default function Navbar() {
 
                   {/* Account Actions */}
                   <div className="space-y-2">
+                    <Link
+                      href="/teams"
+                      onClick={() => setShowModal(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-sm font-medium
+                        rounded-lg transition-all duration-200 w-full
+                        text-white/60 hover:text-white
+                        bg-white/[0.02] hover:bg-white/[0.04]"
+                    >
+                      <UserGroupIcon className="h-4 w-4" />
+                      <span>Teams</span>
+                    </Link>
                     <button
                       onClick={() => {
                         open({ view: "Connect" });

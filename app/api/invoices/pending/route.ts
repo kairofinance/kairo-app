@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getCacheHeaders } from "@/utils/cache-headers";
 
-// Create a single PrismaClient instance and reuse it
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   const headers = getCacheHeaders({
@@ -20,6 +13,7 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get("address");
   const type = searchParams.get("type");
+  const teamId = searchParams.get("teamId");
 
   if (!address) {
     return NextResponse.json(
@@ -35,13 +29,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Build the where clause based on type and team context
+    const whereClause: any = {
+      paid: false,
+      ...(type === "incoming"
+        ? { clientAddress: address.toLowerCase() }
+        : { issuerAddress: address.toLowerCase() }),
+    };
+
+    // Add team filter if teamId is provided
+    if (teamId) {
+      whereClause.teamId = teamId;
+    }
+
     const invoices = await prisma.invoice.findMany({
-      where: {
-        paid: false,
-        ...(type === "incoming"
-          ? { clientAddress: address.toLowerCase() }
-          : { issuerAddress: address.toLowerCase() }),
-      },
+      where: whereClause,
       orderBy: {
         createdAt: "desc",
       },
@@ -54,6 +56,12 @@ export async function GET(request: NextRequest) {
             createdAt: "desc",
           },
           take: 1,
+        },
+        team: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
     });

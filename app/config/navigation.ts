@@ -51,8 +51,8 @@ export const navigation: NavigationElement[] = [
 export const teams = [
   {
     id: 1,
-    name: "Plasma",
-    href: "/teams/plasma",
+    name: "Kairo",
+    href: "/teams/kairo",
     initial: "K",
     current: false,
   },

@@ -29,7 +29,7 @@ export async function generateMetadata() {
   });
 
   return {
-    title: "Create Team | Plasma",
+    title: "Create Team | Kairo",
     description: "Create a new team",
     other: {
       headers,
