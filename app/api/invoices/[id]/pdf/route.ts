@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import puppeteer from "puppeteer-core";
 import chrome from "@sparticuz/chromium";
 import path from "path";
-import { USDC_ADDRESS, DAI_ADDRESS } from "../../../../contracts/addresses";
+import { USDC_ADDRESS, DAI_ADDRESS } from "@/contracts/addresses";
 
 const prisma = new PrismaClient();
 

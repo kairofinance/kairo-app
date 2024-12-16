@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 interface CircularCropModalProps {
   imageUrl: string;
@@ -117,22 +118,18 @@ export default function CircularCropModal({
               circularCrop
               className="flex items-center justify-center"
             >
-              <img
+              <Image
                 ref={imgRef}
                 src={imageUrl}
                 alt="Crop preview"
-                className="max-h-[500px] object-contain"
-                onLoad={(e) => {
-                  const img = e.currentTarget;
-                  const minSize = Math.min(img.width, img.height);
-                  setCrop({
-                    unit: "%",
-                    width: 90,
-                    height: 90,
-                    x: 5,
-                    y: 5,
-                  });
+                width={500}
+                height={500}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "70vh",
+                  objectFit: "contain",
                 }}
+                onLoad={onImageLoad}
               />
             </ReactCrop>
           </div>

@@ -14,7 +14,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./app/*"]
+      "@/*": ["./*"]
     },
     "target": "ES2017",
     "plugins": [
@@ -27,7 +27,15 @@
     "app/**/*.ts",
     "app/**/*.tsx",
     "app/**/*.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "utils/addressUtils.ts",
+    "utils/cache-headers.ts",
+    "utils/cn.ts",
+    "utils/date-format.ts",
+    "utils/ethereum-client.ts",
+    "utils/fileHelpers.ts",
+    "lib/db.ts",
+    "lib/pdfjs.ts"
   ],
   "exclude": ["node_modules"]
 }

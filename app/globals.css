@@ -60,7 +60,7 @@
 
 @font-face {
   font-family: "JetBrains Mono";
-  src: url("/fonts/JetBrainsMono-Extrabold.woff2") format("woff2");
+  src: url("/fonts/JetBrainsMono-ExtraBold.woff2") format("woff2");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -68,7 +68,7 @@
 
 @font-face {
   font-family: "JetBrains Mono";
-  src: url("/fonts/JetBrainsMono-Extrabold-Italic.woff2") format("woff2");
+  src: url("/fonts/JetBrainsMono-ExtraBold-Italic.woff2") format("woff2");
   font-weight: 800;
   font-style: italic;
   font-display: swap;
@@ -82,6 +82,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 245, 245, 245;
@@ -89,7 +97,7 @@
 }
 
 * {
-  font-family: "Helvetica", sans-serif;
+  font-family: "Poppins", sans-serif;
   ::selection {
     color: black;
     background: white;

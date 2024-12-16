@@ -2,13 +2,31 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      "pspn4pqflsrqqzjp.public.blob.vercel-storage.com",
-      "cdn.stamp.fyi",
-      "mirror.xyz",
-      "mirror-media.xyz",
-      "arweave.net",
-      "images.mirror-media.xyz",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "pspn4pqflsrqqzjp.public.blob.vercel-storage.com",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.stamp.fyi",
+      },
+      {
+        protocol: "https",
+        hostname: "mirror.xyz",
+      },
+      {
+        protocol: "https",
+        hostname: "mirror-media.xyz",
+      },
+      {
+        protocol: "https",
+        hostname: "arweave.net",
+      },
+      {
+        protocol: "https",
+        hostname: "images.mirror-media.xyz",
+      },
     ],
   },
   webpack: (config) => {

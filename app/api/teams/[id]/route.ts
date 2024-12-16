@@ -1,150 +1,190 @@
 import { NextRequest } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { getCacheHeaders } from "@/utils/cache-headers";
 
-const prisma = new PrismaClient();
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
 
-// GET /api/teams/[id] - Get a single team
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const teamId = await params.id;
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const headers = getCacheHeaders({
+    maxAge: 3600,
+    staleWhileRevalidate: 300,
+  });
 
   try {
+    const userAddress = request.headers.get("x-user-address")?.toLowerCase();
+    if (!userAddress) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers });
+    }
+
     const team = await prisma.team.findUnique({
-      where: { id: teamId },
+      where: { id: params.id },
       include: {
+        owner: true,
         members: {
           include: {
             user: true,
           },
         },
+        invites: {
+          include: {
+            invitee: true,
+          },
+        },
+      },
+    });
+
+    if (!team) {
+      return Response.json(
+        { error: "Team not found" },
+        { status: 404, headers }
+      );
+    }
+
+    // Check if user is a member
+    const isMember = team.members.some(
+      (member) => member.user.address.toLowerCase() === userAddress
+    );
+
+    if (!isMember) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers });
+    }
+
+    return Response.json(team, { headers });
+  } catch (error) {
+    console.error("Error fetching team:", error);
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500, headers }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const headers = getCacheHeaders({
+    maxAge: 3600,
+    staleWhileRevalidate: 300,
+  });
+
+  try {
+    const userAddress = request.headers.get("x-user-address")?.toLowerCase();
+    if (!userAddress) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers });
+    }
+
+    const body = await request.json();
+    const { name, description, website, treasuryAddress } = body;
+
+    const team = await prisma.team.findUnique({
+      where: { id: params.id },
+      include: {
+        owner: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!team) {
+      return Response.json(
+        { error: "Team not found" },
+        { status: 404, headers }
+      );
+    }
+
+    // Check if user is the owner
+    if (team.owner.address.toLowerCase() !== userAddress) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers });
+    }
+
+    // Check if name can be changed (7 days cooldown)
+    if (name && name !== team.name) {
+      const lastNameChange = team.lastNameChange || team.createdAt;
+      const weekSince = new Date(
+        lastNameChange.getTime() + 7 * 24 * 60 * 60 * 1000
+      );
+      if (new Date() < weekSince) {
+        return Response.json(
+          { error: "Name can only be changed once every 7 days" },
+          { status: 400, headers }
+        );
+      }
+    }
+
+    const updatedTeam = await prisma.team.update({
+      where: { id: params.id },
+      data: {
+        ...(name && { name, lastNameChange: new Date() }),
+        ...(description !== undefined && { description }),
+        ...(website !== undefined && { website }),
+        ...(treasuryAddress !== undefined && { treasuryAddress }),
+      },
+      include: {
+        owner: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    return Response.json(updatedTeam, { headers });
+  } catch (error) {
+    console.error("Error updating team:", error);
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500, headers }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const headers = getCacheHeaders({
+    maxAge: 3600,
+    staleWhileRevalidate: 300,
+  });
+
+  try {
+    const userAddress = request.headers.get("x-user-address")?.toLowerCase();
+    if (!userAddress) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers });
+    }
+
+    const team = await prisma.team.findUnique({
+      where: { id: params.id },
+      include: {
         owner: true,
       },
     });
 
     if (!team) {
-      return new Response(JSON.stringify({ error: "Team not found" }), {
-        status: 404,
-      });
+      return Response.json(
+        { error: "Team not found" },
+        { status: 404, headers }
+      );
     }
 
-    return new Response(JSON.stringify({ team }), {
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error fetching team:", error);
-    return new Response(JSON.stringify({ error: "Failed to fetch team" }), {
-      status: 500,
-    });
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-// PATCH /api/teams/[id] - Update team details
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const teamId = await params.id;
-
-  try {
-    const body = await request.json();
-
-    // Destructure with default values to prevent null/undefined
-    const {
-      name = undefined,
-      description = undefined,
-      website = undefined,
-      treasuryAddress = undefined,
-    } = body;
-
-    // Get current team to check lastNameChange
-    const currentTeam = await prisma.team.findUnique({
-      where: { id: teamId },
-    });
-
-    if (!currentTeam) {
-      return new Response(JSON.stringify({ error: "Team not found" }), {
-        status: 404,
-      });
+    // Check if user is the owner
+    if (team.owner.address.toLowerCase() !== userAddress) {
+      return Response.json({ error: "Unauthorized" }, { status: 401, headers });
     }
 
-    // Check if name is being changed
-    const nameUpdate =
-      name && name !== currentTeam.name
-        ? {
-            name,
-            lastNameChange: new Date(),
-          }
-        : {};
-
-    // Create update data object with only defined values
-    const updateData = {
-      ...nameUpdate,
-      ...(description !== undefined && { description }),
-      ...(website !== undefined && { website }),
-      ...(treasuryAddress !== undefined && { treasuryAddress }),
-    };
-
-    const team = await prisma.team.update({
-      where: { id: teamId },
-      data: updateData,
-      include: {
-        members: {
-          include: {
-            user: true,
-          },
-        },
-        owner: true,
-      },
-    });
-
-    return new Response(JSON.stringify({ team }), {
-      status: 200,
-    });
-  } catch (error) {
-    console.error("Error updating team:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Failed to update team",
-        details: error instanceof Error ? error.message : "Unknown error",
-      }),
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-// DELETE /api/teams/[id] - Delete a team
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const teamId = await params.id;
-
-  try {
-    // Delete all team members first
-    await prisma.teamMember.deleteMany({
-      where: { teamId },
-    });
-
-    // Then delete the team
     await prisma.team.delete({
-      where: { id: teamId },
+      where: { id: params.id },
     });
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-    });
+    return Response.json({ success: true }, { headers });
   } catch (error) {
     console.error("Error deleting team:", error);
-    return new Response(JSON.stringify({ error: "Failed to delete team" }), {
-      status: 500,
-    });
-  } finally {
-    await prisma.$disconnect();
+    return Response.json(
+      { error: "Internal server error" },
+      { status: 500, headers }
+    );
   }
 }

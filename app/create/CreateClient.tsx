@@ -5,6 +5,8 @@ import {
   DocumentPlusIcon,
   ArrowPathIcon,
   ClockIcon,
+  CalendarIcon,
+  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import CreateInvoice from "./components/CreateInvoice";
 import CreateStream from "./components/CreateStream";
@@ -19,6 +21,9 @@ import {
   Area,
   ResponsiveContainer,
 } from "recharts";
+import Image from "next/image";
+import Spinner from "@/components/Spinner";
+import Card from "@/components/shared/ui/Card";
 
 type CreationType = "invoice" | "stream" | "vesting";
 
@@ -287,12 +292,7 @@ const PaymentTypeGraph = ({
 
   return (
     <div className="relative">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="h-[300px]"
-      >
+      <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
@@ -330,16 +330,13 @@ const PaymentTypeGraph = ({
               vertical={false}
             />
             <XAxis
-              dataKey="x"
-              axisLine={false}
+              dataKey="name"
+              stroke="rgba(255, 255, 255, 0.4)"
+              fontSize={10}
               tickLine={false}
-              tick={{
-                fill: "rgba(255, 255, 255, 0.4)",
-                fontSize: 10,
-                fontFamily: "JetBrains Mono",
-              }}
+              axisLine={false}
               ticks={markers.map((m) => m.value)}
-              tick={(props) => {
+              tickFormatter={(props) => {
                 const { x, y, payload } = props;
                 return (
                   <g transform={`translate(${x},${y})`}>
@@ -461,7 +458,7 @@ const PaymentTypeGraph = ({
             />
           </AreaChart>
         </ResponsiveContainer>
-      </motion.div>
+      </div>
     </div>
   );
 };
@@ -513,6 +510,159 @@ export default function CreateClient() {
     []
   );
 
+  const renderPreview = () => {
+    switch (selectedType) {
+      case "invoice":
+        return (
+          <div className="px-5 space-y-4">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/[0.05]">
+                  <Image
+                    src="/tokens/USDC.png"
+                    width={16}
+                    height={16}
+                    alt="USDC"
+                    className="opacity-80"
+                  />
+                </div>
+                <span className="text-sm text-white/60">Amount</span>
+              </div>
+              <span className="text-sm font-medium text-white">
+                {graphData.invoice?.amount || "0"} USDC
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/[0.05]">
+                  <CalendarIcon className="w-4 h-4 text-white/60" />
+                </div>
+                <span className="text-sm text-white/60">Due Date</span>
+              </div>
+              <span className="text-sm font-medium text-white">
+                {graphData.invoice?.dueDate?.toLocaleDateString() || "Not set"}
+              </span>
+            </div>
+          </div>
+        );
+
+      case "stream":
+        const streamRate =
+          graphData.stream?.recipients.reduce(
+            (sum, r) => sum + parseFloat(r.amount || "0"),
+            0
+          ) /
+          (parseFloat(graphData.stream?.duration.value || "0") *
+            (graphData.stream?.duration.inHours || 0));
+
+        return (
+          <div className="px-5 space-y-4">
+            {graphData.stream?.recipients.map((recipient, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-white/[0.05]">
+                    <UserCircleIcon className="w-4 h-4 text-white/60" />
+                  </div>
+                  <span className="text-sm text-white/60">
+                    Recipient {index + 1}
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-white">
+                  {recipient.amount || "0"} USDC
+                </span>
+              </div>
+            ))}
+
+            <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/[0.05]">
+                  <ArrowPathIcon className="w-4 h-4 text-white/60" />
+                </div>
+                <span className="text-sm text-white/60">Stream Rate</span>
+              </div>
+              <span className="text-sm font-medium text-white">
+                {streamRate ? `${streamRate.toFixed(6)} USDC/hr` : "0 USDC/hr"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/[0.05]">
+                  <CalendarIcon className="w-4 h-4 text-white/60" />
+                </div>
+                <span className="text-sm text-white/60">Duration</span>
+              </div>
+              <span className="text-sm font-medium text-white">
+                {graphData.stream?.duration.value || "0"}{" "}
+                {graphData.stream?.duration.unit || "hours"}
+              </span>
+            </div>
+          </div>
+        );
+
+      case "vesting":
+        return (
+          <div className="px-5 space-y-4">
+            {graphData.vesting?.recipients.map((recipient, index) => (
+              <div key={index} className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-white/[0.05]">
+                      <UserCircleIcon className="w-4 h-4 text-white/60" />
+                    </div>
+                    <span className="text-sm text-white/60">
+                      Recipient {index + 1}
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-white">
+                    {recipient.amount || "0"} USDC
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-white/[0.05]">
+                      <CalendarIcon className="w-4 h-4 text-white/60" />
+                    </div>
+                    <span className="text-sm text-white/60">Schedule</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-white">
+                      {recipient.cliffDuration || "0"} months cliff
+                    </div>
+                    <div className="text-sm text-white/60">
+                      {recipient.vestingDuration || "0"} months vesting
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-white/[0.05]">
+                      <ArrowPathIcon className="w-4 h-4 text-white/60" />
+                    </div>
+                    <span className="text-sm text-white/60">
+                      Initial Release
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-white">
+                    {recipient.initialRelease || "0"}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen mt-5">
       <div className="max-w-6xl mx-auto space-y-12 p-9">
@@ -552,17 +702,23 @@ export default function CreateClient() {
           <PaymentTypeGraph selectedType={selectedType} graphData={graphData} />
         </div>
 
-        {/* Creation Forms */}
-        <div className="space-y-6">
-          {selectedType === "invoice" && (
-            <CreateInvoice onDataUpdate={handleInvoiceDataUpdate} />
-          )}
-          {selectedType === "stream" && (
-            <CreateStream onDataUpdate={handleStreamDataUpdate} />
-          )}
-          {selectedType === "vesting" && (
-            <CreateVesting onDataUpdate={handleVestingDataUpdate} />
-          )}
+        {/* Creation Forms - Using new Card component */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Details Section */}
+          <Card title="Details">
+            {selectedType === "invoice" && (
+              <CreateInvoice onDataUpdate={handleInvoiceDataUpdate} />
+            )}
+            {selectedType === "stream" && (
+              <CreateStream onDataUpdate={handleStreamDataUpdate} />
+            )}
+            {selectedType === "vesting" && (
+              <CreateVesting onDataUpdate={handleVestingDataUpdate} />
+            )}
+          </Card>
+
+          {/* Preview Section */}
+          <Card title="Preview">{renderPreview()}</Card>
         </div>
       </div>
     </div>

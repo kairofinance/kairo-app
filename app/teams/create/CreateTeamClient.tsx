@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import CircularCropModal from "@/components/CircularCropModal";
-import { useAlert } from "@/hooks/useAlert";
+import { useAlert } from "@/components/shared/hooks/useAlert";
 import AlertMessage from "@/components/AlertMessage";
 
 export default function CreateTeamClient() {

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import TeamOverview from "./components/TeamOverview";
 import TeamMembers from "./components/TeamMembers";
-import { useTeam } from "@/hooks/useTeam";
+import { useTeam } from "@/components/shared/hooks/useTeam";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -14,11 +14,15 @@ import {
   TrashIcon,
   UserMinusIcon,
   ExclamationTriangleIcon,
+  ArrowLeftIcon,
+  UserPlusIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import { useAlert } from "@/hooks/useAlert";
+import { useAlert } from "@/components/shared/hooks/useAlert";
 import AlertMessage from "@/components/AlertMessage";
 import CircularCropModal from "@/components/CircularCropModal";
+import Spinner from "@/components/Spinner";
+import Card from "@/components/shared/ui/Card";
 
 interface TeamClientProps {
   teamId: string;
@@ -169,10 +173,8 @@ export default function TeamClient({ teamId }: TeamClientProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="h-[400px] rounded-lg bg-white/[0.02] animate-pulse" />
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
       </div>
     );
   }
@@ -197,23 +199,19 @@ export default function TeamClient({ teamId }: TeamClientProps) {
     <div className="min-h-screen mt-5">
       <div className="max-w-6xl mx-auto space-y-12 p-9">
         {/* Header with Back Navigation */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/teams"
-              className="flex items-center gap-2 px-3 py-1.5 text-sm
-                text-white/40 hover:text-white/60 
-                bg-white/[0.02] hover:bg-white/[0.04]
-                rounded-lg transition-all duration-200"
-            >
-              <ChevronLeftIcon className="w-4 h-4" />
-              <span>Back to Teams</span>
-            </Link>
-          </div>
+
+        <div className="flex items-center">
+          <Link
+            href="/teams"
+            className="inline-flex items-center gap-2 text-white/60 hover:text-white/80 transition-colors mb-6 font-jetbrains text-sm"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+            <span>Back to Teams</span>
+          </Link>
         </div>
 
         {/* Team Header Section */}
-        <div className="relative h-[300px] rounded-lg bg-gradient-to-b from-white/[0.02] to-transparent overflow-hidden">
+        <div className="relative h-[300px] rounded-lg !mt-0 bg-gradient-to-b from-white/[0.02] to-transparent overflow-hidden">
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-r from-white/5 via-transparent to-white/5" />
 
@@ -315,23 +313,103 @@ export default function TeamClient({ teamId }: TeamClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Team Overview */}
           <div className="lg:col-span-2">
-            <TeamOverview
-              team={team}
-              userAddress={address}
-              onDelete={() => setShowDeleteModal(true)}
-              onLeave={handleLeaveTeam}
-              onFileSelect={handleFileSelect}
-              localPreviewImage={localPreviewImage}
-              pendingImageFormData={pendingImageFormData}
-              onPendingImageChange={setPendingImageFormData}
-              onLocalPreviewChange={setLocalPreviewImage}
-              onImageUpload={handleImageUpload}
-            />
+            <Card
+              title="Overview"
+              action={
+                isOwner && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm 
+                             bg-white/[0.02] hover:bg-white/[0.05] 
+                             border border-white/[0.08] hover:border-white/[0.12] 
+                             rounded-lg transition-all duration-200"
+                  >
+                    <PencilIcon className="w-4 h-4 text-white/60" />
+                    <span className="text-white/60">Edit</span>
+                  </button>
+                )
+              }
+            >
+              <div className="space-y-6">
+                {/* Team Description */}
+                <div>
+                  <h3 className="text-sm text-white/40 mb-2">Description</h3>
+                  <p className="text-white/80">
+                    {team.description || "No description provided"}
+                  </p>
+                </div>
+
+                {/* Team Website */}
+                <div>
+                  <h3 className="text-sm text-white/40 mb-2">Website</h3>
+                  {team.website ? (
+                    <a
+                      href={team.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 transition-colors"
+                    >
+                      {team.website}
+                    </a>
+                  ) : (
+                    <p className="text-white/40">No website provided</p>
+                  )}
+                </div>
+
+                {/* Treasury Address */}
+                <div>
+                  <h3 className="text-sm text-white/40 mb-2">Treasury</h3>
+                  {team.treasuryAddress ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/80">
+                        {`${team.treasuryAddress.slice(
+                          0,
+                          6
+                        )}...${team.treasuryAddress.slice(-4)}`}
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-white/40">No treasury address set</p>
+                  )}
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* Team Members */}
           <div className="lg:col-span-1">
-            <TeamMembers team={team} userAddress={address} />
+            <Card
+              title="Members"
+              action={
+                isOwner && (
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm 
+                             bg-white/[0.02] hover:bg-white/[0.05] 
+                             border border-white/[0.08] hover:border-white/[0.12] 
+                             rounded-lg transition-all duration-200"
+                  >
+                    <UserPlusIcon className="w-4 h-4 text-white/60" />
+                    <span className="text-white/60">Invite</span>
+                  </button>
+                )
+              }
+            >
+              <div className="space-y-2">
+                {team.members.map((member) => (
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group flex items-center justify-between p-3
+                             bg-white/[0.02] hover:bg-white/[0.04] 
+                             rounded-lg transition-all duration-200"
+                  >
+                    {/* ... keep existing member card content ... */}
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
           </div>
         </div>
       </div>

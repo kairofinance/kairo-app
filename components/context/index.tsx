@@ -23,10 +23,10 @@ import type {
 import { createSIWEConfig, formatMessage } from "@reown/appkit-siwe";
 import { Chain } from "viem";
 import { defineChain } from "viem";
-import { SafeAdapter } from "../adapters/SafeAdapter";
 import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import Safe from "@safe-global/safe-apps-sdk";
-import { TeamProvider } from "@/contexts/TeamContext";
+import { TeamProvider } from "@/components/context/TeamContext";
+import { siweConfig } from "@/config/siwe";
 
 // Configure WalletConnect metadata
 const metadata = {
@@ -37,30 +37,22 @@ const metadata = {
   icons: ["../favicon.ico"],
 };
 
-// Configure transport with proper settings
-const transport = http(
-  process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.sepolia.org",
-  {
-    retryCount: 3,
-    retryDelay: 1000,
-    timeout: 10000,
-  }
-);
-
-// Configure WalletConnect
 const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
+
 if (!projectId) {
   throw new Error("Project ID is not defined");
 }
 
-// Create WagmiAdapter with proper configuration
-const wagmiAdapter = new WagmiAdapter({
+export const networks = [sepolia];
+
+//Set up the Wagmi Adapter (Config)
+export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({
     storage: cookieStorage,
   }),
   ssr: true,
   projectId,
-  networks: [sepolia],
+  networks,
 });
 
 // Create AppKit instance
@@ -73,6 +65,7 @@ const appKit = createAppKit({
   features: {
     analytics: true,
   },
+  siweConfig: siweConfig, // pass your siweConfig
 });
 
 // Create QueryClient with proper configuration
@@ -88,36 +81,18 @@ const queryClient = new QueryClient({
 
 // Initialize Safe SDK
 const safe = new Safe();
-const safeAdapter = new SafeAdapter();
 
-export default function Context({
+export function ContextProvider({
   children,
   cookies,
 }: {
   children: ReactNode;
-  cookies: string;
+  cookies: string | null;
 }) {
   const initialState = cookieToInitialState(
     wagmiAdapter.wagmiConfig as Config,
     cookies
   );
-
-  React.useEffect(() => {
-    // Initialize Safe when the app loads
-    const initSafe = async () => {
-      try {
-        const safeInfo = await safe.safe.getInfo();
-        if (safeInfo) {
-          const provider = new SafeAppProvider(safeInfo, safe);
-          await safeAdapter.init(provider, safeInfo.safeAddress);
-        }
-      } catch (err) {
-        console.log("Not running as a Safe App");
-      }
-    };
-
-    initSafe();
-  }, []);
 
   return (
     <WagmiProvider
@@ -133,4 +108,4 @@ export default function Context({
   );
 }
 
-export { safe, safeAdapter };
+export { safe };

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract, useReadContract } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { useAlert } from "@/hooks/useAlert";
+import { useAlert } from "@/components/shared/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/AlertMessage";
@@ -17,8 +17,9 @@ import "react-datepicker/dist/react-datepicker.css";
 import { sepolia } from "viem/chains";
 import { UserCircleIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import { client } from "../../../wagmi.config";
-import { useTeamContext } from "@/contexts/TeamContext";
+import { useTeamContext } from "@/components/context/TeamContext";
 import { ERC20ABI } from "../../../contracts/ERC20.sol/ERC20";
+import Input from "@/components/shared/ui/Input";
 
 const tokens = [
   {
@@ -230,209 +231,107 @@ export default function CreateInvoice({ onDataUpdate }: CreateInvoiceProps) {
   }, [details.amount, details.dueDate, onDataUpdate]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Form Section */}
-      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2
-          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
-                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
-        >
-          Details
-        </h2>
-
-        <div className="space-y-6">
-          {/* Token Selection */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Select Token
-            </label>
-            <div className="flex gap-2">
-              {tokens.map((token) => (
-                <button
-                  key={token.name}
-                  onClick={() => setSelectedToken(token)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
-                    ${
-                      selectedToken.name === token.name
-                        ? "bg-white/[0.08]"
-                        : "bg-white/[0.02] hover:bg-white/[0.04]"
-                    }`}
-                >
-                  <Image
-                    src={token.image}
-                    width={20}
-                    height={20}
-                    alt={token.name}
-                    className="rounded-full"
-                  />
-                  <span className="text-white/80">{token.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Amount Input */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Amount
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={details.amount}
-                onChange={handleAmountChange}
-                placeholder="Enter amount"
-                className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                         placeholder:text-white/20 transition-all duration-200
-                         hover:bg-white/[0.04] focus:bg-white/[0.04]"
+    <div className="space-y-8">
+      {/* Token Selection */}
+      <div className="space-y-2">
+        <label className="text-sm text-white/40">Select Token</label>
+        <div className="flex gap-2">
+          {tokens.map((token) => (
+            <button
+              key={token.name}
+              onClick={() => setSelectedToken(token)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
+                ${
+                  selectedToken.name === token.name
+                    ? "bg-zinc-800"
+                    : "bg-zinc-800/50 hover:bg-zinc-800"
+                }`}
+            >
+              <Image
+                src={token.image}
+                width={20}
+                height={20}
+                alt={token.name}
+                className="rounded-full"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40">
-                {selectedToken.name}
-              </span>
-            </div>
-          </div>
-
-          {/* Recipient Input */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Recipient
-            </label>
-            <input
-              type="text"
-              value={details.recipient}
-              onChange={(e) => handleDetailsChange("recipient", e.target.value)}
-              placeholder="Enter recipient address or ENS"
-              className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                       placeholder:text-white/20 transition-all duration-200
-                       hover:bg-white/[0.04] focus:bg-white/[0.04]"
-            />
-          </div>
-
-          {/* Due Date Input */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Due Date
-            </label>
-            <DatePicker
-              selected={details.dueDate}
-              onChange={(date) => handleDetailsChange("dueDate", date)}
-              minDate={new Date()}
-              placeholderText="Select due date"
-              className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                       placeholder:text-white/20 transition-all duration-200
-                       hover:bg-white/[0.04] focus:bg-white/[0.04]"
-            />
-          </div>
-
-          {/* Create Button */}
-          <button
-            onClick={handleSubmit}
-            disabled={
-              isLoading ||
-              isPending ||
-              !hasEnoughBalance() ||
-              !details.recipient ||
-              !details.amount ||
-              !details.dueDate ||
-              !isAddress(details.recipient)
-            }
-            className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
-                     disabled:cursor-not-allowed transition-all duration-200 rounded-lg
-                     py-3 px-6 text-white font-medium"
-          >
-            {isLoading || isPending
-              ? "Processing..."
-              : !hasEnoughBalance()
-              ? "Insufficient Balance"
-              : "Create Invoice"}
-          </button>
-
-          {/* Balance Display */}
-          <div className="flex items-center justify-between text-sm text-white/60 mb-4">
-            <span>Balance:</span>
-            <span>
-              {formatUnits(tokenBalance, selectedToken.decimals)}{" "}
-              {selectedToken.name}
-            </span>
-          </div>
+              <span className="text-white/80">{token.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Preview Section */}
-      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2
-          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
-                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
-        >
-          Preview
-        </h2>
+      {/* Amount Input */}
+      <Input
+        label="Amount"
+        value={details.amount}
+        onChange={handleAmountChange}
+        placeholder="Enter amount"
+        tokenIcon={selectedToken.image}
+        suffix={selectedToken.name}
+      />
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <Image
-                  src={selectedToken.image}
-                  width={16}
-                  height={16}
-                  alt={selectedToken.name}
-                  className="opacity-80"
-                />
-              </div>
-              <span className="text-sm text-white/60">Amount</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {details.amount || "0"} {selectedToken.name}
-            </span>
-          </div>
+      {/* Recipient Input */}
+      <Input
+        label="Recipient"
+        icon={<UserCircleIcon className="w-4 h-4" />}
+        value={details.recipient}
+        onChange={(e) => handleDetailsChange("recipient", e.target.value)}
+        placeholder="Enter recipient address or ENS"
+        error={
+          details.recipient && !isAddress(details.recipient)
+            ? "Invalid address format"
+            : undefined
+        }
+      />
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <UserCircleIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Recipient</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {details.recipient || "Not set"}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <CalendarIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Due Date</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {details.dueDate
-                ? details.dueDate.toLocaleDateString()
-                : "Not set"}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <UserCircleIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Issuer</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {selectedTeam ? selectedTeam.name : "Personal Account"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {alertState && (
-        <AlertMessage
-          message={alertState.message}
-          type={alertState.type}
-          onDismiss={dismissAlert}
+      {/* Due Date Input */}
+      <div className="space-y-2">
+        <label className="text-sm text-white/40 flex items-center gap-2">
+          <CalendarIcon className="w-4 h-4 text-white/60" />
+          Due Date
+        </label>
+        <DatePicker
+          selected={details.dueDate}
+          onChange={(date) => handleDetailsChange("dueDate", date)}
+          minDate={new Date()}
+          placeholderText="Select due date"
+          className="w-full bg-zinc-800/50 hover:bg-zinc-800 focus:bg-zinc-800 
+                   rounded-lg px-4 py-3 text-white border border-white/[0.08]
+                   placeholder:text-white/20 transition-all duration-200"
         />
-      )}
+      </div>
+
+      {/* Create Button */}
+      <button
+        onClick={handleSubmit}
+        disabled={
+          isLoading ||
+          isPending ||
+          !hasEnoughBalance() ||
+          !details.recipient ||
+          !details.amount ||
+          !details.dueDate ||
+          !isAddress(details.recipient)
+        }
+        className="w-full bg-zinc-800/50 hover:bg-zinc-800 disabled:opacity-50 
+                 disabled:cursor-not-allowed transition-all duration-200 rounded-lg
+                 py-3 px-6 text-white font-medium border border-white/[0.08]"
+      >
+        {isLoading || isPending
+          ? "Processing..."
+          : !hasEnoughBalance()
+          ? "Insufficient Balance"
+          : "Create Invoice"}
+      </button>
+
+      {/* Balance Display */}
+      <div className="flex items-center justify-between text-sm text-white/40">
+        <span>Balance:</span>
+        <span>
+          {formatUnits(tokenBalance, selectedToken.decimals)}{" "}
+          {selectedToken.name}
+        </span>
+      </div>
     </div>
   );
 }

@@ -2,11 +2,11 @@ import React from "react";
 import "./globals.css";
 import type { Metadata } from "next";
 import "react-loading-skeleton/dist/skeleton.css";
-import Context from "./Context";
+import { ContextProvider } from "../components/context";
 import Footer from "@/components/Footer";
 import { headers } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
-import Navbar from "./components/Navbar";
+import Navbar from "../components/Navbar";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
@@ -56,15 +56,15 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
-  const cookieHeader = (await headers()).get("cookie");
+}>) {
+  const cookies = (await headers()).get("cookie");
 
   return (
     <html lang="en">
-      <body className="bg-[#080808]">
-        <Context cookies={cookieHeader || ""}>
+      <body className="bg-[#0d0d0d]">
+        <ContextProvider cookies={cookies}>
           <Suspense fallback={null}>
             <div className="flex min-h-screen relative flex-col">
               <Navbar />
@@ -73,7 +73,7 @@ export default async function RootLayout({
             </div>
           </Suspense>
           <Analytics />
-        </Context>
+        </ContextProvider>
       </body>
     </html>
   );

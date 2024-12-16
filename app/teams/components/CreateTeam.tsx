@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { useTeams } from "@/hooks/useTeams";
+import { useTeams } from "@/components/shared/hooks/useTeams";
 import { useRouter } from "next/navigation";
 
 interface CreateTeamProps {

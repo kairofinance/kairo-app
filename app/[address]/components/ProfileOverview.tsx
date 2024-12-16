@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { UserCircleIcon, LinkIcon } from "@heroicons/react/24/outline";
 import { useEnsName, useEnsAvatar, useBalance } from "wagmi";
 import { usePublicClient } from "wagmi";
-import { useTeams } from "@/hooks/useTeams";
+import { useTeams } from "@/components/shared/hooks/useTeams";
 
 interface ProfileOverviewProps {
   address: string;

@@ -11,9 +11,10 @@ import {
   CalendarIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
-import SpinningLogo from "@/components/SpinningLogo";
+
 import Image from "next/image";
 import * as cheerio from "cheerio";
+import Card from "@/components/shared/ui/Card";
 
 // Placeholder data
 async function getTotalPaid() {
@@ -109,9 +110,6 @@ const featuredDAOs = [
 ];
 
 export default async function Home() {
-  const totalPaid = await getTotalPaid();
-  const stats = await getStats();
-
   // Fetch metadata for each article
   const featuredNews = await Promise.all(
     articleUrls.map(async (url, index) => {
@@ -129,19 +127,15 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen p-6">
-      <div className="max-w-5xl mx-auto space-y-12">
-        {/* Stats Grid */}
-
+      <div className="max-w-5xl mx-auto space-y-4">
         {/* Featured Users Section */}
-        <div>
-          <div className="grid grid-cols-6 grid-rows-2 gap-4 outline-2 outline outline-white/[0.2] p-7 relative">
-            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-              featured users
-            </h2>
+        <Card title="Featured Users">
+          <div className="grid grid-cols-6 grid-rows-2 gap-4">
             {featuredUsers.map((user) => (
               <div
                 key={user.id}
-                className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-4 flex flex-col items-center gap-2"
+                className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-4 
+                         flex flex-col items-center gap-2 transition-all duration-200"
               >
                 <div className="h-10 w-10 overflow-hidden">
                   <Image
@@ -166,18 +160,16 @@ export default async function Home() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Featured DAOs Section */}
-        <div className="mt-12">
-          <div className="grid grid-cols-2 gap-6 outline-2 outline outline-white/[0.2] p-7 relative">
-            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-              featured daos
-            </h2>
+        <Card title="Featured DAOs">
+          <div className="grid grid-cols-2 gap-6">
             {featuredDAOs.map((dao) => (
               <div
                 key={dao.id}
-                className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-6 flex items-start gap-4"
+                className="backdrop-blur-sm bg-white/[0.02] hover:bg-white/[0.04] p-6 
+                         flex items-start gap-4 transition-all duration-200"
               >
                 <div className="h-12 w-12 overflow-hidden flex-shrink-0">
                   <Image
@@ -207,21 +199,20 @@ export default async function Home() {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
-        {/* Featured News Section */}
-        <div className="mt-12">
-          <div className="grid grid-cols-2 gap-6 outline-2 outline outline-white/[0.2] p-7 relative">
-            <h2 className="text-base absolute z-20 -top-3 font-jetbrains left-6 px-2 bg-zinc-950 font-garet font-extrabold text-zinc-500">
-              news
-            </h2>
+        {/* News Section */}
+        <Card title="News">
+          <div className="grid grid-cols-2 gap-6">
             {featuredNews.map((article) => (
               <a
                 key={article.id}
                 href={article.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-col overflow-hidden backdrop-blur-sm border border-white/[0.08] bg-white/[0.02]"
+                className="group flex flex-col overflow-hidden backdrop-blur-sm 
+                         border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04]
+                         transition-all duration-200"
               >
                 {/* Banner Image Container */}
                 <div className="relative h-32 w-full">
@@ -240,7 +231,10 @@ export default async function Home() {
                     {article.date}
                   </div>
 
-                  <h3 className="text-lg font-semibold text-white group-hover:text-orange-600 transition-colors duration-200">
+                  <h3
+                    className="text-lg font-semibold text-white group-hover:text-green-100 
+                               transition-colors duration-200"
+                  >
                     {article.title}
                   </h3>
 
@@ -251,7 +245,7 @@ export default async function Home() {
               </a>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

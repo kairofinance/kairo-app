@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { cn } from "@/utils/cn";
-import { useIsClient } from "@/hooks/useIsClient";
+import { useIsClient } from "../hooks/useIsClient";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline" | "ghost";

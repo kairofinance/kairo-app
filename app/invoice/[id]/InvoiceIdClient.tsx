@@ -25,12 +25,19 @@ import {
   UserCircleIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
+  CalendarIcon,
+  BanknotesIcon,
+  ArrowUpCircleIcon,
+  WalletIcon,
 } from "@heroicons/react/24/outline";
-import SpinningLogo from "@/components/SpinningLogo";
 import { formatRelativeTime } from "@/utils/date-format";
 import Avatar from "@/components/shared/Avatar";
 import { decodeEventLog } from "viem";
-import { useTeamContext } from "@/contexts/TeamContext";
+import { useTeamContext } from "@/components/context/TeamContext";
+import Spinner from "@/components/Spinner";
+import Card from "@/components/shared/ui/Card";
+import ErrorDisplay from "@/components/shared/ui/ErrorDisplay";
+import AddressDisplay from "@/components/shared/AddressDisplay";
 
 const CONTRACT_ADDRESS = getAddress(INVOICE_MANAGER_ADDRESS, sepolia.id);
 
@@ -142,7 +149,6 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
       try {
         if (!address) {
           if (status === "disconnected") {
-            setError("Please connect your wallet to view this invoice");
             setIsLoading(false);
           }
           return;
@@ -516,44 +522,30 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
 
   if (isConnectingOrReconnecting) {
     return (
-      <div className="min-h-screen p-6 bg-zinc-950">
+      <div className="min-h-screen p-6 ">
         <div className="mx-auto max-w-6xl">
           <div className="bg-white/[0.02] rounded-xl p-8 flex items-center justify-center">
-            <SpinningLogo />
+            <Spinner />
           </div>
         </div>
       </div>
     );
   }
 
-  if (!address && status === "disconnected") {
+  if (!address) {
     return (
-      <div className="min-h-screen p-6 bg-zinc-950">
-        <div className="mx-auto max-w-6xl">
-          <div className="bg-white/[0.02] rounded-xl p-8 text-center">
-            <div className="mb-4">
-              <UserCircleIcon className="w-12 h-12 text-white/40 mx-auto" />
-            </div>
-            <h2 className="text-xl font-garet text-white mb-2">
-              Wallet Not Connected
-            </h2>
-            <p className="text-white/60 font-jetbrains text-sm">
-              Please connect your wallet to view invoice details
-            </p>
-          </div>
-        </div>
-      </div>
+      <ErrorDisplay
+        title="Wallet Not Connected"
+        message="Please connect your wallet to view invoice details"
+        icon={<WalletIcon className="w-6 h-6 text-white/40" />}
+      />
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6 bg-zinc-950">
-        <div className="mx-auto max-w-7xl">
-          <div className="bg-white/[0.02] rounded-xl p-8 flex items-center justify-center">
-            <SpinningLogo />
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
       </div>
     );
   }
@@ -580,7 +572,7 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
     address?.toLowerCase() === invoice.clientAddress.toLowerCase();
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-6">
         {/* Header */}
         <div className="py-8">
@@ -781,177 +773,135 @@ export default function InvoiceIdClient({ invoiceId }: { invoiceId: string }) {
             </div>
           </div>
 
-          {/* Bottom Section - Updated to match app style */}
+          {/* Bottom Section - Using Card Component */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Column - Amount Details */}
-            <div className="bg-white/[0.02] rounded-xl p-6 border border-white/[0.05]">
-              <h3 className="text-lg font-garet text-white mb-4">
-                Payment Details
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                  <span className="text-white/60 font-jetbrains text-sm">
-                    Base Amount
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={`/tokens/${
-                        getTokenInfo(invoice.tokenAddress).symbol
-                      }.png`}
-                      alt={getTokenInfo(invoice.tokenAddress).symbol}
-                      width={16}
-                      height={16}
-                      className="rounded-full"
-                    />
-                    <span className="text-white font-jetbrains text-sm">
-                      {formatAmount(invoice.amount, invoice.tokenAddress)}
-                    </span>
+            {/* Payment Details Card */}
+            <Card title="Payment Details">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-white/[0.05]">
+                      <BanknotesIcon className="w-4 h-4 text-white/60" />
+                    </div>
+                    <span className="text-sm text-white/60">Amount</span>
                   </div>
+                  <span className="text-sm font-medium text-white">
+                    {formatAmount(invoice.amount, invoice.tokenAddress)}{" "}
+                    {getTokenInfo(invoice.tokenAddress).symbol}
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                  <span className="text-white/60 font-jetbrains text-sm">
-                    Platform Fee (1.5%)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={`/tokens/${
-                        getTokenInfo(invoice.tokenAddress).symbol
-                      }.png`}
-                      alt={getTokenInfo(invoice.tokenAddress).symbol}
-                      width={16}
-                      height={16}
-                      className="rounded-full opacity-60"
-                    />
-                    <span className="text-white/80 font-jetbrains text-sm">
-                      {formatAmount(
-                        (
-                          (BigInt(invoice.amount) * BigInt(15)) /
-                          BigInt(1000)
-                        ).toString(),
-                        invoice.tokenAddress
-                      )}
+                {isClient && !invoice.paid && (
+                  <button
+                    onClick={handlePayment}
+                    disabled={!hasEnoughBalance || isPending}
+                    className="w-full flex items-center justify-center gap-2 p-4 
+                             rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             text-emerald-500 hover:text-emerald-400
+                             transition-all duration-200"
+                  >
+                    {isPending ? (
+                      <Spinner className="w-4 h-4" />
+                    ) : (
+                      <ArrowUpCircleIcon className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isPending ? "Processing..." : "Pay Invoice"}
                     </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border-t border-white/[0.05]">
-                  <span className="text-white/80 font-jetbrains text-sm">
-                    Total Amount
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={`/tokens/${
-                        getTokenInfo(invoice.tokenAddress).symbol
-                      }.png`}
-                      alt={getTokenInfo(invoice.tokenAddress).symbol}
-                      width={16}
-                      height={16}
-                      className="rounded-full"
-                    />
-                    <span className="text-white font-jetbrains text-sm">
-                      {formatAmount(
-                        (
-                          BigInt(invoice.amount) +
-                          (BigInt(invoice.amount) * BigInt(15)) / BigInt(1000)
-                        ).toString(),
-                        invoice.tokenAddress
-                      )}
-                    </span>
-                  </div>
-                </div>
+                  </button>
+                )}
 
                 {isClient && (
-                  <div className="flex items-center justify-between p-3 mt-2 rounded-lg border border-white/[0.05]">
-                    <span className="text-white/60 font-jetbrains text-sm">
-                      Your Balance
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src={`/tokens/${
-                          getTokenInfo(invoice.tokenAddress).symbol
-                        }.png`}
-                        alt={getTokenInfo(invoice.tokenAddress).symbol}
-                        width={16}
-                        height={16}
-                        className="rounded-full"
-                      />
-                      <span
-                        className={`font-jetbrains text-sm ${
-                          hasEnoughBalance ? "text-white" : "text-red-500"
-                        }`}
-                      >
-                        {formatTokenAmount(tokenBalance)}
+                  <div
+                    className="flex items-center justify-between p-4 rounded-lg 
+                                bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200 
+                                border border-white/[0.05]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-white/[0.05]">
+                        <Image
+                          src={`/tokens/${
+                            getTokenInfo(invoice.tokenAddress).symbol
+                          }.png`}
+                          alt={getTokenInfo(invoice.tokenAddress).symbol}
+                          width={16}
+                          height={16}
+                        />
+                      </div>
+                      <span className="text-sm text-white/60">
+                        Your Balance
                       </span>
                     </div>
+                    <span
+                      className={`text-sm font-medium ${
+                        hasEnoughBalance ? "text-white" : "text-red-500"
+                      }`}
+                    >
+                      {formatTokenAmount(tokenBalance)}
+                    </span>
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
 
-            {/* Right Column - Dates and Status */}
-            <div className="space-y-6">
-              {/* Dates Card */}
-              <div className="bg-white/[0.02] rounded-xl p-6 border border-white/[0.05]">
-                <h3 className="text-lg font-garet text-white mb-4">
-                  Important Dates
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                    <span className="text-white/60 font-jetbrains text-sm">
-                      Issue Date
-                    </span>
-                    <span className="text-white font-jetbrains text-sm">
-                      {new Date(invoice.issuedDate).toLocaleDateString()}
-                    </span>
+            {/* Important Dates Card */}
+            <Card title="Important Dates">
+              <div className="space-y-4">
+                <div
+                  className="flex items-center justify-between p-4 rounded-lg 
+                              bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-white/[0.05]">
+                      <CalendarIcon className="w-4 h-4 text-white/60" />
+                    </div>
+                    <span className="text-sm text-white/60">Issue Date</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                    <span className="text-white/60 font-jetbrains text-sm">
-                      Due Date
-                    </span>
-                    <span
-                      className={`font-jetbrains text-sm ${
-                        isOverdue ? "text-red-500" : "text-white"
-                      }`}
-                    >
-                      {new Date(invoice.dueDate).toLocaleDateString()}
-                    </span>
+                  <span className="text-sm font-medium text-white">
+                    {new Date(invoice.issuedDate).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <div
+                  className="flex items-center justify-between p-4 rounded-lg 
+                              bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-white/[0.05]">
+                      <ClockIcon className="w-4 h-4 text-white/60" />
+                    </div>
+                    <span className="text-sm text-white/60">Due Date</span>
                   </div>
-                  {invoice.paid && invoice.paidDate && (
-                    <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                      <span className="text-white/60 font-jetbrains text-sm">
+                  <span
+                    className={`text-sm font-medium ${
+                      isOverdue ? "text-red-500" : "text-white"
+                    }`}
+                  >
+                    {new Date(invoice.dueDate).toLocaleDateString()}
+                  </span>
+                </div>
+
+                {invoice.paid && invoice.paidDate && (
+                  <div
+                    className="flex items-center justify-between p-4 rounded-lg 
+                                bg-zinc-800/50 hover:bg-zinc-800 transition-colors duration-200"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-white/[0.05]">
+                        <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <span className="text-sm text-white/60">
                         Payment Date
                       </span>
-                      <span className="text-emerald-500 font-jetbrains text-sm">
-                        {new Date(invoice.paidDate).toLocaleDateString()}
-                      </span>
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Transaction Details if paid */}
-              {invoice.paid && invoice.paymentTransactionHash && (
-                <div className="bg-white/[0.02] rounded-xl p-6 border border-white/[0.05]">
-                  <h3 className="text-lg font-garet text-white mb-4">
-                    Transaction Details
-                  </h3>
-                  <div className="p-3 bg-black/20 rounded-lg">
-                    <div className="text-white/60 font-jetbrains text-sm mb-1">
-                      Transaction Hash
-                    </div>
-                    <a
-                      href={`https://sepolia.etherscan.io/tx/${invoice.paymentTransactionHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-500 hover:text-emerald-400 font-jetbrains text-sm break-all"
-                    >
-                      {invoice.paymentTransactionHash}
-                    </a>
+                    <span className="text-sm font-medium text-emerald-500">
+                      {new Date(invoice.paidDate).toLocaleDateString()}
+                    </span>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </Card>
           </div>
         </div>
       </div>

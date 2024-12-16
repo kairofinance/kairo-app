@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import AuthWrapper from "@/auth/AuthWrapper";
 import { cookies } from "next/headers";
-import SpinningLogo from "@/components/SpinningLogo";
+import Spinner from "@/components/Spinner";
 import OverviewClient from "./OverviewClient";
 import { getCacheHeaders } from "@/utils/cache-headers";
 
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
         <Suspense
           fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
-              <SpinningLogo />
+              <Spinner />
             </div>
           }
         >

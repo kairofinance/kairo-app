@@ -3,29 +3,27 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Line } from "react-chartjs-2";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract, useReadContract } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { useAlert } from "@/hooks/useAlert";
+import { useAlert } from "@/components/shared/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
-import AlertMessage from "@/components/AlertMessage";
 import { VEST_MANAGER_ADDRESS } from "../../../contracts/addresses";
 import { VestManagerABI } from "../../../contracts/VestManager.sol/VestManager";
 import { sepolia } from "viem/chains";
 import { client } from "../../../wagmi.config";
+import {
+  UserCircleIcon,
+  CalendarIcon,
+  PlusIcon,
+  XMarkIcon,
+  ClockIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
+import { useTeamContext } from "@/components/context/TeamContext";
 import { ERC20ABI } from "../../../contracts/ERC20.sol/ERC20";
-import { UserCircleIcon, CalendarIcon } from "@heroicons/react/24/outline";
-import { useTeamContext } from "@/contexts/TeamContext";
+import Input from "@/components/shared/ui/Input";
 
 const tokens = [
   {
@@ -377,300 +375,182 @@ export default function CreateVesting({ onDataUpdate }: CreateVestingProps) {
   }, [tokenBalance, recipients, selectedToken.decimals]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Form Section */}
-      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2
-          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
-                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
-        >
-          Details
-        </h2>
+    <div className="space-y-8">
+      {/* Token Selection */}
+      <div className="space-y-2">
+        <label className="text-sm text-white/40">Select Token</label>
+        <div className="flex gap-2">
+          {tokens.map((token) => (
+            <button
+              key={token.name}
+              onClick={() => setSelectedToken(token)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
+                ${
+                  selectedToken.name === token.name
+                    ? "bg-zinc-800"
+                    : "bg-zinc-800/50 hover:bg-zinc-800"
+                }`}
+            >
+              <Image
+                src={token.image}
+                width={20}
+                height={20}
+                alt={token.name}
+                className="rounded-full"
+              />
+              <span className="text-white/80">{token.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-        <div className="space-y-6">
-          {/* Token Selection */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Select Token
-            </label>
-            <div className="flex gap-2">
-              {tokens.map((token) => (
-                <button
-                  key={token.name}
-                  onClick={() => setSelectedToken(token)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
-                    ${
-                      selectedToken.name === token.name
-                        ? "bg-white/[0.08]"
-                        : "bg-white/[0.02] hover:bg-white/[0.04]"
-                    }`}
-                >
-                  <Image
-                    src={token.image}
-                    width={20}
-                    height={20}
-                    alt={token.name}
-                    className="rounded-full"
-                  />
-                  <span className="text-white/80">{token.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+      {/* Recipients */}
+      <div className="space-y-4">
+        <label className="text-sm text-white/40">Recipients</label>
+        <div className="space-y-4">
+          {recipients.map((recipient, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-lg border border-white/[0.08] bg-zinc-800/50 space-y-4"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/40">
+                  Recipient {index + 1}
+                </span>
+                {index > 0 && (
+                  <button
+                    onClick={() => removeRecipient(index)}
+                    className="p-2 text-white/40 hover:text-white/60 transition-colors"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
 
-          {/* Recipients */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Recipients
-            </label>
-            <div className="space-y-4">
-              {recipients.map((recipient, index) => (
-                <div
-                  key={index}
-                  className="space-y-3 p-4 bg-white/[0.02] border border-white/[0.08] rounded-lg"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-white/40 font-jetbrains text-sm">
-                        $
-                      </span>
-                      <span className="text-sm font-jetbrains text-white/60">
-                        recipient_{index + 1}
-                      </span>
-                    </div>
-                    {index > 0 && (
-                      <motion.button
-                        onClick={() => removeRecipient(index)}
-                        className="p-2 bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.02] hover:bg-white/[0.04] 
-                                 hover:border-white/[0.12] text-white/40 hover:text-white transition-all duration-200"
-                      >
-                        <span className="font-jetbrains">x</span>
-                      </motion.button>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  value={recipient.recipient}
+                  onChange={(e) =>
+                    handleRecipientChange(index, "recipient", e.target.value)
+                  }
+                  placeholder="0x.../ENS"
+                  icon={<UserCircleIcon className="w-4 h-4" />}
+                  error={
+                    recipient.recipient && !isAddress(recipient.recipient)
+                      ? "Invalid address format"
+                      : undefined
+                  }
+                />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      value={recipient.recipient}
-                      onChange={(e) =>
-                        handleRecipientChange(
-                          index,
-                          "recipient",
-                          e.target.value
-                        )
-                      }
-                      placeholder="0x.../ENS"
-                      className="w-full bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                               placeholder:text-white/20 transition-all duration-200
-                               hover:bg-white/[0.04] focus:bg-white/[0.04]"
-                    />
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={recipient.amount}
-                        onChange={(e) =>
-                          handleRecipientChange(index, "amount", e.target.value)
-                        }
-                        placeholder="Amount"
-                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-16 py-3 text-white 
-                                 placeholder:text-white/20 transition-all duration-200
-                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
-                        {selectedToken.name}
-                      </span>
-                    </div>
-                  </div>
+                <Input
+                  value={recipient.amount}
+                  onChange={(e) =>
+                    handleRecipientChange(index, "amount", e.target.value)
+                  }
+                  placeholder="Amount"
+                  tokenIcon={selectedToken.image}
+                  suffix={selectedToken.name}
+                />
+              </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={recipient.cliffDuration}
-                        onChange={(e) =>
-                          handleRecipientChange(
-                            index,
-                            "cliffDuration",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Cliff"
-                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-20 py-3 text-white 
-                                 placeholder:text-white/20 transition-all duration-200
-                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
-                        Months
-                      </span>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={recipient.vestingDuration}
-                        onChange={(e) =>
-                          handleRecipientChange(
-                            index,
-                            "vestingDuration",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Duration"
-                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-20 py-3 text-white 
-                                 placeholder:text-white/20 transition-all duration-200
-                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
-                        Months
-                      </span>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={recipient.initialRelease}
-                        onChange={(e) =>
-                          handleRecipientChange(
-                            index,
-                            "initialRelease",
-                            e.target.value
-                          )
-                        }
-                        placeholder="Initial"
-                        className="w-full bg-white/[0.02] rounded-lg px-4 pr-12 py-3 text-white 
-                                 placeholder:text-white/20 transition-all duration-200
-                                 hover:bg-white/[0.04] focus:bg-white/[0.04]"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input
+                  value={recipient.cliffDuration}
+                  onChange={(e) =>
+                    handleRecipientChange(
+                      index,
+                      "cliffDuration",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Cliff"
+                  icon={<ClockIcon className="w-4 h-4" />}
+                  suffix="Months"
+                  type="number"
+                  min="0"
+                />
 
-              <motion.button
-                onClick={addRecipient}
-                className="flex items-center gap-2 text-sm font-jetbrains text-white/40 hover:text-white/60"
-              >
-                <span>$</span>
-                <span>add_recipient</span>
-              </motion.button>
-            </div>
-          </div>
+                <Input
+                  value={recipient.vestingDuration}
+                  onChange={(e) =>
+                    handleRecipientChange(
+                      index,
+                      "vestingDuration",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Duration"
+                  icon={<CalendarIcon className="w-4 h-4" />}
+                  suffix="Months"
+                  type="number"
+                  min="0"
+                />
 
-          {/* Create Button */}
+                <Input
+                  value={recipient.initialRelease}
+                  onChange={(e) =>
+                    handleRecipientChange(
+                      index,
+                      "initialRelease",
+                      e.target.value
+                    )
+                  }
+                  placeholder="Initial"
+                  icon={<ArrowPathIcon className="w-4 h-4" />}
+                  suffix="%"
+                  type="number"
+                  min="0"
+                  max="100"
+                />
+              </div>
+            </motion.div>
+          ))}
+
           <button
-            onClick={handleSubmit}
-            disabled={
-              isLoading ||
-              isPending ||
-              !hasEnoughBalance() ||
-              !recipients.every(
-                (r) =>
-                  isAddress(r.recipient) &&
-                  parseFloat(r.amount) > 0 &&
-                  parseFloat(r.vestingDuration) > 0
-              )
-            }
-            className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
-                     disabled:cursor-not-allowed transition-all duration-200 rounded-lg
-                     py-3 px-6 text-white font-medium"
+            onClick={addRecipient}
+            className="flex items-center gap-2 text-sm text-white/40 hover:text-white/60 transition-colors"
           >
-            {isLoading || isPending
-              ? "Processing..."
-              : !hasEnoughBalance()
-              ? "Insufficient Balance"
-              : "Create Vesting"}
+            <PlusIcon className="w-4 h-4" />
+            <span>Add Recipient</span>
           </button>
         </div>
       </div>
 
-      {/* Preview Section */}
-      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2
-          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
-                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
-        >
-          Preview
-        </h2>
+      {/* Create Button */}
+      <button
+        onClick={handleSubmit}
+        disabled={
+          isLoading ||
+          isPending ||
+          !hasEnoughBalance() ||
+          !recipients.every(
+            (r) =>
+              isAddress(r.recipient) &&
+              parseFloat(r.amount) > 0 &&
+              parseFloat(r.vestingDuration) > 0
+          )
+        }
+        className="w-full bg-zinc-800/50 hover:bg-zinc-800 disabled:opacity-50 
+                 disabled:cursor-not-allowed transition-all duration-200 rounded-lg
+                 py-3 px-6 text-white font-medium border border-white/[0.08]"
+      >
+        {isLoading || isPending
+          ? "Processing..."
+          : !hasEnoughBalance()
+          ? "Insufficient Balance"
+          : "Create Vesting"}
+      </button>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <Image
-                  src={selectedToken.image}
-                  width={16}
-                  height={16}
-                  alt={selectedToken.name}
-                  className="opacity-80"
-                />
-              </div>
-              <span className="text-sm text-white/60">Total Amount</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {totalAmount.toLocaleString()} {selectedToken.name}
-            </span>
-          </div>
-
-          {recipients.map((recipient, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-white/[0.05]">
-                  <UserCircleIcon className="w-4 h-4 text-white/60" />
-                </div>
-                <span className="text-sm text-white/60">
-                  Recipient {index + 1}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-sm font-medium text-white">
-                  {recipient.amount || "0"} {selectedToken.name}
-                </span>
-                <div className="text-xs text-white/40">
-                  {recipient.cliffDuration} months cliff,{" "}
-                  {recipient.vestingDuration} months vesting
-                </div>
-              </div>
-            </div>
-          ))}
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <CalendarIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Initial Release</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {recipients[0]?.initialRelease || "0"}%
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <UserCircleIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Grantor</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {selectedTeam ? selectedTeam.name : "Personal Account"}
-            </span>
-          </div>
-        </div>
+      {/* Balance Display */}
+      <div className="flex items-center justify-between text-sm text-white/40">
+        <span>Balance:</span>
+        <span>
+          {formatUnits(tokenBalance, selectedToken.decimals)}{" "}
+          {selectedToken.name}
+        </span>
       </div>
-
-      {alertState && (
-        <AlertMessage
-          message={alertState.message}
-          type={alertState.type}
-          onDismiss={dismissAlert}
-        />
-      )}
     </div>
   );
 }

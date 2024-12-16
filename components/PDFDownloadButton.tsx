@@ -92,7 +92,6 @@ export const PDFDownloadButton: React.FC<PDFDownloadButtonProps> = ({
       >
         {isGenerating ? (
           <div className="flex items-center gap-2">
-            <Spinner inline size={15} />
             <span>Generating PDF...</span>
           </div>
         ) : (

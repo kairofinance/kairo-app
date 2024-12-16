@@ -1,11 +1,20 @@
 import React from "react";
 import ProfileOverview from "./components/ProfileOverview";
+import Spinner from "@/components/Spinner";
 
 interface ProfileClientProps {
   address: string;
 }
 
 export default function ProfileClient({ address }: ProfileClientProps) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto space-y-6">

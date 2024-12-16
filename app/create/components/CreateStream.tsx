@@ -16,7 +16,7 @@ import {
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import { useWriteContract, useReadContract } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
-import { useAlert } from "@/hooks/useAlert";
+import { useAlert } from "@/components/shared/hooks/useAlert";
 import { isAddress } from "viem";
 import { useRouter } from "next/navigation";
 import AlertMessage from "@/components/AlertMessage";
@@ -29,9 +29,12 @@ import {
   ArrowPathIcon,
   UserCircleIcon,
   CalendarIcon,
+  PlusIcon,
+  XMarkIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
-import { useTeamContext } from "@/contexts/TeamContext";
-import DatePicker from "react-datepicker";
+import { useTeamContext } from "@/components/context/TeamContext";
+import Input from "@/components/shared/ui/Input";
 
 const tokens = [
   {
@@ -81,8 +84,6 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
   const [durationUnit, setDurationUnit] = useState<TimeUnit>(timeUnits[1]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { alertState, showAlert, dismissAlert } = useAlert();
-  const router = useRouter();
   const { address, isConnected } = useAppKitAccount();
   const { writeContractAsync, isPending } = useWriteContract();
   const { data: allowance = BigInt(0) } = useReadContract({
@@ -327,43 +328,47 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
 
     setIsLoading(true);
     try {
-      // Basic validation
-      if (!recipients[0].address || !recipients[0].amount || !durationValue) {
-        throw new Error("Please fill in all required fields");
+      // Validate all recipients and amounts
+      for (const recipient of recipients) {
+        if (!isAddress(recipient.address)) {
+          throw new Error("Invalid recipient address");
+        }
+        if (!recipient.amount || parseFloat(recipient.amount) <= 0) {
+          throw new Error("Invalid amount");
+        }
       }
 
-      if (!isAddress(recipients[0].address)) {
-        throw new Error("Invalid recipient address");
-      }
-
-      // Format amount with proper decimals
-      const amount = parseUnits(
-        recipients[0].amount.replace(/,/g, ""),
-        selectedToken.decimals
-      );
-
-      // Calculate timing
-      const now = Math.floor(Date.now() / 1000);
-      const startTimeSeconds = BigInt(now + 60); // Start 1 minute from now
+      // Calculate duration in seconds
       const durationInSeconds = Math.floor(
         parseFloat(durationValue) * durationUnit.inHours * 3600
       );
-      const endTimeSeconds = startTimeSeconds + BigInt(durationInSeconds);
-
-      // Validate duration
       if (durationInSeconds < 3600) {
         throw new Error("Duration must be at least 1 hour");
       }
 
+      // Format amounts with proper decimals
+      const recipientAddresses = recipients.map(
+        (r) => r.address as `0x${string}`
+      );
+      const amounts = recipients.map((r) =>
+        parseUnits(r.amount.replace(/,/g, ""), selectedToken.decimals)
+      );
+
+      // Calculate total amount for allowance check
+      const totalAmount = amounts.reduce(
+        (sum, amount) => sum + amount,
+        BigInt(0)
+      );
+
       // Check allowance
-      if (allowance < amount) {
+      if (allowance < totalAmount) {
         showAlert("Approving token spending...", "info");
         try {
           const approveTx = await writeContractAsync({
             address: selectedToken.address as `0x${string}`,
             abi: ERC20ABI,
             functionName: "approve",
-            args: [STREAM_MANAGER_ADDRESS[sepolia.id], amount],
+            args: [STREAM_MANAGER_ADDRESS[sepolia.id], totalAmount],
             chainId: sepolia.id,
           });
 
@@ -384,17 +389,21 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
         }
       }
 
-      // **Pass Five Separate Arguments as Expected by the ABI**
+      // Create the streams with proper struct format
       const streamTx = await writeContractAsync({
         address: STREAM_MANAGER_ADDRESS[sepolia.id],
         abi: StreamManagerABI,
         functionName: "createStreams",
         args: [
-          [recipients[0].address as `0x${string}`], // recipients array
-          [amount], // amounts array
-          selectedToken.address as `0x${string}`, // token address
-          startTimeSeconds, // start time
-          endTimeSeconds, // end time
+          [
+            // Array of StreamParams structs
+            ...recipients.map((recipient, index) => ({
+              recipient: recipient.address as `0x${string}`,
+              token: selectedToken.address as `0x${string}`,
+              amount: amounts[index],
+              duration: BigInt(durationInSeconds),
+            })),
+          ],
         ],
         chainId: sepolia.id,
       });
@@ -406,27 +415,29 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
       });
 
       if (receipt.status === "success") {
-        // Save to database with team context
+        // Save all streams in a single API call
         await fetch("/api/streams", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            streamId: streamTx,
-            senderAddress: selectedTeam
-              ? selectedTeam.treasuryAddress || address
-              : address,
-            recipientAddress: recipients[0].address,
-            tokenAddress: selectedToken.address,
-            amount: amount.toString(),
-            startTime: new Date(Number(startTimeSeconds) * 1000),
-            endTime: new Date(Number(endTimeSeconds) * 1000),
+            streams: recipients.map((recipient, index) => ({
+              streamId: `${streamTx}-${index}`,
+              senderAddress: selectedTeam
+                ? selectedTeam.treasuryAddress || address
+                : address,
+              recipientAddress: recipient.address,
+              tokenAddress: selectedToken.address,
+              amount: amounts[index].toString(),
+              startTime: new Date(Date.now() + 60000), // start time in ms
+              endTime: new Date(Date.now() + 60000 + durationInSeconds * 1000), // end time in ms
+            })),
             creationTxHash: streamTx,
             teamId: selectedTeam?.id || null,
             createdBy: address,
           }),
         });
 
-        showAlert("Stream created successfully!", "success", {
+        showAlert("Stream(s) created successfully!", "success", {
           txHash: streamTx,
         });
         router.push(`/stream/${streamTx}`);
@@ -468,280 +479,169 @@ export default function CreateStream({ onDataUpdate }: CreateStreamProps) {
   }, [recipients, durationValue, durationUnit, onDataUpdate]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Form Section */}
-      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2
-          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
-                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
-        >
-          Details
-        </h2>
-
-        <div className="space-y-6">
-          {/* Token Selection */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Select Token
-            </label>
-            <div className="flex gap-2">
-              {tokens.map((token) => (
-                <button
-                  key={token.name}
-                  onClick={() => setSelectedToken(token)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
-                    ${
-                      selectedToken.name === token.name
-                        ? "bg-white/[0.08]"
-                        : "bg-white/[0.02] hover:bg-white/[0.04]"
-                    }`}
-                >
-                  <Image
-                    src={token.image}
-                    width={20}
-                    height={20}
-                    alt={token.name}
-                    className="rounded-full"
-                  />
-                  <span className="text-white/80">{token.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Recipients */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Recipients
-            </label>
-            <div className="space-y-3">
-              {recipients.map((recipient, index) => (
-                <div key={index} className="flex gap-3 items-center">
-                  <input
-                    type="text"
-                    value={recipient.address}
-                    onChange={(e) =>
-                      handleRecipientChange(index, "address", e.target.value)
-                    }
-                    placeholder="0x.../ENS"
-                    className="flex-1 bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                             placeholder:text-white/20 transition-all duration-200
-                             hover:bg-white/[0.04] focus:bg-white/[0.04]"
-                  />
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={recipient.amount}
-                      onChange={(e) =>
-                        handleRecipientChange(index, "amount", e.target.value)
-                      }
-                      className="w-32 bg-white/[0.02] font-jetbrains rounded-none px-4 pr-16 py-3 
-                               text-white placeholder-white/40 border border-white/[0.08] 
-                               focus:border-white/[0.12] focus:bg-white/[0.02] hover:bg-white/[0.04]
-                               transition-all duration-200"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-jetbrains text-sm">
-                      {selectedToken.name}
-                    </span>
-                  </div>
-                  {index > 0 && (
-                    <motion.button
-                      onClick={() => removeRecipient(index)}
-                      className="p-2 bg-white/[0.02] border border-white/[0.08] hover:bg-white/[0.02] hover:bg-white/[0.04] 
-                               hover:border-white/[0.12] text-white/40 hover:text-white transition-all duration-200"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <span className="font-jetbrains">x</span>
-                    </motion.button>
-                  )}
-                </div>
-              ))}
-              <motion.button
-                onClick={addRecipient}
-                className="flex items-center gap-2 text-sm font-jetbrains text-white/40 hover:text-white/60"
-              >
-                <span>$</span>
-                <span>add_recipient</span>
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Duration */}
-          <div>
-            <label className="block text-sm font-medium text-white/60 mb-2">
-              Duration
-            </label>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={durationValue}
-                onChange={(e) => setDurationValue(e.target.value)}
-                className="flex-1 bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                         placeholder:text-white/20 transition-all duration-200
-                         hover:bg-white/[0.04] focus:bg-white/[0.04]"
+    <div className="space-y-8">
+      {/* Token Selection */}
+      <div className="space-y-2">
+        <label className="text-sm text-white/40">Select Token</label>
+        <div className="flex gap-2">
+          {tokens.map((token) => (
+            <button
+              key={token.name}
+              onClick={() => setSelectedToken(token)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200
+                ${
+                  selectedToken.name === token.name
+                    ? "bg-zinc-800"
+                    : "bg-zinc-800/50 hover:bg-zinc-800"
+                }`}
+            >
+              <Image
+                src={token.image}
+                width={20}
+                height={20}
+                alt={token.name}
+                className="rounded-full"
               />
-              <select
-                value={durationUnit.value}
-                onChange={(e) => {
-                  const newUnit = timeUnits.find(
-                    (unit) => unit.value === e.target.value
-                  );
-                  if (newUnit) setDurationUnit(newUnit);
-                }}
-                className="w-32 bg-white/[0.02] rounded-lg px-4 py-3 text-white 
-                         transition-all duration-200 hover:bg-white/[0.04]"
-              >
-                {timeUnits.map((unit) => (
-                  <option
-                    key={unit.value}
-                    value={unit.value}
-                    className="bg-zinc-900 text-white font-jetbrains"
-                  >
-                    {unit.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Create Button */}
-          <button
-            onClick={handleSubmit}
-            disabled={
-              isLoading ||
-              isPending ||
-              !hasEnoughBalance() ||
-              !recipients.every(
-                (r) =>
-                  isAddress(r.address) &&
-                  parseFloat(r.amount.replace(/,/g, "")) > 0
-              ) ||
-              parseFloat(durationValue) <= 0
-            }
-            className="w-full bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-50 
-                     disabled:cursor-not-allowed transition-all duration-200 rounded-lg
-                     py-3 px-6 text-white font-medium"
-          >
-            {isLoading || isPending
-              ? "Processing..."
-              : !hasEnoughBalance()
-              ? "Insufficient Balance"
-              : "Create Stream"}
-          </button>
-
-          <div className="flex items-center justify-between text-sm text-white/60 mb-4">
-            <span>Balance:</span>
-            <span>
-              {formatUnits(tokenBalance, selectedToken.decimals)}{" "}
-              {selectedToken.name}
-            </span>
-          </div>
+              <span className="text-white/80">{token.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Preview Section */}
-      <div className="relative outline-1 bg-white/[0.02] outline outline-white/[0.2] p-7">
-        <h2
-          className="text-lg absolute z-20 -top-4 font-jetbrains left-6 px-2 
-                       backdrop-blur-md bg-black/40 font-garet font-extrabold text-white"
-        >
-          Preview
-        </h2>
-
+      {/* Recipients */}
+      <div className="space-y-4">
+        <label className="text-sm text-white/40">Recipients</label>
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <Image
-                  src={selectedToken.image}
-                  width={16}
-                  height={16}
-                  alt={selectedToken.name}
-                  className="opacity-80"
-                />
-              </div>
-              <span className="text-sm text-white/60">Total Amount</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {totalAmount.toLocaleString()} {selectedToken.name}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <ArrowPathIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Stream Rate</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {streamRate.toFixed(6)} {selectedToken.name}/hr
-            </span>
-          </div>
-
           {recipients.map((recipient, index) => (
-            <div
+            <motion.div
               key={index}
-              className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-lg border border-white/[0.08] bg-zinc-800/50 space-y-4"
             >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-white/[0.05]">
-                  <UserCircleIcon className="w-4 h-4 text-white/60" />
-                </div>
-                <span className="text-sm text-white/60">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-white/40">
                   Recipient {index + 1}
                 </span>
+                {index > 0 && (
+                  <button
+                    onClick={() => removeRecipient(index)}
+                    className="p-2 text-white/40 hover:text-white/60 transition-colors"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-              <span className="text-sm font-medium text-white">
-                {recipient.amount || "0"} {selectedToken.name}
-              </span>
-            </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  value={recipient.address}
+                  onChange={(e) =>
+                    handleRecipientChange(index, "address", e.target.value)
+                  }
+                  placeholder="0x.../ENS"
+                  icon={<UserCircleIcon className="w-4 h-4" />}
+                  error={
+                    recipient.address && !isAddress(recipient.address)
+                      ? "Invalid address format"
+                      : undefined
+                  }
+                />
+
+                <Input
+                  value={recipient.amount}
+                  onChange={(e) =>
+                    handleRecipientChange(index, "amount", e.target.value)
+                  }
+                  placeholder="Amount"
+                  tokenIcon={selectedToken.image}
+                  suffix={selectedToken.name}
+                />
+              </div>
+            </motion.div>
           ))}
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <CalendarIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Duration</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {durationValue} {durationUnit.label}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <CalendarIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Start Time</span>
-            </div>
-            <span className="text-sm font-medium text-white">In 1 minute</span>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors duration-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/[0.05]">
-                <UserCircleIcon className="w-4 h-4 text-white/60" />
-              </div>
-              <span className="text-sm text-white/60">Issuer</span>
-            </div>
-            <span className="text-sm font-medium text-white">
-              {selectedTeam ? selectedTeam.name : "Personal Account"}
-            </span>
-          </div>
+          <button
+            onClick={addRecipient}
+            className="flex items-center gap-2 text-sm text-white/40 hover:text-white/60 transition-colors"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span>Add Recipient</span>
+          </button>
         </div>
       </div>
 
-      {alertState && (
-        <AlertMessage
-          message={alertState.message}
-          type={alertState.type}
-          onDismiss={dismissAlert}
+      {/* Duration */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Input
+          label="Duration"
+          icon={<ClockIcon className="w-4 h-4" />}
+          value={durationValue}
+          onChange={(e) => setDurationValue(e.target.value)}
+          placeholder="Enter duration"
+          type="number"
+          min="0"
         />
-      )}
+
+        <div className="space-y-2">
+          <label className="text-sm text-white/40">Unit</label>
+          <select
+            value={durationUnit.value}
+            onChange={(e) => {
+              const newUnit = timeUnits.find(
+                (unit) => unit.value === e.target.value
+              );
+              if (newUnit) setDurationUnit(newUnit);
+            }}
+            className="w-full bg-zinc-800/50 hover:bg-zinc-800 focus:bg-zinc-800 
+                     rounded-lg px-4 py-3 text-white border border-white/[0.08]
+                     transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-white/20"
+          >
+            {timeUnits.map((unit) => (
+              <option
+                key={unit.value}
+                value={unit.value}
+                className="bg-zinc-900 text-white"
+              >
+                {unit.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Create Button */}
+      <button
+        onClick={handleSubmit}
+        disabled={
+          isLoading ||
+          isPending ||
+          !hasEnoughBalance() ||
+          !recipients.every(
+            (r) =>
+              isAddress(r.address) && parseFloat(r.amount.replace(/,/g, "")) > 0
+          ) ||
+          parseFloat(durationValue) <= 0
+        }
+        className="w-full bg-zinc-800/50 hover:bg-zinc-800 disabled:opacity-50 
+                 disabled:cursor-not-allowed transition-all duration-200 rounded-lg
+                 py-3 px-6 text-white font-medium border border-white/[0.08]"
+      >
+        {isLoading || isPending
+          ? "Processing..."
+          : !hasEnoughBalance()
+          ? "Insufficient Balance"
+          : "Create Stream"}
+      </button>
+
+      {/* Balance Display */}
+      <div className="flex items-center justify-between text-sm text-white/40">
+        <span>Balance:</span>
+        <span>
+          {formatUnits(tokenBalance, selectedToken.decimals)}{" "}
+          {selectedToken.name}
+        </span>
+      </div>
     </div>
   );
 }

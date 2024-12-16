@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useTeams } from "@/hooks/useTeams";
+import { useTeams } from "@/components/shared/hooks/useTeams";
 import { Team } from "@/types/team";
 import { useAppKitAccount } from "@reown/appkit/react";
 

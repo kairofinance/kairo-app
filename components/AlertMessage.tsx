@@ -5,7 +5,7 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from "@heroicons/react/20/solid";
-import type { AlertType } from "@/hooks/useAlert";
+import type { AlertType } from "@/components/shared/hooks/useAlert";
 
 interface AlertMessageProps {
   message: string;

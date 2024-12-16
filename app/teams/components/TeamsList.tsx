@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import Image from "next/image";
-import { useTeams } from "@/hooks/useTeams";
+import { useTeams } from "@/components/shared/hooks/useTeams";
 
 interface TeamsListProps {
   address?: string;
@@ -21,11 +21,6 @@ export default function TeamsList({ address }: TeamsListProps) {
   return (
     <div className="space-y-6">
       {/* Title Section - Matching main header style */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h3 className="text-lg font-semibold text-white">List View</h3>
-        </div>
-      </div>
 
       {/* Loading State */}
       {isLoading && (

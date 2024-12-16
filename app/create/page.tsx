@@ -1,9 +1,8 @@
 import { Suspense } from "react";
 import AuthWrapper from "@/auth/AuthWrapper";
-import SpinningLogo from "@/components/SpinningLogo";
+import Spinner from "@/components/Spinner";
 import CreateClient from "./CreateClient";
 import { Metadata } from "next";
-import PageTransition from "@/components/PageTransition";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -18,21 +17,19 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function CreatePage() {
   return (
-    <PageTransition>
-      <AuthWrapper>
-        <div className="min-h-screen">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center min-h-[50vh]">
-                <SpinningLogo />
-              </div>
-            }
-          >
-            <CreateClient />
-          </Suspense>
-        </div>
-      </AuthWrapper>
-    </PageTransition>
+    <AuthWrapper>
+      <div className="min-h-screen">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center min-h-[50vh]">
+              <Spinner />
+            </div>
+          }
+        >
+          <CreateClient />
+        </Suspense>
+      </div>
+    </AuthWrapper>
   );
 }
 

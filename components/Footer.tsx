@@ -36,21 +36,25 @@ const navigation = {
 
 export default function Footer() {
   return (
-    <footer className="border-t border-white/[0.2] text-white/[0.2]  mt-12 max-w-6xl mx-auto place-items-end">
-      <div className="px-6 pb-12 pt-4 lg:px-8 flex space-x-3">
-        {navigation.social.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/60 hover:text-white transition-colors duration-200"
-          >
-            <span className="sr-only">{item.name}</span>
-            <item.icon className="h-5 w-5" aria-hidden="true" />
-          </Link>
-        ))}
+    <div className="mt-12">
+      <div className="max-w-5xl mx-auto border-t border-white/[0.2]">
+        <div className="py-4">
+          <div className="flex space-x-3">
+            {navigation.social.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white/60 hover:text-white transition-colors duration-200"
+              >
+                <span className="sr-only">{item.name}</span>
+                <item.icon className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
-    </footer>
+    </div>
   );
 }

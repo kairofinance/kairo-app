@@ -200,107 +200,76 @@ export default function RecentActivity({
   }
 
   return (
-    <div className="w-full">
-      <div
-        className={`transition-opacity duration-300 ease-in-out ${
-          isLoading ? "opacity-50" : "opacity-100"
-        }`}
-      >
-        {isLoading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="flex gap-4 animate-pulse">
-                <div className="w-20 h-4 bg-white/5 rounded" />
-                <div className="flex-1 h-12 bg-white/5 rounded-lg" />
-              </div>
-            ))}
-          </div>
-        ) : paginatedInvoices.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-white/40">No recent activity available</p>
-          </div>
-        ) : (
-          <div className="relative">
-            <div className="space-y-6 pr-6">
-              {paginatedInvoices.map((day) => (
-                <div key={day.dateTime}>
-                  <div className="mb-3">
-                    <time
-                      dateTime={day.dateTime}
-                      className="text-sm font-medium text-white/30 uppercase tracking-wider"
-                    >
-                      {formatDate(day.date)}
-                    </time>
-                  </div>
+    <div className="w-full bg-white/[0.02] rounded-2xl border border-white/[0.05] backdrop-blur-sm">
+      <div className="p-8">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-semibold text-white">Recent Activity</h2>
+        </div>
 
-                  <div className="space-y-2">
-                    {day.invoices.map((invoice) => {
-                      const status = getInvoiceStatus(invoice, userAddress);
-                      const isUserIssuer =
-                        invoice.issuerAddress.toLowerCase() ===
-                        userAddress.toLowerCase();
+        <div
+          className={`transition-opacity duration-300 ease-in-out ${
+            isLoading ? "opacity-50" : "opacity-100"
+          }`}
+        >
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex gap-4 animate-pulse">
+                  <div className="w-20 h-4 bg-white/5 rounded" />
+                  <div className="flex-1 h-12 bg-white/5 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          ) : paginatedInvoices.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-white/40">No recent activity available</p>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="space-y-6">
+                {paginatedInvoices.map((day) => (
+                  <div key={day.dateTime}>
+                    <div className="mb-4">
+                      <time
+                        dateTime={day.dateTime}
+                        className="text-sm font-medium text-white/40"
+                      >
+                        {formatDate(day.date)}
+                      </time>
+                    </div>
 
-                      return (
-                        <Link
-                          key={invoice.id}
-                          href={`/invoice/${invoice.invoiceId}`}
-                          className="block group relative"
-                        >
-                          <div className="relative overflow-hidden backdrop-blur-sm rounded-lg border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300">
-                            {/* Main container - make it stack on mobile */}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 py-4 px-4 sm:py-5 sm:px-6">
-                              {/* Top row for mobile - time and status */}
-                              <div className="flex items-center justify-between sm:hidden">
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={`
-                                      w-2 h-2 rounded-full shrink-0
-                                      ${
-                                        status === "Paid"
-                                          ? "bg-orange-600"
-                                          : status === "Created"
-                                          ? "bg-white/60"
-                                          : "bg-white"
-                                      }
-                                    `}
-                                  />
-                                  <div className="text-sm tabular-nums text-white/40">
-                                    {
-                                      formatCustomDateTime(
-                                        invoice.issuedDate
-                                      ).split(" ")[1]
-                                    }
-                                  </div>
-                                </div>
+                    <div className="space-y-2.5">
+                      {day.invoices.map((invoice) => {
+                        const status = getInvoiceStatus(invoice, userAddress);
+                        const isUserIssuer =
+                          invoice.issuerAddress.toLowerCase() ===
+                          userAddress.toLowerCase();
+
+                        return (
+                          <Link
+                            key={invoice.id}
+                            href={`/invoice/${invoice.invoiceId}`}
+                            className="block group"
+                          >
+                            <div className="relative rounded-xl border border-white/[0.08] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-200">
+                              <div className="flex items-center gap-4 p-4">
+                                {/* Status Indicator */}
                                 <div
                                   className={`
-                                    px-2.5 py-1 text-xs font-medium rounded-full
-                                    backdrop-blur-sm transition-colors duration-200
-                                    ${statusStyles[status]}
+                                    w-2 h-2 rounded-full shrink-0
+                                    ${
+                                      status === "Paid"
+                                        ? "bg-orange-500"
+                                        : status === "Created"
+                                        ? "bg-white/60"
+                                        : "bg-white"
+                                    }
                                   `}
-                                >
-                                  {getStatusText(status)}
-                                </div>
-                              </div>
+                                />
 
-                              {/* Desktop status icon and time */}
-                              <div className="hidden sm:flex items-center gap-4">
-                                <div className="flex items-center">
-                                  <div
-                                    className={`
-                                      w-2 h-2 rounded-full shrink-0
-                                      ${
-                                        status === "Paid"
-                                          ? "bg-orange-600"
-                                          : status === "Created"
-                                          ? "bg-white/60"
-                                          : "bg-white"
-                                      }
-                                    `}
-                                  />
-                                </div>
-                                <div className="w-[75px] shrink-0 flex items-center">
-                                  <div className="text-sm tabular-nums text-white/40">
+                                {/* Time */}
+                                <div className="w-[60px] shrink-0">
+                                  <div className="text-sm text-white/40">
                                     {
                                       formatCustomDateTime(
                                         invoice.issuedDate
@@ -308,14 +277,11 @@ export default function RecentActivity({
                                     }
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Main Content */}
-                              <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                                <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
-                                  {/* Token Amount */}
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <div className="flex items-center opacity-80 group-hover:opacity-100 transition-opacity">
+                                {/* Amount and Address */}
+                                <div className="flex-1 flex items-center justify-between min-w-0">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex items-center gap-2">
                                       <Image
                                         src={`/tokens/${getTokenSymbol(
                                           invoice.tokenAddress
@@ -325,40 +291,34 @@ export default function RecentActivity({
                                         )}
                                         width={18}
                                         height={18}
-                                        className="rounded-full"
+                                        className="rounded-full opacity-80 group-hover:opacity-100 transition-opacity"
                                       />
+                                      <span className="text-base font-medium text-white/90 group-hover:text-white transition-colors">
+                                        {formatAmount(
+                                          invoice.amount,
+                                          invoice.tokenAddress
+                                        )}
+                                      </span>
                                     </div>
-                                    <span className="text-base font-medium text-white/90 group-hover:text-white transition-colors">
-                                      {formatAmount(
-                                        invoice.amount,
-                                        invoice.tokenAddress
-                                      )}
+
+                                    <span className="text-sm text-white/40">
+                                      {getActionText(status, isUserIssuer)}
                                     </span>
-                                  </div>
 
-                                  <span className="text-sm text-white/30">
-                                    {getActionText(status, isUserIssuer)}
-                                  </span>
-
-                                  {/* Address */}
-                                  <div className="min-w-0 truncate flex items-center">
                                     <AddressDisplay
                                       address={
                                         isUserIssuer
                                           ? invoice.clientAddress
                                           : invoice.issuerAddress
                                       }
-                                      className="text-sm text-white/70 group-hover:text-white/90 transition-colors duration-200"
+                                      className="text-sm text-white/70 group-hover:text-white/90 transition-colors"
                                     />
                                   </div>
-                                </div>
 
-                                {/* Status Badge - desktop only */}
-                                <div className="hidden sm:flex items-center gap-2 shrink-0">
                                   <div
                                     className={`
-                                      px-3 py-1 text-sm font-medium rounded-full
-                                      backdrop-blur-sm transition-colors duration-200
+                                      px-3 py-1 text-xs font-medium rounded-full
+                                      transition-colors duration-200
                                       ${statusStyles[status]}
                                     `}
                                   >
@@ -367,27 +327,27 @@ export default function RecentActivity({
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+          )}
+        </div>
+
+        {!isLoading && allInvoices.length > 0 && (
+          <div className="mt-8">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </div>
-
-      {!isLoading && allInvoices.length > 0 && (
-        <div className="mt-8">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
     </div>
   );
 }
